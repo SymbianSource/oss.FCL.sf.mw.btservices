@@ -496,7 +496,7 @@ public:
     *
     * @since S60 v3.2
     */
-    IMPORT_C void CBTEngDiscovery::CloseRemoteSdpConnection();
+    IMPORT_C void CloseRemoteSdpConnection();
 
     /**
      * Static helper function to return the SDP element type 

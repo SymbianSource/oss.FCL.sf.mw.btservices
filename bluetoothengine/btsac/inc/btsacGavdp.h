@@ -127,7 +127,7 @@ NONSHARABLE_CLASS(CBTSACGavdp) : public CBase, public MGavdpUser
     		 * @param   None.
     		 * @return  None.
     		 */
-    		 TInt CBTSACGavdp::Shutdown();
+    		 TInt Shutdown();
     		
     		 /**
     		 * Suspend (Pause) streaming to remote accessory
