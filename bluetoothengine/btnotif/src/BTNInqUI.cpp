@@ -22,7 +22,6 @@
 #include <aknlists.h>
 #include <aknPopup.h>
 #include <avkon.mbg>
-#include <StringLoader.h>       // Localisation stringloader
 #include <wlaninternalpskeys.h> // For WLAN state checking
 #include <ctsydomainpskeys.h>
 #include <AknNotiferAppServerApplication.h> 
@@ -30,9 +29,9 @@
 #include <BTNotif.rsg>          // Own resources
 #include <bt_subscribe.h>
 #include <btnotif.mbg>
-#include <wlanplugin.mbg>       // Borrow WLan signal strenth bar to show RSSI  
 #include <devui_const.h>
 #include <btengutil.h>
+#include <bluetoothuiutil.h>
 #include "btninqui.h"           // Own class definition
 #include "btNotifDebug.h"       // Debugging macros
 #include "btnotifnameutils.h"
@@ -46,8 +45,7 @@ const TInt KMediumStrength = 53;
 const TInt KHighStrength = 82;
 const TUint32 ExcludePairedDeviceMask = 0x800000;
 const TUint32 ResetExcludePairedDeviceMask = 0xFF7FFFFF;
-_LIT(KBtnotifBmpFileName,"btnotif.mbm");
-_LIT(KWLanBmpFileName,"wlanplugin.mif");
+_LIT(KBtnotifBmpFileName,"btnotif.mif"); //mif is target file under resource folder
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -727,23 +725,18 @@ void CBTInqUI::CreatePopupListL(TInt aSoftkeysResourceId, TInt aTitleResourceId 
 	GetColorIconL( bmpFilename, KAknsIIDQgnIndiBtBlocked, 
 	                EMbmBtnotifQgn_indi_bt_blocked, 
 	                EMbmBtnotifQgn_indi_bt_blocked_mask, iconList );
-	
-	bmpFilename.Zero();
-	bmpFilename.Append( KFileDrive );
-	bmpFilename.Append( KDC_APP_BITMAP_DIR );
-	bmpFilename.Append( KWLanBmpFileName );
-	
-    GetColorIconL( bmpFilename, KAknsIIDQgnIndiWlanSignalLowAdd, 
-	                EMbmWlanpluginQgn_indi_wlan_signal_low_add, 
-	                EMbmWlanpluginQgn_indi_wlan_signal_low_add_mask, iconList);
-	
-    GetColorIconL( bmpFilename, KAknsIIDQgnIndiWlanSignalMedAdd, 
-                    EMbmWlanpluginQgn_indi_wlan_signal_med_add, 
-                    EMbmWlanpluginQgn_indi_wlan_signal_med_add_mask, iconList );
 
-    GetColorIconL( bmpFilename, KAknsIIDQgnIndiWlanSignalGoodAdd, 
-                    EMbmWlanpluginQgn_indi_wlan_signal_good_add, 
-                    EMbmWlanpluginQgn_indi_wlan_signal_good_add_mask, iconList );
+    GetColorIconL( bmpFilename, KAknsIIDQgnIndiBtSignalLowAdd, 
+                    EMbmBtnotifQgn_indi_bt_signal_low_add, 
+                    EMbmBtnotifQgn_indi_bt_signal_low_add_mask, iconList);
+	
+    GetColorIconL( bmpFilename, KAknsIIDQgnIndiBtSignalMedAdd, 
+                    EMbmBtnotifQgn_indi_bt_signal_med_add, 
+                    EMbmBtnotifQgn_indi_bt_signal_med_add_mask, iconList );
+
+    GetColorIconL( bmpFilename, KAknsIIDQgnIndiBtSignalGoodAdd, 
+                    EMbmBtnotifQgn_indi_bt_signal_good_add, 
+                    EMbmBtnotifQgn_indi_bt_signal_good_add_mask, iconList );
 	
 	// Transfer iconlist ownership to the listbox
 	//
@@ -1047,21 +1040,14 @@ void CBTInqUI::AdjustDeviceArrayL(CBTDeviceArray* aDeviceArray)
 TInt CBTInqUI::QueryUnblockDeviceL(CBTDevice* aDevice)
 	{
 	FLOG(_L("[BTNOTIF]\t CBTInqUI::QueryUnblockDeviceL()"));
-
-    HBufC* stringholder = NULL;
-
-    if (aDevice->IsValidFriendlyName())
-       	{
-        stringholder = StringLoader::LoadLC(R_BT_UNBLOCK_DEVICE, aDevice->FriendlyName());
-        }
-    else
-        {  	
-        stringholder = StringLoader::LoadLC(R_BT_UNBLOCK_DEVICE, BTDeviceNameConverter::ToUnicodeL(aDevice->DeviceName()));
-        }
-
-    TBTDeviceName name(KNullDesC);
+	RBuf stringholder;
+	stringholder.CleanupClosePushL();
+    TBTDeviceName name;
+    BtNotifNameUtils::GetDeviceDisplayName( name, aDevice );
+    BluetoothUiUtil::LoadResourceAndSubstringL( 
+            stringholder, R_BT_UNBLOCK_DEVICE, name, 0 );
     TInt keypress(0);
-    keypress = iUiUtil->ShowQueryL( *stringholder, R_BT_UNBLOCK_QUERY, 
+    keypress = iUiUtil->ShowQueryL( stringholder, R_BT_UNBLOCK_QUERY, 
             ECmdBTnotifUnavailable, name, CAknQueryDialog::EConfirmationTone );
     CleanupStack::PopAndDestroy();  // stringholder
     FTRACE(FPrint(_L("[BTNOTIF]\t CBTInqUI::QueryUnblockDeviceL()  keypress= %d"),keypress));    

@@ -15,7 +15,7 @@
 *
 */
 
-
+#include <coecntrl.h>
 #include "paintcursorappview.h"
 #include "pointmsgqueue.h"
 #include "debug.h"
@@ -154,4 +154,26 @@ void CPaintCursorAppView::ShowCursor()
 
     iMouseInitialized = ETrue;
     }
+
+void CPaintCursorAppView::HandleResourceChange( TInt aType )
+    {
+    CCoeControl::HandleResourceChange( aType );
+    if ( aType == KEikDynamicLayoutVariantSwitch )
+        {
+        TRect mainPaneRect;
+        AknLayoutUtils::LayoutMetricsRect( AknLayoutUtils::EMainPane, mainPaneRect );
+        SetRect( mainPaneRect );
+        DrawNow();
+        if (iMouseInitialized)
+            {
+            iClientCommander.ImageCommand( KRedrawBTCursorAnim );
+            }
+        }
+    }
+
+void CPaintCursorAppView::HandleControlEventL(
+    CCoeControl* /*aControl*/, TCoeEvent /*aEventType*/ )
+    {
+    }
+
 

@@ -27,6 +27,10 @@
 #endif
 #include <btnotif.h>			// notifier id for power mode setting 
 
+// @todo remove this declaration once both stack and UI layers are in codeline
+const TUid KBTUserConfirmationNotifierUidCopyForWrapper={0x2002E224};
+
+
 const TInt KMaxSynchReplyBufLength = 256;  //what should be?
 
 const TUid KBTInquiryChannel            = {0x00000601}; // Channel for inquiry notifier
@@ -45,6 +49,7 @@ const TInt KBTGenericInfoNotifierPriority = MEikSrvNotifierBase2::ENotifierPrior
 const TInt KBTGenericQueryNotifierPriority = MEikSrvNotifierBase2::ENotifierPriorityHigh;
 const TInt KBTNumericComparisonPriority     = MEikSrvNotifierBase2::ENotifierPriorityVHigh;  // for SSP
 const TInt KBTPasskeyEntryNotifierPriority = MEikSrvNotifierBase2::ENotifierPriorityVHigh;   // for SSP
+const TInt KBTUserConfirmationNotifierPriority = MEikSrvNotifierBase2::ENotifierPriorityVHigh;   // for SSP
 const TInt KBTPairedDeviceSettingPriority = MEikSrvNotifierBase2::ENotifierPriorityVHigh;   
 const TInt KBTEnterpriseItSecurityInfoNotifierPriority = MEikSrvNotifierBase2::ENotifierPriorityHigh;
 
@@ -78,64 +83,109 @@ CArrayPtr<MEikSrvNotifierBase2>* DoCreateNotifierArrayL()
                                    KBTInquiryPriority,
                                    _L("BTNotif.dll"),
                                    KMaxSynchReplyBufLength);
-	  		   
+
+    CleanupStack::PushL( master );
     subjects->AppendL( master );
-    
-   // Notifiers using masters session 
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTManAuthNotifierUid,
-                                   			 				KBTAuthorisationChannel,
-                                   			 				KBTAuthorisationPriority));
-    
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTPinCodeEntryNotifierUid,
-                                   			 				KBTAuthenticationChannel,
-                                   			 				KBTAuthenticationPriority));
-                                   			 				                               
-	subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTObexPasskeyQueryNotifierUid,
-                                   			 				KBTObexPINChannel,
-                                   			 				KBTObexPinPriority));
-        
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KPowerModeSettingNotifierUid,
-                                   			 				KBTPowerModeChannel,
-                                   			 				KBTPowerModePriority));                               			 				
-                                   			 				
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTGenericInfoNotifierUid,
-                                   			 				KBTGenericInfoNotifierUid,
-                                   			 				KBTGenericInfoNotifierPriority));
+    CleanupStack::Pop( master );
 
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTGenericQueryNotifierUid,
-                                   			 				KBTGenericQueryNotifierUid,
-                                   			 				KBTGenericQueryNotifierPriority));
-    
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KPbapAuthNotifierUid,
-                                   			 				KBTObexPINChannel,
-                                   			 				KBTObexPinPriority));   
-    
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTPairedDeviceSettingNotifierUid,
-                                                            KBTPairedDeviceSettingChannel,
-                                                            KBTPairedDeviceSettingPriority));   
+    // Notifiers using masters session
+    CAknNotifierWrapperLight* notif = NULL;
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTManAuthNotifierUid,
+                                                  KBTAuthorisationChannel,
+                                                  KBTAuthorisationPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
 
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTNumericComparisonNotifierUid,
-                                                            KBTNumericComparisonNotifierUid,
-                                                            KBTNumericComparisonPriority));       
-    
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master,
-                                                            KBTPasskeyDisplayNotifierUid,
-                                                            KBTPasskeyDisplayNotifierUid,
-                                                            KBTPasskeyEntryNotifierPriority)); 
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTPinCodeEntryNotifierUid,
+                                                  KBTAuthenticationChannel,
+                                                  KBTAuthenticationPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
 
-    subjects->AppendL(new (ELeave) CAknNotifierWrapperLight(*master, 
-                                                            KBTEnterpriseItSecurityInfoNotifierUid,
-                                   			 				KBTEnterpriseItSecurityInfoNotifierUid,
-                                   			 				KBTEnterpriseItSecurityInfoNotifierPriority));
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTObexPasskeyQueryNotifierUid,
+                                                  KBTObexPINChannel,
+                                                  KBTObexPinPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KPowerModeSettingNotifierUid,
+                                                  KBTPowerModeChannel,
+                                                  KBTPowerModePriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTGenericInfoNotifierUid,
+                                                  KBTGenericInfoNotifierUid,
+                                                  KBTGenericInfoNotifierPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTGenericQueryNotifierUid,
+                                                  KBTGenericQueryNotifierUid,
+                                                  KBTGenericQueryNotifierPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KPbapAuthNotifierUid,
+                                                  KBTObexPINChannel,
+                                                  KBTObexPinPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTPairedDeviceSettingNotifierUid,
+                                                  KBTPairedDeviceSettingChannel,
+                                                  KBTPairedDeviceSettingPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTNumericComparisonNotifierUid,
+                                                  KBTNumericComparisonNotifierUid,
+                                                  KBTNumericComparisonPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTPasskeyDisplayNotifierUid,
+                                                  KBTPasskeyDisplayNotifierUid,
+                                                  KBTPasskeyEntryNotifierPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
+
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTUserConfirmationNotifierUidCopyForWrapper,
+                                                  KBTUserConfirmationNotifierUidCopyForWrapper,
+                                                  KBTUserConfirmationNotifierPriority);
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );    
+    
+    notif = new (ELeave) CAknNotifierWrapperLight(*master,
+                                                  KBTEnterpriseItSecurityInfoNotifierUid,
+                                                  KBTEnterpriseItSecurityInfoNotifierUid,
+                                                  KBTEnterpriseItSecurityInfoNotifierPriority);
+
+    CleanupStack::PushL( notif );
+    subjects->AppendL( notif );
+    CleanupStack::Pop( notif );
 
     CleanupStack::Pop();	// array cleanup
     return(subjects);

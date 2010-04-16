@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -61,12 +61,6 @@ public:
     void ProcessCommandL( const RMessage2& aMessage );
     
     /**
-     * Cancels an outstanding command.
-     * @param aOpcode the identifier of the command to be cancelled.
-     */
-    void CancelCommand( TInt aOpCode );
-    
-    /**
      * Handle a change in BTRegistry remote device table.
      *
      * @since S60 v5.1
@@ -101,6 +95,14 @@ public:
      * 
      */
     void OutgoingPairCompleted( TInt aErr );
+    
+    /**
+     * Be informed that a session will be closed.
+     *
+     * @since Symbian^3
+     * @param aSession the session to be cloased.
+     */
+    void SessionClosed(CSession2* aSession );
     
     /**
      * Unpair a device via registry
@@ -163,6 +165,16 @@ private:
      * Symbian 2nd-phase constructor
      */
     void ConstructL();
+
+    /**
+     * Initialiases the paired devices list
+     */
+    void InitPairedDevicesList();
+
+    /**
+     * Initialises the paired devices list (second stage)
+     */
+    void DoInitPairedDevicesList();
 
     /**
      * Activate / deactivate a pair observer
@@ -313,6 +325,31 @@ private:
      * Own.
      */
     CBTEngPairBase* iPairer;
+    
+    /**
+     * Client-server message for power change requests.
+     */
+    RMessage2 iMessage;
+
+    /**
+     * AO for local address updates.
+     */
+    CBTEngActive* iLocalAddrActive;
+
+    /**
+     * Provides access to the BT local device address.
+     */
+    RProperty iPropertyLocalAddr;
+
+    /**
+     * Records whether or not this CBTEngPairMan has ever been involed in a pairing operaton.
+     */
+    TBool iPairingOperationAttempted;
+
+    /**
+     * Counter of unhandled paired device view initialisation requests.
+     */
+    TInt iNotHandledInitEventCounter;
     };
 
 #endif /*BTENGPAIRMANAGER_H_*/

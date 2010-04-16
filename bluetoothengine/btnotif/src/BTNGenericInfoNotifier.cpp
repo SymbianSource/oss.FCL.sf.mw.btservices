@@ -24,6 +24,7 @@
 #include "btNotifDebug.h"       // Debugging macros
 #include <SecondaryDisplay/BTnotifSecondaryDisplayAPI.h>
 #include <e32cmn.h>
+#include <bluetoothuiutil.h>
 #include "btnotifnameutils.h"
 
 // ================= MEMBER FUNCTIONS =======================
@@ -59,7 +60,7 @@ CBTGenericInfoNotifier::CBTGenericInfoNotifier()
 CBTGenericInfoNotifier::~CBTGenericInfoNotifier()
     {
     Cancel();   // Free own resources
-    delete iQueryMessage; 
+    iQueryMessage.Close(); 
     }
 
 // ----------------------------------------------------------
@@ -84,10 +85,13 @@ CBTGenericInfoNotifier::TNotifierInfo CBTGenericInfoNotifier::RegisterL()
 TPtrC8 CBTGenericInfoNotifier::StartL( const TDesC8& aBuffer )
     {
     FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::StartL()"));
- 	ProcessParamBufferL(aBuffer);
+    if( !iNotifUiUtil )
+        {
+        iNotifUiUtil = CBTNotifUIUtil::NewL( iIsCoverUI );
+        }
+    ProcessParamBufferL(aBuffer, ETrue);
+    FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::StartL() completed"));
 
-	FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::StartL() completed"));
-	
     TPtrC8 ret(KNullDesC8);
     return (ret);
     }
@@ -108,7 +112,7 @@ void CBTGenericInfoNotifier::GetParamsL(const TDesC8& aBuffer,
 	    return;
 	    }
     iMessage = aMessage;
- 	ProcessParamBufferL(aBuffer);
+ 	ProcessParamBufferL(aBuffer, EFalse);
     }
 
 // ----------------------------------------------------------
@@ -116,10 +120,10 @@ void CBTGenericInfoNotifier::GetParamsL(const TDesC8& aBuffer,
 // Parse the data out of the message that is sent by the
 // client of the notifier.
 // ----------------------------------------------------------
-void CBTGenericInfoNotifier::ProcessParamBufferL(const TDesC8& aBuffer)
+void CBTGenericInfoNotifier::ProcessParamBufferL(const TDesC8& aBuffer, TBool aSyncCall)
 	{
 	TBTGenericInfoNotifierParams bParams;
-	TPckgC<TBTGenericInfoNotifierParams> bPckg(bParams);	
+	TPckgC<TBTGenericInfoNotifierParams> bPckg(bParams);
 		
 	bPckg.Set( aBuffer );
 	iSecondaryDisplayCommand = ECmdBTnotifUnavailable;
@@ -203,18 +207,25 @@ void CBTGenericInfoNotifier::ProcessParamBufferL(const TDesC8& aBuffer)
 			User::Leave(KErrNotFound);		
 		}
     
-	// if the logic string contains substitute indicator "%U", replace it with device name:	
-	iQueryMessage = StringLoader::LoadL( iMessageResourceId);
-	_LIT(PU,"%U");
-	if( iQueryMessage->Find(PU) != KErrNotFound)
+	// if the logic string contains substitute indicator "%U", replace it with device name:
+	HBufC* buf = StringLoader::LoadL( iMessageResourceId);
+	iQueryMessage.Assign( buf );
+	
+    TInt keyLen;
+    TInt pos = BluetoothUiUtil::GetStringSubstringKeyPos( 
+            iQueryMessage, 0, keyLen );
+    if( pos > KErrNotFound)
 		{
 		iBTAddr = TBTDevAddr( bPckg().iRemoteAddr );
-        iDevice = CBTDevice::NewL(iBTAddr);
+		if( !iDevice )
+		    {
+            iDevice = CBTDevice::NewL(iBTAddr);
+		    }
 	    GetDeviceFromRegL( iBTAddr );
 		}
 	else
 	    {
-	    ShowNoteAndCompleteL();
+	    ShowNoteAndCompleteL(aSyncCall);
 	    }
 	}
 	
@@ -223,10 +234,13 @@ void CBTGenericInfoNotifier::ProcessParamBufferL(const TDesC8& aBuffer)
 // Shows the notifier in backround 
 // ----------------------------------------------------------
 //
-void CBTGenericInfoNotifier::ShowNoteAndCompleteL()
+void CBTGenericInfoNotifier::ShowNoteAndCompleteL(TBool aSyncCall)
 	{
-	iNotifUiUtil->ShowInfoNoteL( *iQueryMessage, iSecondaryDisplayCommand );
-    CompleteMessage(KErrNone);
+	iNotifUiUtil->ShowInfoNoteL( iQueryMessage, iSecondaryDisplayCommand );
+	if (!aSyncCall)
+		{
+        CompleteMessage(KErrNone);
+        }
     FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::ShowNoteAndComplete() complete"));
 	}
 
@@ -234,14 +248,13 @@ void CBTGenericInfoNotifier::HandleGetDeviceCompletedL(const CBTDevice* /*aDev*/
     {
     FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::HandleGetDeviceCompleted()"));
     
-    delete iQueryMessage;
-    iQueryMessage=NULL;
-    
     TBTDeviceName name;
     BtNotifNameUtils::GetDeviceDisplayName(name, iDevice);
-    iQueryMessage = StringLoader::LoadL( iMessageResourceId, name);            
+    iQueryMessage.Zero();
+    BluetoothUiUtil::LoadResourceAndSubstringL( 
+            iQueryMessage, iMessageResourceId, name, 0);      
     
-    ShowNoteAndCompleteL();
+    ShowNoteAndCompleteL(EFalse);
 
     FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::HandleGetDeviceComplete() Complete"));        
     }

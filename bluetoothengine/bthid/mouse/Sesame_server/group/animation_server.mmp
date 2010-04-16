@@ -21,12 +21,10 @@ TARGET          BTcursor_server.dll
 TARGETTYPE      ani
 
 // The second one is the UID of the server, different than main program's UID
-UID 0x10003b22 0x2001FE5A
+UID      0x10003B22 0x2001FE5A
 
 CAPABILITY      CAP_CLIENT_DLL
 VENDORID        VID_DEFAULT
-
-DEFFILE btcursor_server.def
 
 SECUREID	    0xA000022E
 EPOCSTACKSIZE	0x5000

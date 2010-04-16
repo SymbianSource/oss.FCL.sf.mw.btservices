@@ -33,7 +33,10 @@ START EXTENSION s60/mifconv
 OPTION TARGETFILE btnotif.mif
 OPTION HEADERFILE btnotif.mbg
 OPTION SOURCES -c8,8 qgn_note_bt_popup -c8,8 qgn_note_bt_popup_2 \
-		           -c8,8 qgn_note_bt_popup_3 -c8,8 qgn_indi_bt_blocked
+		           -c8,8 qgn_note_bt_popup_3 -c8,8 qgn_indi_bt_blocked \
+		           -c8,8 qgn_indi_bt_signal_good_add \
+		           -c8,8 qgn_indi_bt_signal_low_add \
+		           -c8,8 qgn_indi_bt_signal_med_add
 END
 
 PRJ_MMPFILES
