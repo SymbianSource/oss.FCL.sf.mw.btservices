@@ -31,7 +31,7 @@
 #include "btnpbappinnotifier.h" // own class definition
 #include "btNotifDebug.h"       // debugging macros
 
-#include <SecondaryDisplay/BTnotifSecondaryDisplayAPI.h>
+#include <secondarydisplay/BTnotifSecondaryDisplayAPI.h>
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -92,16 +92,17 @@ void CBTPBAPPinNotifier::GetParamsL(const TDesC8& /* aBuffer */, TInt aReplySlot
         {
         User::Leave(KErrInUse);
         }
-    else if ( AutoLockOnL() )
+    
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
+    
+    if ( AutoLockOnL() )
         {
         // The phone is locked, access denied.
         //
         CompleteMessage(KErrCancel);
         return;
         }
-        
-    iMessage = aMessage;
-    iReplySlot = aReplySlot;
 
     ShowNoteCompleteMessageL();
 

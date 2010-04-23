@@ -17,15 +17,15 @@
 
 
 #include <platform_paths.hrh>
-#include "../devmodel/group/bld.inf"
+//#include "../devmodel/group/bld.inf"
 
 PRJ_PLATFORMS
 //DEFAULT
 
 PRJ_EXPORTS
 ../loc/btui.loc        MW_LAYER_LOC_EXPORT_PATH(btui.loc)
-../rom/btui.iby        CORE_MW_LAYER_IBY_EXPORT_PATH(btui.iby)
-../rom/BtuiResources.iby LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(BtuiResources.iby)
+//../rom/btui.iby        CORE_MW_LAYER_IBY_EXPORT_PATH(btui.iby)
+//../rom/BtuiResources.iby LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(BtuiResources.iby)
 ../inc/BtuiPluginInterface.h |../../inc/BtuiPluginInterface.h
 ../inc/BtuiPluginInterface.inl |../../inc/BtuiPluginInterface.inl
 ../Ecom/inc/bluetoothuiutil.h   |../../inc/bluetoothuiutil.h
@@ -53,8 +53,8 @@ END
 
 PRJ_MMPFILES
 
-../Ecom/group/BtuiPlugin.mmp	
-../group/BTUI.mmp			
+// CP plugin API removed. Do not build "../Ecom/group/BtuiPlugin.mmp"	
+//../group/BTUI.mmp			
 
 
 //---End of File---  
