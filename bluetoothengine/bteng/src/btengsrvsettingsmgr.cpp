@@ -23,8 +23,7 @@
 #include <centralrepository.h>
 #include <featmgr.h>
 #include <AknSmallIndicator.h>
-#include <avkon.hrh>
-
+//#include <avkon.hrh>
 #include "btengserver.h"
 #include "btengsrvpluginmgr.h"
 #include "btengsrvbbconnectionmgr.h"
@@ -93,11 +92,6 @@ CBTEngSrvSettingsMgr* CBTEngSrvSettingsMgr::NewL( CBTEngServer* aServer )
 //
 CBTEngSrvSettingsMgr::~CBTEngSrvSettingsMgr()
     {
-    if( iActive && iActive->IsActive() )
-        {
-        // Cancel the outstanding request.
-        iPowerMgr.Cancel();
-        }
     delete iActive;  
     iPowerMgr.Close();
     }
@@ -184,11 +178,11 @@ void CBTEngSrvSettingsMgr::SetPowerStateL( TBTPowerState aState, TBool aTemporar
         if ( currentState == aState )
             {
             // Make sure that the CenRep key is in sync.
-            // During boot-up, the pwoer is set from the CenRep key, so we could 
+            // During boot-up, the power is set from the CenRep key, so we could 
             // end up out-of-sync.
             TRACE_INFO( ( _L( "SetPowerStateL: currentState == aState" ) ) )
-            UpdateCenRepPowerKeyL( aState );
-            } 
+            HandleHwPowerChangeL( aState );
+            }
         return;
         }
     if ( aState == EBTOn )
@@ -318,20 +312,19 @@ void CBTEngSrvSettingsMgr::StopBTStackL()
 
 
 // ---------------------------------------------------------------------------
-// Update the power state CenRep key.
+// Update the power state CenRep key, and start BTNotif server if BT is on.
 // ---------------------------------------------------------------------------
 //
-void CBTEngSrvSettingsMgr::UpdateCenRepPowerKeyL( TBTPowerState aState )
+void CBTEngSrvSettingsMgr::HandleHwPowerChangeL( TBTPowerState aState )
     {
     TRACE_FUNC_ENTRY
     CRepository* cenrep = CRepository::NewLC( KCRUidBluetoothPowerState );
     // TBTPowerState power state type is inverted from TBTPowerStateValue...
-    TBTPowerStateValue power = (TBTPowerStateValue) !aState;
+    TBTPowerStateValue power = ( aState == EBTOn ) ? EBTPowerOn : EBTPowerOff;
     User::LeaveIfError( cenrep->Set( KBTPowerState, (TInt) power ) );
     CleanupStack::PopAndDestroy( cenrep );
     TRACE_FUNC_EXIT
     }
-
 
 // ---------------------------------------------------------------------------
 // ?implementation_description
@@ -654,9 +647,9 @@ void CBTEngSrvSettingsMgr::SetDutMode( TInt aDutMode )
 // Callback to notify that an outstanding request has completed.
 // ---------------------------------------------------------------------------
 //
-void CBTEngSrvSettingsMgr::RequestCompletedL( CBTEngActive* aActive, TInt aId, TInt aStatus )
+void CBTEngSrvSettingsMgr::RequestCompletedL( CBTEngActive* aActive, TInt aStatus )
     {
-    __ASSERT_ALWAYS( aId == KBTEngSettingsActive, PanicServer( EBTEngPanicCorrupt ) );
+    __ASSERT_ALWAYS( aActive->RequestId() == KBTEngSettingsActive, PanicServer( EBTEngPanicCorrupt ) );
     TRACE_FUNC_ENTRY
     (void) aActive;
     if ( aStatus != KErrNone && aStatus != KErrAlreadyExists && aStatus != KErrCancel )
@@ -664,7 +657,6 @@ void CBTEngSrvSettingsMgr::RequestCompletedL( CBTEngActive* aActive, TInt aId, T
         // Something went wrong, so we turn BT off again.
         SetPowerStateL( EBTOff, EFalse );
         }
-    
     if ( !iMessage.IsNull())
         {
         iMessage.Complete( aStatus );
@@ -672,16 +664,29 @@ void CBTEngSrvSettingsMgr::RequestCompletedL( CBTEngActive* aActive, TInt aId, T
     TRACE_FUNC_EXIT
     }
 
+// ---------------------------------------------------------------------------
+// From class MBTEngActiveObserver.
+// Handles cancelation of an outstanding request
+// ---------------------------------------------------------------------------
+//
+void CBTEngSrvSettingsMgr::CancelRequest( TInt aRequestId )
+    {
+    TRACE_FUNC_ARG( ( _L( "reqID %d" ), aRequestId ) );
+    if ( aRequestId == KBTEngSettingsActive )
+        {
+        iPowerMgr.Cancel();
+        }
+    TRACE_FUNC_EXIT 
+    }
 
 // ---------------------------------------------------------------------------
 // From class MBTEngActiveObserver.
 // Callback to notify that an error has occurred in RunL.
 // ---------------------------------------------------------------------------
 //
-void CBTEngSrvSettingsMgr::HandleError( CBTEngActive* aActive, TInt aId, TInt aError )
+void CBTEngSrvSettingsMgr::HandleError( CBTEngActive* aActive, TInt aError )
     {
     (void) aActive;
-    (void) aId;
     if ( !iMessage.IsNull())
         {
         iMessage.Complete( aError );
@@ -729,10 +734,11 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
     
     if( powerState == EBTPowerOff )
         {
-        SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-        SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
-        SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-        SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
+        // To be migrated
+        //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
+        //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
+        //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
+        //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
         }
     else
         {
@@ -748,46 +754,46 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
             {
              if ( connecting ) // BT connecting and hidden
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-                SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateAnimate );
+                // To be migrated to QT
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateAnimate );
                 }
             else if ( phys > 0 ) // BT connection active and hidden     
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-                SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOn );
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOn );
                 }
             else  // BT connection not active and hidden
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOn );
-                SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOn );
+                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
                 }
-            SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-            SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
+            //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
+            //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
             }           
         else if( visibilityMode == EBTVisibilityModeGeneral || visibilityMode == EBTVisibilityModeTemporary )
             {     
             if ( connecting ) // BT connecting and visible
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-                SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateAnimate );
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateAnimate );
                 }
             else if ( phys > 0 ) // BT connection active and visible 
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-                SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOn );
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOn );
                 }
             else  // BT connection not active and visible
                 {
-                SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOn );
-                SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
+                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOn );
+                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
                 }
-            SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-            SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
+            //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
+            //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
             }
         }
     TRACE_FUNC_EXIT
     }
-
 
 // ---------------------------------------------------------------------------
 // ?implementation_description
@@ -795,9 +801,12 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
 //
 void CBTEngSrvSettingsMgr::SetIndicatorStateL( const TInt aIndicator, const TInt aState )
     {
-    CAknSmallIndicator* indicator = CAknSmallIndicator::NewLC( TUid::Uid( aIndicator ) );
-    indicator->SetIndicatorStateL( aState );
-    CleanupStack::PopAndDestroy( indicator ); //indicator
+    // To be migrated to QT
+    (void) aIndicator;
+    (void) aState;
+    //CAknSmallIndicator* indicator = CAknSmallIndicator::NewLC( TUid::Uid( aIndicator ) );
+    //indicator->SetIndicatorStateL( aState );
+    //CleanupStack::PopAndDestroy( indicator ); //indicator
     }
 
 
@@ -886,3 +895,4 @@ void CBTEngSrvSettingsMgr::CheckTemporaryPowerStateL( TBTPowerState& aCurrentSta
         }
     TRACE_FUNC_EXIT 
     }
+

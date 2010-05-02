@@ -37,7 +37,7 @@ HEADER
 TARGET                  btbearer.rsc
 END // RESOURCE
 
-USERINCLUDE             ../inc
+USERINCLUDE             ../inc ../../inc
 USERINCLUDE             ../btbearer/inc
 
 MW_LAYER_SYSTEMINCLUDE
@@ -49,4 +49,5 @@ LIBRARY                 ecom.lib
 LIBRARY                 centralrepository.lib
 LIBRARY                 btengsettings.lib
 LIBRARY                 btfeatures.lib
+LIBRARY                 btnotifclient.lib
 DEBUGLIBRARY            flogger.lib             // File logging services
