@@ -89,7 +89,7 @@ public:
      *              procedure; KErrNone for a normal disconnection, or 
      *              e.g. KErrCancel if the user cancelled the pairing dialog.
      */
-    virtual void PairingComplete( TBTDevAddr& aAddr, TInt aErr );
+     IMPORT_C virtual void PairingComplete( TBTDevAddr& aAddr, TInt aErr );
 
     };
 

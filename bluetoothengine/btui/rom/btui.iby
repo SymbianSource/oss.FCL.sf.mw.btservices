@@ -20,16 +20,16 @@
 #ifdef __BT
 
 // BTUI Application(EXE)
-S60_APP_EXE(BtUi)
-SCALABLE_IMAGE(APP_BITMAP_DIR,APP_BITMAP_DIR,BtUi)
-S60_APP_AIF_ICONS(BtUi)
-S60_APP_AIF_RSC(BtUi)
+//S60_APP_EXE(BtUi)
+//SCALABLE_IMAGE(APP_BITMAP_DIR,APP_BITMAP_DIR,BtUi)
+//S60_APP_AIF_ICONS(BtUi)
+//S60_APP_AIF_RSC(BtUi)
 
 // BTUI Model(DLL)
-file=ABI_DIR\BUILD_DIR\btdevmodel.dll          SHARED_LIB_DIR\btdevmodel.dll
+//file=ABI_DIR\BUILD_DIR\btdevmodel.dll          SHARED_LIB_DIR\btdevmodel.dll
 
 //ECOM plugin(Ecom DLL)
-ECOM_PLUGIN( BtuiPlugin.dll, BtuiPlugin.rsc )
+// CP plugin API removed. Do not export ECOM_PLUGIN( BtuiPlugin.dll, BtuiPlugin.rsc )
 
 #endif //__BT
 
