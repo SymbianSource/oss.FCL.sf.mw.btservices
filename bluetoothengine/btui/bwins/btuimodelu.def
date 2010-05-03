@@ -1,0 +1,22 @@
+EXPORTS
+	??0BtuiModel@@QAE@PAVQObject@@@Z @ 1 NONAME ; BtuiModel::BtuiModel(class QObject *)
+	?tr@BtuiModel@@SA?AVQString@@PBD0@Z @ 2 NONAME ; class QString BtuiModel::tr(char const *, char const *)
+	?qt_metacall@BtuiModel@@UAEHW4Call@QMetaObject@@HPAPAX@Z @ 3 NONAME ; int BtuiModel::qt_metacall(enum QMetaObject::Call, int, void * *)
+	?itemData@BtuiModel@@UBE?AV?$QMap@HVQVariant@@@@ABVQModelIndex@@@Z @ 4 NONAME ; class QMap<int, class QVariant> BtuiModel::itemData(class QModelIndex const &) const
+	?qt_metacast@BtuiModel@@UAEPAXPBD@Z @ 5 NONAME ; void * BtuiModel::qt_metacast(char const *)
+	?getStaticMetaObject@BtuiModel@@SAABUQMetaObject@@XZ @ 6 NONAME ; struct QMetaObject const & BtuiModel::getStaticMetaObject(void)
+	??1BtuiModel@@UAE@XZ @ 7 NONAME ; BtuiModel::~BtuiModel(void)
+	?parent@BtuiModel@@UBE?AVQModelIndex@@ABV2@@Z @ 8 NONAME ; class QModelIndex BtuiModel::parent(class QModelIndex const &) const
+	?btDataChanged@BtuiModel@@QAEXHHPAX@Z @ 9 NONAME ; void BtuiModel::btDataChanged(int, int, void *)
+	?trUtf8@BtuiModel@@SA?AVQString@@PBD0@Z @ 10 NONAME ; class QString BtuiModel::trUtf8(char const *, char const *)
+	?metaObject@BtuiModel@@UBEPBUQMetaObject@@XZ @ 11 NONAME ; struct QMetaObject const * BtuiModel::metaObject(void) const
+	?data@BtuiModel@@UBE?AVQVariant@@ABVQModelIndex@@H@Z @ 12 NONAME ; class QVariant BtuiModel::data(class QModelIndex const &, int) const
+	?columnCount@BtuiModel@@UBEHABVQModelIndex@@@Z @ 13 NONAME ; int BtuiModel::columnCount(class QModelIndex const &) const
+	??_EBtuiModel@@UAE@I@Z @ 14 NONAME ; BtuiModel::~BtuiModel(unsigned int)
+	?trUtf8@BtuiModel@@SA?AVQString@@PBD0H@Z @ 15 NONAME ; class QString BtuiModel::trUtf8(char const *, char const *, int)
+	?index@BtuiModel@@UBE?AVQModelIndex@@HHABV2@@Z @ 16 NONAME ; class QModelIndex BtuiModel::index(int, int, class QModelIndex const &) const
+	?staticMetaObject@BtuiModel@@2UQMetaObject@@B @ 17 NONAME ; struct QMetaObject const BtuiModel::staticMetaObject
+	??0BtuiModel@@QAE@ABV0@PAVQObject@@@Z @ 18 NONAME ; BtuiModel::BtuiModel(class BtuiModel const &, class QObject *)
+	?rowCount@BtuiModel@@UBEHABVQModelIndex@@@Z @ 19 NONAME ; int BtuiModel::rowCount(class QModelIndex const &) const
+	?tr@BtuiModel@@SA?AVQString@@PBD0H@Z @ 20 NONAME ; class QString BtuiModel::tr(char const *, char const *, int)
+

@@ -1,0 +1,23 @@
+EXPORTS
+	_ZN9BtuiModel11qt_metacallEN11QMetaObject4CallEiPPv @ 1 NONAME
+	_ZN9BtuiModel11qt_metacastEPKc @ 2 NONAME
+	_ZN9BtuiModel13btDataChangedEiiPv @ 3 NONAME
+	_ZN9BtuiModel16staticMetaObjectE @ 4 NONAME DATA 16
+	_ZN9BtuiModel19getStaticMetaObjectEv @ 5 NONAME
+	_ZN9BtuiModelC1EP7QObject @ 6 NONAME
+	_ZN9BtuiModelC1ERKS_P7QObject @ 7 NONAME
+	_ZN9BtuiModelC2EP7QObject @ 8 NONAME
+	_ZN9BtuiModelC2ERKS_P7QObject @ 9 NONAME
+	_ZN9BtuiModelD0Ev @ 10 NONAME
+	_ZN9BtuiModelD1Ev @ 11 NONAME
+	_ZN9BtuiModelD2Ev @ 12 NONAME
+	_ZNK9BtuiModel10metaObjectEv @ 13 NONAME
+	_ZNK9BtuiModel11columnCountERK11QModelIndex @ 14 NONAME
+	_ZNK9BtuiModel4dataERK11QModelIndexi @ 15 NONAME
+	_ZNK9BtuiModel5indexEiiRK11QModelIndex @ 16 NONAME
+	_ZNK9BtuiModel6parentERK11QModelIndex @ 17 NONAME
+	_ZNK9BtuiModel8itemDataERK11QModelIndex @ 18 NONAME
+	_ZNK9BtuiModel8rowCountERK11QModelIndex @ 19 NONAME
+	_ZTI9BtuiModel @ 20 NONAME
+	_ZTV9BtuiModel @ 21 NONAME
+

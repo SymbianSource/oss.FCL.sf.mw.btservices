@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>docml/bt-device-search-dialog.docml</file>
+        <file>icons/qgn_prop_sml_bt.svg</file>
+    </qresource>
+</RCC>
