@@ -166,6 +166,7 @@ void CBTEngServer::ConstructL()
     iPluginMgr = CBTEngSrvPluginMgr::NewL( this );
     iBBConnMgr = CBTEngSrvBBConnMgr::NewL( this, iSocketServ );
 
+    iSdpDbHandler = NULL;
 
     TCallBack idleCb( IdleTimerCallBack, this );
     iIdleCallBack.Set( idleCb );
@@ -216,7 +217,10 @@ CBTEngServer::~CBTEngServer()
     RProperty::Delete( KPSUidBluetoothEnginePrivateCategory, KBTTurnBTOffQueryOn );
     RProperty::Delete( KPSUidBluetoothEnginePrivateCategory, KBTNotifierLocks );
     delete iTimer;
-    delete iSdpDbHandler;
+    if ( iSdpDbHandler )
+        {
+        delete iSdpDbHandler;
+        }
     delete iWatcher;
     delete iSettingsMgr;
     delete iPluginMgr;
