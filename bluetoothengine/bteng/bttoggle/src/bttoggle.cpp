@@ -360,7 +360,8 @@ void CBTToggle::RunL()
 //
 TInt CBTToggle::RunError(TInt aError)
     {	  
-    TRACE_INFO((_L("[BTENG][BTTOGGLE] RunError %d"), aError ))	
+    TRACE_INFO((_L("[BTENG][BTTOGGLE] RunError %d"), aError ))
+    (void) aError;
     iActiveNotifier = ENoneQuery;
     CActiveScheduler::Stop();
     return KErrNone;

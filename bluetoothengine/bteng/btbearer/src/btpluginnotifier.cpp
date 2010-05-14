@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -23,6 +23,7 @@
 #include "btpluginnotifier.h"
 #include "debug.h"
 #include <btfeaturescfg.h>
+#include <btnotifclient.h>
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -68,9 +69,9 @@ void CBTPluginNotifier::ConstructL()
         TRACE_INFO( ( _L( "Turning BT on" ) ) )
         TInt err = settings->SetPowerState( EBTPowerOn );
         TRACE_INFO( ( _L( "SetPowerState returned %d" ), err ) )
-        if( !err )
+        if ( !err )
             {
-            iHandler.NotifyBearerStatus( ELocodBearerBT, power );
+            HandleBtPowerChanged( EBTPowerOn );
             }
         }
     else
@@ -129,6 +130,30 @@ void  CBTPluginNotifier::SubscribeL()
     SetActive();
     }
 
+// ---------------------------------------------------------------------------
+// Handles power state change. Inform Locod. In addition, if BT is on, start
+// btnotifier server.
+// ---------------------------------------------------------------------------
+//
+void CBTPluginNotifier::HandleBtPowerChanged( TBTPowerStateValue aPower )
+    {
+    TRACE_FUNC_ARG( ( _L( " to %d" ), aPower ) )
+    TInt err (KErrNone );
+    if ( aPower == EBTPowerOn )
+        {
+        // Start BT notifier server by creating a session with it:
+        RBTNotifier btnotif;
+        err = btnotif.Connect();
+        TRACE_INFO( ( _L( "start bt notifier server %d" ), err ) )
+        // btnotif server manages its lifecycle. no need
+        // to keep this session:
+        btnotif.Close();
+        }
+    if ( !err )
+        {
+        iHandler.NotifyBearerStatus( ELocodBearerBT, aPower );
+        }
+    }
 
 // ---------------------------------------------------------------------------
 // From class CActive.
@@ -162,9 +187,12 @@ void CBTPluginNotifier::RunL()
         case EKeyInt:
             {
             TRACE_INFO( ( _L( "[CBTPluginNotifier::RunL2 %d]" ), status ) )
-            TInt newValue = 1;
-            iSession->Get( iId, newValue );
-            iHandler.NotifyBearerStatus( ELocodBearerBT, newValue );
+            TInt newValue = EBTPowerOff;
+            TInt err = iSession->Get( iId, newValue );
+            if ( !err )
+                {
+                HandleBtPowerChanged( static_cast<TBTPowerStateValue>( newValue ) );
+                }
             }
             break;
         default:

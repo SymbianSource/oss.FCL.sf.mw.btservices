@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hbdocument version="0.8">
+
+    <widget name="dialog" type="HbDialog">
+        <widget name="heading" role="HbDialog:headingWidget" type="HbLabel">
+            <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
+        </widget>
+        <widget name="container" role="HbDialog:contentWidget" type="HbWidget">
+            <widget name="listView" type="HbListView">
+                <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem">
+                    <string name="state" value="normal"/>
+                </widget>
+                <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
+                <enums name="verticalScrollBarPolicy" value="ScrollBarAsNeeded"/>
+            </widget>
+            <widget name="container_1" type="HbWidget">
+                <widget name="viewBy" type="HbPushButton">
+                    <string name="text" value="View by"/>
+                </widget>
+                <widget name="stop" type="HbPushButton">
+                    <string name="text" value="Stop"/>
+                </widget>
+                <widget name="retry" type="HbPushButton">
+                    <string name="text" value="Retry"/>
+                </widget>
+                <real name="z" value="0"/>
+                <sizehint height="10un" type="PREFERRED" width="27un"/>
+                <layout spacing="0.5un" type="grid">
+                    <griditem column="0" itemname="viewBy" row="0"/>
+                    <griditem column="1" itemname="stop" row="0"/>
+                    <griditem column="2" itemname="retry" row="0"/>
+                </layout>
+            </widget>
+            <layout type="grid">
+                <griditem column="0" itemname="listView" row="0"/>
+                <griditem column="0" itemname="container_1" row="1"/>
+            </layout>
+        </widget>
+    </widget>
+    <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">
+        <uistate name="Common ui state" sections="#common"/>
+        <dummydata objectName="listView" section="#common" value="0"/>
+    </metadata>
+</hbdocument>

@@ -37,7 +37,6 @@
 #include "btengsecpolicy.h"
 #include "btengprivatepskeys.h"
 #include "btengplugin.h"
-#include "btengpairman.h"
 #include "debug.h"
 
 /**  Bluetooth Engine server thread name */
@@ -167,8 +166,7 @@ void CBTEngServer::ConstructL()
     iPluginMgr = CBTEngSrvPluginMgr::NewL( this );
     iBBConnMgr = CBTEngSrvBBConnMgr::NewL( this, iSocketServ );
 
-    User::LeaveIfError( iBTRegServ.Connect() );
-    iPairMan = CBTEngPairMan::NewL( *this );
+    iSdpDbHandler = NULL;
 
     TCallBack idleCb( IdleTimerCallBack, this );
     iIdleCallBack.Set( idleCb );
@@ -219,15 +217,16 @@ CBTEngServer::~CBTEngServer()
     RProperty::Delete( KPSUidBluetoothEnginePrivateCategory, KBTTurnBTOffQueryOn );
     RProperty::Delete( KPSUidBluetoothEnginePrivateCategory, KBTNotifierLocks );
     delete iTimer;
-    delete iSdpDbHandler;
+    if ( iSdpDbHandler )
+        {
+        delete iSdpDbHandler;
+        }
     delete iWatcher;
     delete iSettingsMgr;
     delete iPluginMgr;
     delete iBBConnMgr;
     delete iServerState;
-    delete iPairMan;
     iSocketServ.Close();
-    iBTRegServ.Close();
     }
 
 // ---------------------------------------------------------------------------
@@ -315,7 +314,6 @@ void CBTEngServer::RemoveSession( CSession2* aSession, TBool aAutoOff )
 	TRACE_INFO( ( _L( "[CBTEngServer]\t iSessionCount %d"), iSessionCount ))
     iSessionCount--;
 	iSettingsMgr->SessionClosed( aSession );
-	iPairMan->SessionClosed( aSession );
     if( aAutoOff )
         {
         TRAP_IGNORE( SetPowerStateL( EBTOff, ETrue ) );

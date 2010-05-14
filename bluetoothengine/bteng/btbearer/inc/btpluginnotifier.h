@@ -89,6 +89,11 @@ private:
      * @since S60 v3.2
      */
     void SubscribeL();
+    
+    /**
+     * Handles service load/unload when BT power changes.
+     */
+    void HandleBtPowerChanged( TBTPowerStateValue aPower );
 
 // from base class CActive
 
