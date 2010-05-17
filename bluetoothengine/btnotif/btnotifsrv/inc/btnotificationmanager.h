@@ -1,23 +1,19 @@
 /*
-* ============================================================================
-*  Name        : btnotificationmanager.h
-*  Part of     : bluetoothengine / btnotif
-*  Description : Class for managing user notification and query objects, and for serializing access to the notification server.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.2
+* Description: Class for managing user notification and query objects, 
+* and for serializing access to the notification server.
+*
 */
 
 #ifndef BTNOTIFICATIONMANAGER_H
@@ -74,9 +70,8 @@ public:
      *                  EPriorityStandard means that it is appended to the end,
      *                  and should be used for most notes. EPriorityLow is not 
      *                  used yet.
-     * @return Error code.
      */
-    TInt QueueNotification( CBluetoothNotification* aNotification, 
+    void QueueNotificationL( CBluetoothNotification* aNotification, 
                 TNotificationPriority aPriority = EPriorityStandard );
 
 private:
@@ -107,32 +102,12 @@ private:
      */
     void CheckIdle();
 
-    /**
-     * Callback function for asynchronous processing of 
-     * queued notification requests.
-     *
-     * @since Symbian^4
-     * @param aPtr Pointer to notification manager instance.
-     */
-    static TInt AsyncCallback( TAny* aPtr );
-
 private: // data
 
     /**
      * The queue of notifications to be shown to the user.
      */
     RPointerArray<CBluetoothNotification> iNotificationQ;
-
-    /**
-     * The queue of spare notifications.
-     */
-    RPointerArray<CBluetoothNotification> iUnusedQ;
-
-    /**
-     * Callback for asynchronous processing.
-     * Own.
-     */
-    CAsyncCallBack* iAsyncCb;
     
     /**
      * Pointer to our parent.

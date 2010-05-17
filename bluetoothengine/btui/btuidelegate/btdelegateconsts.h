@@ -28,6 +28,11 @@ namespace BtDelegate
         ManagePower,
         DeviceName,
         Visibility,
+        Inquiry,
+        Connect,
+        Pair,
+        Disconnect,
+        Unpair,
         };
     }
 

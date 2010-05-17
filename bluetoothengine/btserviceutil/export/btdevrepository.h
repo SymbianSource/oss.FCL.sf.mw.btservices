@@ -49,7 +49,7 @@ public:
      * registry update events.
      * 
      */
-    virtual void RepositoryInitialiazed() = 0;    
+    virtual void RepositoryInitialized() = 0;    
     
     /**
      * Callback to notify that a device has been deleted from BT registry.
@@ -57,14 +57,14 @@ public:
      *
      * @param aAddr the bd_addr of the deleted device
      */
-    virtual void BtDeviceDeleted( const TBTDevAddr& aAddr ) = 0;
+    virtual void DeletedFromRegistry( const TBTDevAddr& aAddr ) = 0;
     
     /**
      * Callback to notify that the device has been added to BT registry.
      *
      * @param aDevice the device that has been added to registry
      */
-    virtual void BtDeviceAdded( const CBtDevExtension& aDevice ) = 0;
+    virtual void AddedToRegistry( const CBtDevExtension& aDevice ) = 0;
     
     /**
      * Callback to notify that the property of a device in BT registry has been
@@ -77,8 +77,20 @@ public:
      *        TBTNamelessDevice::TBTDeviceSet for the meanings of the bits 
      *        in this parameter.
      */
-    virtual void BtDeviceChangedInRegistry( 
-            const CBtDevExtension& aDevice, TUint aSimilarity ) = 0;    
+    virtual void ChangedInRegistry( 
+            const CBtDevExtension& aDevice, TUint aSimilarity ) = 0; 
+    
+    /**
+     * Callback to notify that the status of service (limited to 
+     * services maintained in btengsrv scope) connections with 
+     * a device has changed.
+     *
+     * @param aDevice the device to which the status change refers
+     * @param aConnected ETrue if at least one service is currently connected.
+     *        EFalse if no service is currently connected.
+     */
+    virtual void ServiceConnectionChanged(
+            const CBtDevExtension& aDevice, TBool aConnected ) = 0;
     };
 
 /**
@@ -136,6 +148,16 @@ public:
      */
     IMPORT_C const CBtDevExtension* Device( const TBTDevAddr& aAddr ) const;
 
+    /**
+     * Forces the repository to initialize its data store.
+     * At Initialization completion, corresponding callback will be invoked.
+     * Initialization completion means the repository has retieved all
+     * Bluetooth devices from BT registry, and it is subscribing to
+     * registry update events.
+     * 
+     */
+    IMPORT_C void ReInitialize();
+    
 private:
     
     /**

@@ -24,13 +24,12 @@
 #ifndef BTLOCALSETTING_H
 #define BTLOCALSETTING_H
 
-#include <qglobal.h>
+#include "btsettingmodel.h"
+
 #include <e32base.h>
 #include <e32property.h>
 #include <btengsettings.h>
 #include <btservices/btsimpleactive.h>
-
-#include "btuimodel.h"
 
 /*!
     \class BtuimSettings
@@ -48,21 +47,19 @@ class BtLocalSetting : public QObject,
     Q_OBJECT
 
 public:
-    explicit BtLocalSetting( BtuiModel& model, QObject *parent = 0 );
+    explicit BtLocalSetting( BtSettingModel& model, QObject *parent = 0 );
     
     virtual ~BtLocalSetting();
     
-    bool isValid( int col) const;
+    bool isValid( int row, int col ) const;
     
-    int itemCount() const;
+    int rowCount() const;
+    
+    int columnCount() const;
         
-    void data(QVariant& val, int col, int role ) const;
+    void data(QVariant& val, int row, int col, int role ) const;
     
-    BtuiModelDataItem itemData( int col ) const;
-
-signals:
-
-    void settingDataChanged( int row, int column, void *parent );    
+    BtuiModelDataItem itemData( int row, int col ) const;
     
 private:
     // from MBTEngSettingsObserver
@@ -79,7 +76,6 @@ private:
 
     void HandleError( CBtSimpleActive* active, TInt error );
     
-
     
 public slots:
     //void activeRequestCompleted( int status, int id );
@@ -97,9 +93,10 @@ private:
     void getNameFromRegistry( QString &name );
 
 private:
+    
     BtuiModelDataSource mData;
     
-    BtuiModel& mModel;
+    BtSettingModel& mModel;
     
     CBTEngSettings *mBtengSetting;
     

@@ -21,15 +21,19 @@
 */
 
 #include "btcpuibaseview.h"
-#include <HbAction.h>
+#include <hbaction.h>
 
 /*!
     Constructor.
  */
-BtCpUiBaseView::BtCpUiBaseView( BtuiModel &model, QGraphicsItem *parent )
-    :CpBaseSettingView( 0 , parent ),mModel(model)
+BtCpUiBaseView::BtCpUiBaseView(
+        BtSettingModel &settingModel, 
+        BtDeviceModel &deviceModel, 
+        QGraphicsItem *parent )
+    :CpBaseSettingView( 0 , parent ), 
+     mSettingModel( &settingModel ),
+     mDeviceModel( &deviceModel )
 {
-
 }
 
 /*!

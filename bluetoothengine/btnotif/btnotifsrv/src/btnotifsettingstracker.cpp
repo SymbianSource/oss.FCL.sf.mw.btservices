@@ -1,23 +1,19 @@
 /*
-* ============================================================================
-*  Name        : btnotifsettingstracker.cpp
-*  Part of     : BTProximity / BTProximity
-*  Description : Class for tracking Bluetooth settings, and also for handling notes unrelated to specific connection.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.1
+* Description: Class for tracking Bluetooth settings, and also for 
+* handling notes unrelated to specific connection.
+*
 */
 
 #include "btnotifsettingstracker.h"
@@ -134,7 +130,8 @@ void CBTNotifSettingsTracker::VisibilityModeChanged( TBTVisibilityMode aState )
             {
             iNotification->SetObserver( this );
             iNotification->SetNotificationType( TBluetoothDeviceDialog::ENote, EVisibilityTimeout );
-            iServer->NotificationManager()->QueueNotification( iNotification );
+            TRAP_IGNORE(
+                    iServer->NotificationManager()->QueueNotificationL( iNotification ) );
             }
         }
     iVisibilityMode = aState;

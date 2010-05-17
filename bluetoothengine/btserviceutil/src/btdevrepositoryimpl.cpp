@@ -174,6 +174,25 @@ const CBtDevExtension* CBtDevRepositoryImpl::Device(
     }
 
 // ---------------------------------------------------------------------------
+// ReInitialize
+// ---------------------------------------------------------------------------
+//
+void CBtDevRepositoryImpl::ReInitialize()
+    {
+    iInitialized = EFalse;
+    if ( !iRegistryActive->IsActive() )
+        {
+        CreateRemoteDeviceView();
+        }
+    else
+        {
+        // This counter-increasing
+        // will force to re-create a registry view later.
+        ++iNotHandledRegEventCounter;
+        }
+    }
+
+// ---------------------------------------------------------------------------
 // From class MBtSimpleActiveObserver.
 // Checks if there is an authentication result.
 // ---------------------------------------------------------------------------
@@ -258,10 +277,22 @@ void CBtDevRepositoryImpl::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
     TInt pos = iDevices.Find( aAddr, MatchDeviceAddress );
     if ( pos > -1 )
         {
+        TBTEngConnectionStatus old = iDevices[pos]->ServiceConnectionStatus();
         TBTEngConnectionStatus  status = EBTEngNotConnected;
         // error returned from the call is treated as not connected.
         (void) iBtengConn->IsConnected( aAddr,  status );
         iDevices[pos]->SetServiceConnectionStatus( status );
+        
+        if ( old != status &&
+             ( status == EBTEngConnected ||
+               status == EBTEngNotConnected ) )
+            {
+            for ( TInt i = 0; i < iObservers.Count(); ++i )
+                {
+                iObservers[i]->ServiceConnectionChanged( 
+                        *(iDevices[pos]), status == EBTEngConnected );
+                }
+            }
         }
     }
 
@@ -356,7 +387,7 @@ void CBtDevRepositoryImpl::HandleGetRemoteDevicesCompletedL( TInt aStatus )
             }
         for ( TInt i = 0; i < iObservers.Count(); ++i )
             {
-            iObservers[i]->RepositoryInitialiazed();
+            iObservers[i]->RepositoryInitialized();
             }
         }
     }
@@ -395,9 +426,9 @@ void CBtDevRepositoryImpl::UpdateRemoteDeviceRepositoryL()
             devsFromReg.Remove( pos );
             if ( iInitialized && changed )
                 {
-                for ( TInt i = 0; i < iObservers.Count(); ++i )
+                for ( TInt counter = 0; counter < iObservers.Count(); ++counter )
                     {
-                    iObservers[i]->BtDeviceChangedInRegistry( *iDevices[i], similarity );
+                    iObservers[counter]->ChangedInRegistry( *iDevices[i], similarity );
                     }
                 }
             }
@@ -410,16 +441,16 @@ void CBtDevRepositoryImpl::UpdateRemoteDeviceRepositoryL()
             iDevices.Remove( i );
             if ( iInitialized )
                 {
-                for ( TInt i = 0; i < iObservers.Count(); ++i )
+                for ( TInt counter = 0; counter < iObservers.Count(); ++counter )
                     {
-                    iObservers[i]->BtDeviceDeleted( addr );
+                    iObservers[counter]->DeletedFromRegistry( addr );
                     }
                 }
             }
         }
     
     // Remaining devices in iRegRespRemoteDevices are new devices:
-    for ( TInt i = 0; i < devsFromReg.Count() ; i++ )
+    for ( TInt i = devsFromReg.Count()- 1; i > -1 ; --i )
         {
         CBtDevExtension* devExt = CBtDevExtension::NewLC( devsFromReg[i] );
         iDevices.AppendL( devExt );
@@ -427,9 +458,9 @@ void CBtDevRepositoryImpl::UpdateRemoteDeviceRepositoryL()
         devsFromReg.Remove( i );
         if ( iInitialized )
             {
-            for ( TInt i = 0; i < iObservers.Count(); ++i )
+            for ( TInt counter = 0; counter < iObservers.Count(); ++counter )
                 {
-                iObservers[i]->BtDeviceAdded( *iDevices[ iDevices.Count() - 1 ] );
+                iObservers[counter]->AddedToRegistry( *devExt );
                 }
             }
         }

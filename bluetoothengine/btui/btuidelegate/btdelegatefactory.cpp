@@ -17,25 +17,43 @@
 
 
 #include "btdelegatefactory.h"
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 #include "btdelegatepower.h"
-#include "btuimodel.h"
 #include "btdelegatedevname.h"
 #include "btdelegatevisibility.h"
-
+#include "btdelegateinquiry.h"
+#include "btdelegateconnect.h"
+#include "btdelegatepair.h"
+#include "btdelegatedisconnect.h"
+#include "btdelegatedevsecurity.h"
 
 /*!
     Constructor.
  */
 BtAbstractDelegate * BtDelegateFactory::newDelegate(
-        BtDelegate::Command cmd, BtuiModel& model, QObject *parent )
+        BtDelegate::Command cmd,             
+        BtSettingModel* settingModel, 
+        BtDeviceModel* deviceModel, 
+        QObject *parent )
 {
     switch ( cmd ) {
         case BtDelegate::ManagePower:
-            return new BtDelegatePower( model, parent );
+            return new BtDelegatePower( settingModel, deviceModel, parent );
         case BtDelegate::DeviceName:
-            return new BtDelegateDevName( model, parent );
+            return new BtDelegateDevName( parent );
         case BtDelegate::Visibility:
-                    return new BtDelegateVisibility( model, parent );
+            return new BtDelegateVisibility( parent );
+        case BtDelegate::Inquiry:
+            return new BtDelegateInquiry( settingModel, deviceModel, parent );
+        case BtDelegate::Connect:
+            return new BtDelegateConnect( settingModel, deviceModel, parent );
+        case BtDelegate::Pair:
+            return new BtDelegatePair( settingModel, deviceModel, parent );
+        case BtDelegate::Disconnect:
+            return new BtDelegateDisconnect( settingModel, deviceModel, parent );
+        case BtDelegate::Unpair:
+            return new BtDelegateDevSecurity( settingModel, deviceModel, parent );
     }
     return 0;
 }

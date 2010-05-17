@@ -22,36 +22,43 @@
 #include <hbaction.h>
 #include <hbtoolbar.h>
 #include "btcpuibaseview.h"
+#include "btuimodelsortfilter.h"
 
 class HbLabel;
 class HbPushButton;
 class HbIcon;
 class HbDocumentLoader;
 class HbListView;
-class HbDataFormModel;
-class HbDataFormModelItem;
-class CpSettingFormItemData;
-
+class BtAbstractDelegate;
 
 class BtCpUiSearchView : public BtCpUiBaseView
 {
     Q_OBJECT
     
 public:
-    explicit BtCpUiSearchView(BtuiModel &model, QGraphicsItem *parent = 0);
+    explicit BtCpUiSearchView(
+            BtSettingModel &settingModel, 
+            BtDeviceModel &deviceModel, 
+            QGraphicsItem *parent = 0);
     virtual ~BtCpUiSearchView();
     virtual void activateView( const QVariant& value, int cmdId );
     virtual void deactivateView();
     virtual void setSoftkeyBack();
     
 public slots:
-    void deviceSelected(const QModelIndex& modelIndex);
     virtual void switchToPreviousView();
+    void changeOrientation( Qt::Orientation orientation );
+    void stopSearching();
+    void retrySearch();
+    void searchDelegateCompleted(int error);
+    void deviceSearchCompleted(int error);
+    void deviceSelected(const QModelIndex& modelIndex);
 
 private:
     HbDocumentLoader *mLoader;
     HbLabel *mDeviceIcon;
-    HbLabel *mDeviceName;
+    HbLabel *mLabelFoundDevices;
+    HbLabel *mLabelSearching;        
     HbListView *mDeviceList;
     
     // data structures for switching between views
@@ -59,17 +66,22 @@ private:
     int mAutoCmdId;
     Qt::Orientation mOrientation;
     
-    HbMainWindow* mMainWindow;
-    BtCpUiBaseView* mMainView;
-    BtCpUiBaseView* mSearchView;
-    HbAction *mSoftKeyBackAction;
-//    CpCustomLabelViewItem*      mLabelItem;
-//    CpCustomListViewItem*       mListItem;
-    HbToolBar*                  mToolBar;
-    HbAction*                   mViewBy;
-    HbAction*                   mStop;
-    HbAction*                   mRetry;
-    HbDataFormModel*            mModel;    
+    HbMainWindow*           mMainWindow;
+    BtCpUiBaseView*         mMainView;
+    BtCpUiBaseView*         mDeviceView;
+    HbAction *              mSoftKeyBackAction;
+    HbToolBar*              mToolBar;
+    HbAction*               mViewBy;
+    HbAction*               mStop;
+    HbAction*               mRetry;
+    HbAction*               mExit;
+    HbAction*               mConnect;
+
+    //pointer to abstract delegate, and it is instantiated at runtime
+    BtAbstractDelegate*     mAbstractDelegate;
+    QModelIndex*            mParentIndex;
+    int                     mNumOfRows;
+    BtuiModelSortFilter*    mBtuiModelSortFilter;
 };
 
 #endif//	BTCPUISEARCHVIEW_H

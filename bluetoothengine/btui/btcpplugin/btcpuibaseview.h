@@ -26,7 +26,8 @@
 #include <hbview.h>
 #include <qglobal.h>
 #include <cpbasesettingview.h>
-#include <btuimodel.h>
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 
 /*!
     \class BtUiBaseView
@@ -42,19 +43,29 @@ public:
     virtual ~BtCpUiBaseView();
     virtual void activateView( const QVariant& value, int cmdId ) = 0;
     virtual void deactivateView() = 0;    
-
+    virtual void switchToPreviousView() = 0;
+    
 signals:
 
-protected:   
-    explicit BtCpUiBaseView( BtuiModel &model, QGraphicsItem *parent = 0);
+protected:
+    explicit BtCpUiBaseView( 
+            BtSettingModel &settingModel, 
+            BtDeviceModel &deviceModel, 
+            QGraphicsItem *parent = 0);
+    
     virtual void setSoftkeyBack() = 0;
-    virtual void switchToPreviousView() = 0;
+
+    BtSettingModel &getSettingModel();
+    BtDeviceModel &getDeviceModel();
     
 protected:
     
-    //Does not own this model.
-    BtuiModel &mModel;
-
+    // do not owned
+    BtSettingModel *mSettingModel;
+    
+    //do not owned
+    BtDeviceModel *mDeviceModel;
+    
     QGraphicsItem *mParent;
     int mPreviousViewId;
     

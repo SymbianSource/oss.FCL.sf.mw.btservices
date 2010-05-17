@@ -34,12 +34,15 @@ HEADERS += btcpplugin.h \
            btcpuibaseview.h \
            btcpuimainview.h \
            btcpuisearchview.h \
-           btcpuisettingitem.h
+	   btcpuideviceview.h \
+           btcpuisettingitem.h \
+           btuiviewutil.h 
 
 SOURCES += btcpplugin.cpp \
            btcpuibaseview.cpp \
            btcpuimainview.cpp \
            btcpuisearchview.cpp \
+	   btcpuideviceview.cpp \
            btcpuisettingitem.cpp
            
 symbian: {

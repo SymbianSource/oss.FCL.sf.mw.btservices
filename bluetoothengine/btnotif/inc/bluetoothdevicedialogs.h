@@ -62,7 +62,9 @@ public:
         ENote,
         EQuery,
         EInput,
+        EMoreDevice,
         EDeviceSearch,
+        ESend,
         EGlobalNotif
         };
 

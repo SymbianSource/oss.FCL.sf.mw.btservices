@@ -20,8 +20,10 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QModelIndex>
 
-class BtuiModel;
+class BtSettingModel;
+class BtDeviceModel;
 
 #ifdef BUILD_BTUIDELEGATE
 #define BTUIDELEGATE_IMEXPORT Q_DECL_EXPORT
@@ -42,27 +44,35 @@ class BTUIDELEGATE_IMEXPORT BtAbstractDelegate : public QObject
     Q_OBJECT
 
 public:
-    explicit BtAbstractDelegate( BtuiModel& model, QObject *parent = 0 );
+    explicit BtAbstractDelegate( BtSettingModel* settingModel, 
+            BtDeviceModel* deviceModel, QObject *parent = 0 );
     
     virtual ~BtAbstractDelegate();
 
     virtual void exec( const QVariant &params ) = 0;
 
+    virtual void cancel();
+    
 signals:
     void commandCompleted(int status, QVariant params = QVariant() );
     
 protected:
     
-    BtuiModel &model();
+    BtSettingModel *getSettingModel();
+    BtDeviceModel *getDeviceModel();
     
 public slots:
 
 private:
     
-    BtuiModel& mModel;
-
+    // pointer to models. do not own. 
+    BtSettingModel *mSettingModel;
+    BtDeviceModel *mDeviceModel;
+    
     Q_DISABLE_COPY(BtAbstractDelegate)
 
 };
+
+Q_DECLARE_METATYPE(QModelIndex)
 
 #endif // BTABSTRACTDELEGATE_H

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -24,6 +24,7 @@ DEFAULT
 PRJ_EXPORTS
 
 ../rom/btnotif.iby  CORE_MW_LAYER_IBY_EXPORT_PATH(btnotif.iby)
+../inc/bluetoothdevicedialogs.h       MW_LAYER_PLATFORM_EXPORT_PATH(btservices/bluetoothdevicedialogs.h)
 PRJ_MMPFILES
 
 btnotifsrv.mmp
@@ -32,7 +33,7 @@ btnotifwrapper.mmp
 PRJ_TESTMMPFILES
 
 //../btnotifsrv/tsrc/btnotifsrvtest/group/btnotifsrvtest.mmp
-../btnotifsrv/tsrc/btnotifsrvtest/group/btnotifserversessiontest.mmp
-../btnotifwrapper/tsrc/btnotifwrappertest/group/btnotifwrappertest.mmp
+//../btnotifsrv/tsrc/btnotifsrvtest/group/btnotifserversessiontest.mmp
+//../btnotifwrapper/tsrc/btnotifwrappertest/group/btnotifwrappertest.mmp
 
 PRJ_TESTEXPORTS

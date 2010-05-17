@@ -35,7 +35,7 @@ class BtDelegateVisibility : public BtAbstractDelegate, public MBTEngSettingsObs
     Q_OBJECT
 
 public:
-    explicit BtDelegateVisibility( BtuiModel& model, QObject *parent = 0 );
+    explicit BtDelegateVisibility( QObject *parent = 0 );
     
     virtual ~BtDelegateVisibility();
 

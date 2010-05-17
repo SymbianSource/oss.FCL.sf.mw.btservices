@@ -90,7 +90,7 @@ EXPORT_C CBtDevExtension::~CBtDevExtension()
 // IsBonded
 // ---------------------------------------------------------------------------
 //
-TBool CBtDevExtension::IsBonded( const TBTNamelessDevice &dev )
+EXPORT_C TBool CBtDevExtension::IsBonded( const TBTNamelessDevice &dev )
     {
     // IsValidPaired tells if the paired bit of dev is valid
     // and IsPaired tells if the device is paired or not:
@@ -105,7 +105,7 @@ TBool CBtDevExtension::IsBonded( const TBTNamelessDevice &dev )
 // IsJustWorksBonded
 // ---------------------------------------------------------------------------
 //
-TBool CBtDevExtension::IsJustWorksBonded( const TBTNamelessDevice &dev )
+EXPORT_C TBool CBtDevExtension::IsJustWorksBonded( const TBTNamelessDevice &dev )
     {
     return IsBonded( dev ) && 
          dev.LinkKeyType() == ELinkKeyUnauthenticatedNonUpgradable;
@@ -115,7 +115,7 @@ TBool CBtDevExtension::IsJustWorksBonded( const TBTNamelessDevice &dev )
 // IsUserAwareBonded
 // ---------------------------------------------------------------------------
 //
-TBool CBtDevExtension::IsUserAwareBonded( const TBTNamelessDevice &dev )
+EXPORT_C TBool CBtDevExtension::IsUserAwareBonded( const TBTNamelessDevice &dev )
     {
     if ( IsJustWorksBonded( dev ) )
         {
@@ -130,6 +130,25 @@ TBool CBtDevExtension::IsUserAwareBonded( const TBTNamelessDevice &dev )
     return IsBonded( dev );
     }
 
+// ---------------------------------------------------------------------------
+// IsHeadset
+// ---------------------------------------------------------------------------
+//
+EXPORT_C TBool CBtDevExtension::IsHeadset( const TBTDeviceClass &aCod )
+    {
+    if ( ( aCod.MajorServiceClass() & EMajorServiceAudioService ) &&
+         ( aCod.MajorDeviceClass() & EMajorDeviceAudioDevice ) )
+        {
+        if (aCod.MinorDeviceClass() == EMinorDeviceAVHandsfree ||
+            aCod.MinorDeviceClass() == EMinorDeviceAVCarAudio)
+            {
+            // This is the typical CoD setting used by carkits:
+            return false;
+            }
+        return true;
+        }
+    return false;
+    }
 
 // ---------------------------------------------------------------------------
 // 
@@ -173,7 +192,7 @@ EXPORT_C TBool CBtDevExtension::IsUserAwareBonded() const
 // ServiceConnectionStatus()
 // ---------------------------------------------------------------------------
 //
-TBTEngConnectionStatus CBtDevExtension::ServiceConnectionStatus() const
+EXPORT_C TBTEngConnectionStatus CBtDevExtension::ServiceConnectionStatus() const
     {
     return iServiceStatus;
     }
@@ -218,8 +237,6 @@ void CBtDevExtension::SetServiceConnectionStatus(
     {
     iServiceStatus = aStatus;
     }
-
-
 
 // ---------------------------------------------------------------------------
 // UpdateL()

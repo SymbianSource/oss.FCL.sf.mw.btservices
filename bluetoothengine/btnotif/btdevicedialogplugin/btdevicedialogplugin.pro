@@ -31,13 +31,18 @@ HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btdevicedialogpluginerrors.h \
     inc/btdevicedialogplugin.h \
     inc/btdevicesearchdialogwidget.h \
-    inc/btdevicedialogplugintrace.h
+    inc/btmoredevicesdialogwidget.h \
+    inc/btsenddialogwidget.h \
+    inc/btdevicedialogplugintrace.h 
+
     
 SOURCES += src/btdevicedialogplugin.cpp \
     src/btdevicedialoginputwidget.cpp \
     src/btdevicedialogquerywidget.cpp \
     src/btdevicedialognotifwidget.cpp \
-    src/btdevicesearchdialogwidget.cpp 
+    src/btdevicesearchdialogwidget.cpp \
+    src/btmoredevicesdialogwidget.cpp \
+    src/btsenddialogwidget.cpp
 
 RESOURCES += btdevicedialogplugin.qrc
     

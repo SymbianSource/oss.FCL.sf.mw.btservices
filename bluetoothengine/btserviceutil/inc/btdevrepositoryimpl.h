@@ -86,6 +86,16 @@ public:
     const CBtDevExtension* Device( const TBTDevAddr& aAddr ) const;
     
     /**
+     * Forces the repository to initialize its data store.
+     * At Initialization completion, corresponding callback will be invoked.
+     * Initialization completion means the repository has retieved all
+     * Bluetooth devices from BT registry, and it is subscribing to
+     * registry update events.
+     * 
+     */
+     void ReInitialize();
+    
+    /**
      * Returns the service (limited to services managed in bteng scope)
      * level connection status of the specified device.
      *

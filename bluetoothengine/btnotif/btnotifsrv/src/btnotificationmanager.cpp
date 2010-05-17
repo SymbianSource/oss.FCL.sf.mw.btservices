@@ -1,23 +1,19 @@
 /*
-* ============================================================================
-*  Name        : btnotificationmanager.cpp
-*  Part of     : bluetoothengine / btnotif
-*  Description : Class for managing user notification and query objects, and for serializing access to the notification server.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.1
+* Description: Class for managing user notification and query objects, 
+* and for serializing access to the notification server.
+*
 */
 
 #include "btnotificationmanager.h"
@@ -44,9 +40,6 @@ CBTNotificationManager::CBTNotificationManager( const CBTNotifServer* aServer )
 //
 void CBTNotificationManager::ConstructL()
     {
-    iAsyncCb = new( ELeave ) CAsyncCallBack( iServer->Priority() );
-    TCallBack cb( AsyncCallback, this );
-    iAsyncCb->Set( cb );
     }
 
 
@@ -72,9 +65,6 @@ CBTNotificationManager::~CBTNotificationManager()
     {
     iNotificationQ.ResetAndDestroy();
     iNotificationQ.Close();
-    iUnusedQ.ResetAndDestroy();
-    iUnusedQ.Close();
-    delete iAsyncCb;
     }
 
 
@@ -85,16 +75,7 @@ CBTNotificationManager::~CBTNotificationManager()
 CBluetoothNotification* CBTNotificationManager::GetNotification()
     {
     CBluetoothNotification* notification = NULL;
-    if( iUnusedQ.Count() )
-        {
-        // Re-use the first idle notification.
-        notification = iUnusedQ[0];
-        iUnusedQ.Remove( 0 );
-        }
-    else
-        {
-        TRAP_IGNORE( notification = CBluetoothNotification::NewL( this ) );
-        }
+    TRAP_IGNORE( notification = CBluetoothNotification::NewL( this ) );
     if( notification )
         {
         if( iNotificationQ.Append( notification ) )
@@ -118,23 +99,13 @@ void CBTNotificationManager::ReleaseNotification( CBluetoothNotification* aNotif
     __ASSERT_ALWAYS( aNotification, PanicServer( EBTNotifPanicBadArgument ) );
     TInt pos = iNotificationQ.Find( aNotification );
     __ASSERT_ALWAYS( pos > KErrNotFound, PanicServer( EBTNotifPanicMissing ) );
-    // ToDo: Cancel outstanding notification!
     iNotificationQ.Remove( pos );
-    TInt err = iUnusedQ.Append( aNotification );
-    aNotification->Reset();  // Clean up notification's resources
-    if( err )
+    // Just delete the notification.
+    delete aNotification;    
+    if(!iNotificationQ.Count() )
         {
-        // Just delete the notification.
-        delete aNotification;
-        }
-    if( !iAsyncCb->IsActive() )
-        {
-        if( !iNotificationQ.Count() )
-            {
-            // Set the priority so that this is the last scheduled active object to execute.
-            iAsyncCb->SetPriority( CActive::EPriorityIdle );
-            }
-        iAsyncCb->CallBack();
+        // the queue is empty, reset it.
+        iNotificationQ.Compress();
         }
     }
 
@@ -143,29 +114,22 @@ void CBTNotificationManager::ReleaseNotification( CBluetoothNotification* aNotif
 // Queue the notification with given priority
 // ---------------------------------------------------------------------------
 //
-TInt CBTNotificationManager::QueueNotification( CBluetoothNotification* aNotification,
-    TNotificationPriority aPriority )
+void CBTNotificationManager::QueueNotificationL(
+        CBluetoothNotification* aNotification,
+        TNotificationPriority aPriority )
     {
+    (void) aPriority;
     TInt pos = iNotificationQ.Find( aNotification );
     __ASSERT_ALWAYS( pos > KErrNotFound, PanicServer( EBTNotifPanicMissing ) );
-    if( aPriority == EPriorityHigh && pos != 0 )
+    if( /*aPriority == EPriorityHigh &&*/ pos != 0 )
         {
-        // ToDo:  Move the note to the front of the queue
+        CBluetoothNotification* notification = NULL;
+        notification = iNotificationQ[pos];
+        iNotificationQ.Remove( pos );
+        iNotificationQ.InsertL(notification,0);
         }
-    if( !iAsyncCb->IsActive() )
-        {
-		if( iAsyncCb->Priority() != iServer->Priority() )
-			{
-			// Reset priority back to original value
-			// We first check the current priority, otherwise CActive will do an
-			// unnecessary removal and adding of the callback from the active scheduler. 
-			iAsyncCb->SetPriority( iServer->Priority() );
-			}
-        iAsyncCb->CallBack();
-        }
-    return KErrNone;
+    ProcessNotificationQueueL();
     }
-
 
 // ---------------------------------------------------------------------------
 // Process the notification queue and launch the next notification.
@@ -175,28 +139,12 @@ void CBTNotificationManager::ProcessNotificationQueueL()
     {
     if( iNotificationQ.Count() )
         {
-        TInt err = iNotificationQ[0]->Show();
-        // If the note is already showing, it will return KErrAlreadyExists
-        (void) err; // ToDo: add error handling!!
-        NOTIF_NOTHANDLED( !err || err == KErrAlreadyExists || err == KErrNotFound )
+        iNotificationQ[0]->ShowL();
         }
     else
         {
-        // No outstanding notifications, and unused notifications.
-        // Clean up the unused notifications.
-        iUnusedQ.ResetAndDestroy();
-        iNotificationQ.Reset(); // the queue is empty, reset it.
-        // Also clean up any resources.
+        // No outstanding notifications
+        iNotificationQ.Compress(); // the queue is empty, reset it.
         }
     }
 
-
-// ---------------------------------------------------------------------------
-// Callback for asynchronous processing of queued notification requests.
-// ---------------------------------------------------------------------------
-//
-TInt CBTNotificationManager::AsyncCallback( TAny* aPtr )
-    {
-    TRAPD( err, ( (CBTNotificationManager*) aPtr )->ProcessNotificationQueueL() );
-    return err;
-    }

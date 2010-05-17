@@ -34,4 +34,10 @@ EXPORTS
 	_ZNK16CBtDevRepository10AllDevicesEv @ 33 NONAME
 	_ZNK16CBtDevRepository13IsInitializedEv @ 34 NONAME
 	_ZNK16CBtDevRepository6DeviceERK10TBTDevAddr @ 35 NONAME
+	_ZNK15CBtDevExtension23ServiceConnectionStatusEv @ 36 NONAME
+	_ZN16CBtDevRepository12ReInitializeEv @ 37 NONAME
+	_ZN15CBtDevExtension17IsJustWorksBondedERK17TBTNamelessDevice @ 38 NONAME
+	_ZN15CBtDevExtension17IsUserAwareBondedERK17TBTNamelessDevice @ 39 NONAME
+	_ZN15CBtDevExtension8IsBondedERK17TBTNamelessDevice @ 40 NONAME
+	_ZN15CBtDevExtension9IsHeadsetERK14TBTDeviceClass @ 41 NONAME
 

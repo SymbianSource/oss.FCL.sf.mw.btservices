@@ -80,9 +80,13 @@ CArrayPtr<MEikSrvNotifierBase2>* CreateNotifierArrayL()
     CreateAndAppendNotifierLC( *notifiers, KBTNumericComparisonNotifierUid, KBTAuthChannel );
     CreateAndAppendNotifierLC( *notifiers, KBTPasskeyDisplayNotifierUid, KBTAuthChannel );
     
+    // todo: add
+    // KBTUserConfirmationNotifierUid for incoming JW dedicated bonding.
+    
     CreateAndAppendNotifierLC( *notifiers, KDeviceSelectionNotifierUid, KBTDiscoveryChannel );
 
     /*
+     * todo:
      * Other notifiers to be migrated:
      * 
      * existing stack notifiers:

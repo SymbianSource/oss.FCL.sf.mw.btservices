@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hbdocument version="1.0">
+    <widget name="dialog" type="HbDialog">
+        <widget name="container" role="HbDialog:headingWidget" type="HbWidget">
+            <widget name="container_1" type="HbWidget">
+                <widget name="moreDevices" type="HbPushButton">
+                    <string name="text" value="More devices"/>
+                    <string name="state" value="normal"/>
+                </widget>
+                <widget name="cancel" type="HbPushButton">
+                    <string name="text" value="Cancel"/>
+                    <string name="state" value="normal"/>
+                </widget>
+                <real name="z" value="2"/>
+                <sizehint height="10un" type="PREFERRED" width="27un"/>
+                <layout spacing="0.5un" type="grid">
+                    <griditem column="0" itemname="moreDevices" row="0"/>
+                    <griditem column="1" itemname="cancel" row="0"/>
+                </layout>
+            </widget>
+            <widget name="listView" type="HbListView">
+                <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem">
+                    <string name="state" value="normal"/>
+                </widget>
+                <enums name="horizontalScrollBarPolicy" value="ScrollBarAutoHide"/>
+                <real name="z" value="2"/>
+                <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
+                <enums name="verticalScrollBarPolicy" value="ScrollBarAsNeeded"/>
+            </widget>
+            <widget name="label" type="HbLabel"/>
+            <real name="z" value="3"/>
+            <layout orientation="Vertical" type="linear">
+                <contentsmargins bottom="1.34328un" left="1.34328un" right="1.34328un" top="1.34328un"/>
+                <linearitem itemname="label"/>
+                <linearitem itemname="listView"/>
+                <linearitem itemname="container_1"/>
+            </layout>
+        </widget>
+        <rect height="73.43284un" name="geometry" width="45.22388un" x="4.62687un" y="6.86567un"/>
+    </widget>
+    <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">
+        <uistate name="Common ui state" sections="#common"/>
+        <dummydata objectName="listView" section="#common" value="0"/>
+    </metadata>
+</hbdocument>

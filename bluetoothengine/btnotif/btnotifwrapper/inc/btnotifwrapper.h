@@ -241,7 +241,7 @@ private: // data
      * Buffer containing a copy of the notifier parameters, for async notifiers.
      * Own.
      */
-    HBufC8* iParamsBuf;
+    RBuf8 iParamsBuf;
 
     /**
      * Modifiable pointer descriptor for getting the response back.
@@ -252,7 +252,7 @@ private: // data
      * Buffer for receiving the response from the BT notifier server.
      * Own.
      */
-    HBufC8* iResponseBuf;
+    RBuf8 iResponseBuf;
 
     /**
      * Active object helper class.

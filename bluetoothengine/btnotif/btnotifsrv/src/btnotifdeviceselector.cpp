@@ -45,6 +45,7 @@ CBTNotifDeviceSelector::CBTNotifDeviceSelector( CBTNotifServer& aServer )
 //
 void CBTNotifDeviceSelector::ConstructL()
     {
+    iServer.DevRepository().AddObserverL(this);
     iDiscoverer = CAdvanceDevDiscoverer::NewL( iServer.DevRepository(), *this );
     }
 
@@ -67,6 +68,7 @@ CBTNotifDeviceSelector* CBTNotifDeviceSelector::NewL( CBTNotifServer& aServer )
 //
 CBTNotifDeviceSelector::~CBTNotifDeviceSelector()
     {
+    iServer.DevRepository().RemoveObserver(this);
     if( iNotification )
         {
         // Clear the notification callback, we cannot receive them anymore.
@@ -77,6 +79,7 @@ CBTNotifDeviceSelector::~CBTNotifDeviceSelector()
     iDevices.ResetAndDestroy();
     iDevices.Close();
     delete iDiscoverer;
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -122,9 +125,24 @@ void CBTNotifDeviceSelector::DispatchNotifierMessageL( const RMessage2& aMessage
                 aMessage.Complete( KErrServerBusy );
                 return;
                 }
-            PrepareNotificationL(TBluetoothDialogParams::EDeviceSearch, ENoResource);
-            iDevices.ResetAndDestroy();
-            iDiscoverer->DiscoverDeviceL();
+            
+            iLoadDevices = EFalse;
+            if(iServer.DevRepository().IsInitialized())
+                {
+                iLoadDevices = ETrue;
+                if(iServer.DevRepository().AllDevices().Count()==0)
+                     {
+                     PrepareNotificationL(TBluetoothDialogParams::EDeviceSearch, ENoResource);
+                     iDevices.ResetAndDestroy();
+                     iDiscoverer->DiscoverDeviceL();
+                     }
+                else
+                     {
+                     iDevices.ResetAndDestroy();
+                     PrepareNotificationL(TBluetoothDialogParams::EMoreDevice, ENoResource);
+                     LoadUsedDevicesL();
+                     }
+                }
             iMessage = aMessage;
             break;
             }
@@ -154,7 +172,6 @@ void CBTNotifDeviceSelector::CancelNotifierMessageL( const RMessage2& aMessage )
 void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
     {
     TInt err = KErrCancel;
-//    const CHbSymbianVariant* value = aData.Get(_L("selectedindex"));
     if(aData.Keys().MdcaPoint(0).Compare(_L("selectedindex"))==KErrNone)
         {
         TInt val = *(static_cast<TInt*>(aData.Get(_L("selectedindex"))->Data()));
@@ -167,11 +184,15 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
             if (  val > -1 && val < iDevices.Count() )
                 {
                 devParams().SetDeviceAddress( iDevices[val]->Addr() );
+                devParams().SetDeviceClass(iDevices[val]->Device().DeviceClass());
+                devParams().SetDeviceName(iDevices[val]->Alias());
                 err = iMessage.Write( EBTNotifSrvReplySlot, devParams );
+                iNotification->Close(); // Also dequeues the notification from the queue.
+                iNotification->RemoveObserver();
+                iNotification = NULL;                
                 }
             iMessage.Complete( err );
             }
-        
         iDiscoverer->CancelDiscovery();
         }
     else if(aData.Keys().MdcaPoint(0).Compare(_L("Stop"))==KErrNone)
@@ -182,10 +203,18 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
         {
         iDiscoverer->CancelDiscovery();
         iDevices.ResetAndDestroy();
-        delete iDiscoverer;
-        iDiscoverer = NULL;
-        iDiscoverer = CAdvanceDevDiscoverer::NewL( iServer.DevRepository(), *this );
-        iDiscoverer->DiscoverDeviceL();    
+        TRAP_IGNORE( iDiscoverer->DiscoverDeviceL() );
+        
+        }
+    else if(aData.Keys().MdcaPoint(0).Compare(_L("MoreDevices"))==KErrNone)
+        {
+        iNotification->Close(); // Also dequeues the notification from the queue.
+        iNotification->RemoveObserver();
+        iNotification = NULL;
+        iDevices.ResetAndDestroy();
+        TRAP_IGNORE( {
+        PrepareNotificationL(TBluetoothDialogParams::EDeviceSearch, ENoResource);
+        iDiscoverer->DiscoverDeviceL(); } );
         }
     }
 
@@ -232,8 +261,80 @@ void CBTNotifDeviceSelector::HandleNextDiscoveryResultL(
 void CBTNotifDeviceSelector::HandleDiscoveryCompleted( TInt aErr )
     {
     (void) aErr;
-    // todo: update dialog
+    CHbSymbianVariantMap* map = iNotification->Data();
+    TBuf<25> keyStr;
+    
+
+    //TODO compile fail here we need to send the discovery completed text to the dialog 
+    keyStr.Copy(_L("Search Completed"));
+    CHbSymbianVariant* devEntry( NULL );
+    TRAP_IGNORE( devEntry = CHbSymbianVariant::NewL( (TAny*) &(keyStr), 
+            CHbSymbianVariant::EDes ) );
+    if ( devEntry )
+        {
+        map->Add( keyStr, devEntry );
+        iNotification->Update();
+        }
+    else
+        {
+        // todo: Complete client request with error
+        }
     }
+
+// From MBtDeviceRepositoryObserver
+
+void CBTNotifDeviceSelector::RepositoryInitialized()
+    {
+    iRepositoryInitialized = ETrue;
+    TInt err(KErrNone);
+    if(!iLoadDevices)
+        {
+        iLoadDevices = ETrue;
+        if(iServer.DevRepository().AllDevices().Count()==0)
+             {
+             iDevices.ResetAndDestroy();
+             TRAP(err, {
+             PrepareNotificationL(TBluetoothDialogParams::EDeviceSearch, ENoResource);
+             iDiscoverer->DiscoverDeviceL(); } );
+             }
+        else
+             {
+             iDevices.ResetAndDestroy();
+             TRAP( err, 
+                     {PrepareNotificationL(
+                             TBluetoothDialogParams::EMoreDevice, ENoResource);
+                      LoadUsedDevicesL();
+                     } );
+             }
+        }
+    if ( err )
+        {
+        // todo: complete client request
+        }
+    }
+
+void CBTNotifDeviceSelector::DeletedFromRegistry( const TBTDevAddr& aAddr )
+    {
+    (void) aAddr;
+    }
+
+void CBTNotifDeviceSelector::AddedToRegistry( const CBtDevExtension& aDev )
+    {
+    (void) aDev;
+    }
+
+void CBTNotifDeviceSelector::ChangedInRegistry( const CBtDevExtension& aDev, TUint aSimilarity  ) 
+    {
+    (void) aDev;
+    (void) aSimilarity;
+    }
+
+void CBTNotifDeviceSelector::ServiceConnectionChanged(const CBtDevExtension& aDev, TBool aConnected )
+    {
+    (void) aDev;
+    (void) aConnected;
+    }
+
 
 // ---------------------------------------------------------------------------
 // Get and configure a notification.
@@ -249,14 +350,31 @@ void CBTNotifDeviceSelector::PrepareNotificationL(
     iNotification->SetObserver( this );
     iNotification->SetNotificationType( aType, aResourceId );
 
-    /*
-    _LIT(KTitleValue, "BT Search");
-    TPtrC ptr;
-    ptr.Set( KTitleValue );
-    iNotification->SetData( TBluetoothDialogParams::EDialogTitle, ptr );
-    */
-    
-    /*err = */ iServer.NotificationManager()->QueueNotification( iNotification );
-    //NOTIF_NOTHANDLED( !err )
+    iServer.NotificationManager()->QueueNotificationL( iNotification,CBTNotificationManager::EPriorityHigh );
     BOstraceFunctionExit0( DUMMY_DEVLIST );
+    }
+
+void CBTNotifDeviceSelector::LoadUsedDevicesL()
+    {
+    const RDevExtensionArray& devArray= iServer.DevRepository().AllDevices();
+    for(TInt i=0; i< devArray.Count(); i++ )
+        {
+      const TTime& usedTime = devArray[i]->Device().Used();
+        TTime monthBack;
+        monthBack.HomeTime();
+        monthBack -= TTimeIntervalDays(30);
+        if(usedTime >= monthBack)
+            {
+            iDevices.AppendL( devArray[i]->CopyL() );
+            CHbSymbianVariantMap* map = iNotification->Data();
+            TBuf<8> keyStr;
+            CHbSymbianVariant* devEntry;
+
+            keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );
+            devEntry = CHbSymbianVariant::NewL( (TAny*) &(devArray[i]->Alias()), 
+                    CHbSymbianVariant::EDes );
+            map->Add( keyStr, devEntry );
+            iNotification->Update();
+            }
+        }
     }

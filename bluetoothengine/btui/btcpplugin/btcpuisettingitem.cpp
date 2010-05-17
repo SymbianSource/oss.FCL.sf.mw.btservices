@@ -40,11 +40,12 @@ BtCpUiSettingItem::~BtCpUiSettingItem()
 
 void BtCpUiSettingItem::onLaunchView()
 {
-    mModel = new BtuiModel();
+    mSettingModel = new BtSettingModel(this);
+    mDeviceModel = new BtDeviceModel(this);
     
     mMainWindow = hbInstance->allMainWindows().first();
     
-    mBtMainView = new BtCpUiMainView(*mModel);
+    mBtMainView = new BtCpUiMainView(*mSettingModel, *mDeviceModel);
     
     mCpView = mMainWindow->currentView();
     
@@ -59,8 +60,6 @@ void BtCpUiSettingItem::handleCloseView()
 {
     mBtMainView->deactivateView();
     mMainWindow->setCurrentView(mCpView);
-    delete mBtMainView;
-    delete mModel;
 }
 
 

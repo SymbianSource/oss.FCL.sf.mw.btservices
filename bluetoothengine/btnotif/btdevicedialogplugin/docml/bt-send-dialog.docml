@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hbdocument version="1.0">
+    <widget name="dialog" type="HbDialog">
+        <widget name="container" role="HbDialog:headingWidget" type="HbWidget">
+            <widget name="heading" type="HbLabel">
+                <sizehint height="3.92537un" type="PREFERRED" width="0un"/>
+            </widget>
+            <widget name="container_1" type="HbWidget">
+                <widget name="listView" type="HbListView">
+                    <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
+                </widget>
+                <real name="z" value="0"/>
+                <sizehint height="23.8806un" type="PREFERRED" width="11.9403un"/>
+                <layout orientation="Vertical" type="linear">
+                    <linearitem itemname="listView"/>
+                </layout>
+            </widget>
+            <widget name="horizontalProgressBar" type="HbProgressBar">
+                <integer name="progressValue" value="30"/>
+                <integer name="minimum" value="0"/>
+                <enums name="orientation" value="Horizontal"/>
+                <integer name="maximum" value="100"/>
+            </widget>
+            <real name="z" value="1"/>
+            <layout orientation="Vertical" type="linear">
+                <linearitem itemname="heading"/>
+                <linearitem itemname="container_1"/>
+                <linearitem itemname="horizontalProgressBar"/>
+            </layout>
+        </widget>
+        <rect height="17.46269un" name="geometry" width="47.01493un" x="2.68657un" y="46.26866un"/>
+    </widget>
+    <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">
+        <uistate name="Common ui state" sections="#common"/>
+        <dummydata objectName="listView" section="#common" value="app_list_template5"/>
+    </metadata>
+</hbdocument>

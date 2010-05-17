@@ -116,6 +116,15 @@ public:
     IMPORT_C static TBool IsUserAwareBonded( const TBTNamelessDevice &dev );
     
     /**
+     *   Guesses if the given device is a headset.
+     *   
+     *   @param the Class of Device of the device of which the type is
+     *          determined.
+     *   @return ETrue if it is probably a headset. EFalse otherwise.
+     */
+    IMPORT_C static TBool IsHeadset( const TBTDeviceClass &aCod );    
+    
+    /**
      * Returns the display name of this device for end users. 
      * @return the friendly name of the device if it is available; else, the device
      * name if it is available; otherwise, the BDADDR seperated with ":".

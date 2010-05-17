@@ -17,7 +17,7 @@
 
 
 #include <cpsettingformentryitemdataimpl.h>
-#include "BtCpPlugin.h"
+#include "btcpplugin.h"
 #include "btcpuimainview.h"
 #include "btcpuisettingitem.h"
 

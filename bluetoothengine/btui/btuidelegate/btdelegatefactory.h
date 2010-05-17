@@ -22,7 +22,8 @@
 #include "btdelegateconsts.h"
 
 class BtAbstractDelegate;
-class BtuiModel;
+class BtSettingModel;
+class BtDeviceModel;
 
 #ifdef BUILD_BTUIDELEGATE
 #define BTUIDELEGATE_IMEXPORT Q_DECL_EXPORT
@@ -41,7 +42,10 @@ class BTUIDELEGATE_IMEXPORT BtDelegateFactory
 
 public:
     static BtAbstractDelegate *newDelegate( 
-            BtDelegate::Command cmd, BtuiModel& model, QObject *parent = 0 );
+            BtDelegate::Command cmd, 
+            BtSettingModel* settingModel, 
+            BtDeviceModel* deviceModel, 
+            QObject *parent = 0 );
 
 };
 
