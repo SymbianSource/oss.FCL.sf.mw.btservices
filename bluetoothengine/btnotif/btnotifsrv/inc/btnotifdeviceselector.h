@@ -29,6 +29,7 @@
 #include <btengsettings.h>
 #include <btservices/devdiscoveryobserver.h>
 #include "bluetoothnotification.h"
+#include <btservices/btdevrepository.h>
 
 class CBTNotifServer;
 class CAdvanceDevDiscoverer;
@@ -48,7 +49,8 @@ class CBtDevExtension;
 NONSHARABLE_CLASS( CBTNotifDeviceSelector ) : 
         public CBase,
         public MBTNotificationResult,
-        public MDevDiscoveryObserver
+        public MDevDiscoveryObserver,
+        public MBtDevRepositoryObserver
     {
 
 public:
@@ -127,6 +129,21 @@ private:
      */
     virtual void HandleDiscoveryCompleted( TInt aErr );
     
+    
+    // From MBtDeviceRepositoryObserver
+    
+    void RepositoryInitialized();
+    
+    void DeletedFromRegistry( const TBTDevAddr& addr );
+    
+    void AddedToRegistry( const CBtDevExtension& dev );
+    
+    void ChangedInRegistry( const CBtDevExtension& dev, TUint similarity  ); 
+
+    void ServiceConnectionChanged(
+            const CBtDevExtension& dev, TBool connected );
+
+    
 private:
 
     CBTNotifDeviceSelector( CBTNotifServer& aServer );
@@ -136,6 +153,8 @@ private:
     void PrepareNotificationL( 
             TBluetoothDialogParams::TBTDialogType aType,
             TBTDialogResourceId aResourceId );
+			
+	void LoadUsedDevicesL();		
     
 private: // data    
 
@@ -165,6 +184,10 @@ private: // data
      * The message for a pending device selection request from a RNotifier client.
      */
     RMessage2 iMessage;
+    
+    TBool iRepositoryInitialized;
+    
+    TBool iLoadDevices;
     
     };
 

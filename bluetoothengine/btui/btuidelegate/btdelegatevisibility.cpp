@@ -17,7 +17,8 @@
 
 
 #include "btdelegatevisibility.h"
-#include "btuimodel.h"
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 #include <bluetoothuitrace.h>
 #include "btqtconstants.h"
 #include <btengsettings.h>
@@ -27,8 +28,9 @@ const int MAX_TEMPORARY_VISIBILITY = 60;  // minutes, this value comes from the 
 /*!
     Constructor.
  */
-BtDelegateVisibility::BtDelegateVisibility( BtuiModel& model, QObject *parent )
-    : BtAbstractDelegate( model, parent )
+BtDelegateVisibility::BtDelegateVisibility(
+        QObject *parent )
+    : BtAbstractDelegate( NULL, NULL, parent )
 {
     TRAP_IGNORE( mBtengSettings = CBTEngSettings::NewL(this) );
     Q_CHECK_PTR( mBtengSettings );

@@ -31,8 +31,8 @@ const int KBtLinkCountWatcher = 11;
 /*!
     Constructor.
  */
-BtLocalSetting::BtLocalSetting( BtuiModel& model, QObject *parent )
-    : QObject( parent ), mModel(model), mLocalDeviceWatcher(0)
+BtLocalSetting::BtLocalSetting( BtSettingModel& model, QObject *parent )
+    : QObject( parent), mModel( model ), mLocalDeviceWatcher(0)
     {
     int err( 0 );
     if (!err ) {
@@ -50,7 +50,7 @@ BtLocalSetting::BtLocalSetting( BtuiModel& model, QObject *parent )
     Q_CHECK_PTR( mBtengSetting );
     Q_CHECK_PTR( mLocalDeviceWatcher );
 
-    for ( int i = 0; i < BtuiModel::LocalSettingColCount; ++i ) {
+    for ( int i = 0; i < BtSettingModel::LocalSettingRowCount; ++i ) {
         // Initialize the list with empty values.
         mData.append( BtuiModelDataItem() );
     }
@@ -90,58 +90,91 @@ BtLocalSetting::~BtLocalSetting()
 }
 
 
-bool BtLocalSetting::isValid( int column) const
+/*!
+    Tells whether the given column is in the range of the setting list.
+    
+    \param row the row number to be checked
+    \param col the column number to be checked
+    
+    \return true if the given row and column are valid; false otherwise.
+*/
+bool BtLocalSetting::isValid( int row, int column) const
 {
-    return column < mData.count();
+    return row >= 0 && row < mData.count() && column == 0;
 }
 
-int BtLocalSetting::itemCount() const
+/*!
+    \return the total amount of rows.
+    
+*/
+int BtLocalSetting::rowCount() const
 {
     return mData.count();
 }
 
-void BtLocalSetting::data(QVariant& val, int col, int role ) const
+/*!
+    \return the total amount of columns.
+    
+*/
+int BtLocalSetting::columnCount() const
 {
-    if ( isValid( col ) ) {
-        val = mData.at( col ).value( role );
+    return 1;
+}
+
+/*!
+    Gets the value within a data item.
+    \param val contains the value at return.
+    \param row the row number which the value is from
+    \param col the column number which the value is from
+    \param role the role idenfier of the value.
+ */
+void BtLocalSetting::data(QVariant& val, int row,  int col, int role ) const
+{
+    if ( isValid( row, col ) ) {
+        val = mData.at( row ).value( role );
     }
     else {
         val = QVariant( QVariant::Invalid );
     }
 }
 
-BtuiModelDataItem BtLocalSetting::itemData( int col ) const
+/*!
+    Gets the whole item data at the specified column
+    \param row the row number of the item data to be returned
+    \param col the column number of the item data to be returned
+    \return the item data
+ */
+BtuiModelDataItem BtLocalSetting::itemData( int row, int col ) const
 {
-    if ( isValid( col ) ) {
-        return mData.at( col );
+    if ( isValid( row, col ) ) {
+        return mData.at( row );
     }
     return BtuiModelDataItem();
 }
-
 
 /*!
     Provides notification of changes in the power state
     of the Bluetooth hardware.
 
-    @param state EBTPowerOff if the BT hardware has been turned off,
+    \param state EBTPowerOff if the BT hardware has been turned off,
                  EBTPowerOn if it has been turned on.
  */
 void BtLocalSetting::PowerStateChanged( TBTPowerStateValue state ) 
 {
     setPowerSetting( state );
-    emit settingDataChanged( BtuiModel::LocalSettingRow, BtuiModel::PowerStateCol, this );
+    mModel.emitDataChanged( BtSettingModel::PowerStateRow, 0, this );
 }
 
 /*!
     Provides notification of changes in the discoverability
     mode of the Bluetooth hardware.
-    @param state EBTDiscModeHidden if the BT hardware is in hidden mode,
+    \param state EBTDiscModeHidden if the BT hardware is in hidden mode,
                   EBTDiscModeGeneral if it is in visible mode.
  */
 void BtLocalSetting::VisibilityModeChanged( TBTVisibilityMode state )
 {
     setVisibilityMode( state );
-    emit settingDataChanged( BtuiModel::LocalSettingRow, BtuiModel::VisibilityCol, this );
+    mModel.emitDataChanged( BtSettingModel::VisibilityRow, 0, this );
 }
 
 void BtLocalSetting::RequestCompletedL( CBtSimpleActive* active, TInt status ) {
@@ -176,11 +209,11 @@ void BtLocalSetting::updateDeviceName( const QString &name )
 {
     // To-do: the data structure initialization is not impled yet in the model
     BtuiModelDataItem& item = 
-            mData[ BtuiModel::BluetoothNameCol ];
+            mData[ BtSettingModel::LocalBtNameRow ];
     
     if ( item.isEmpty() ) {
         // Initialize with additional information on the setting
-        item[ BtuiModel::SettingIdentity ] = QVariant( tr( "Local Bluetooth name" ) );
+        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Local Bluetooth name" ) );
     }
     
     bool setByUser = !name.isEmpty();
@@ -189,15 +222,15 @@ void BtLocalSetting::updateDeviceName( const QString &name )
     // Bluetooth name has been set by the user.
     // The flag is set to true if the name has been set.    
     // requirement does not 
-    //nitem[ BtuiModel::SettingValueParam ] = QVariant( setByUser );
+    //nitem[ BtSettingModel::SettingValueParamRole ] = QVariant( setByUser );
     
     QString resolvedName( name );
     if ( resolvedName.isEmpty() ) {
         // We get the default name as suggestion for the user to set.
         getNameFromRegistry( resolvedName );
     }
-    item[ BtuiModel::settingDisplay ] = QVariant( resolvedName );
-    item[ BtuiModel::SettingValue ] = QVariant( resolvedName );
+    item[ BtSettingModel::settingDisplayRole ] = QVariant( resolvedName );
+    item[ BtSettingModel::SettingValueRole ] = QVariant( resolvedName );
 }
 
 /*!
@@ -206,40 +239,40 @@ void BtLocalSetting::updateDeviceName( const QString &name )
 void BtLocalSetting::setPowerSetting( TBTPowerStateValue state )
 {
     BtuiModelDataItem& item = 
-            mData[ BtuiModel::PowerStateCol ];
+            mData[ BtSettingModel::PowerStateRow ];
     if ( item.isEmpty() ) {
         // Initialize with additional information on the setting
-        item[ BtuiModel::SettingIdentity ] = QVariant( tr( "Bluetooth power" ) );
+        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Bluetooth power" ) );
     }
     
     bool powerOn = ( state == EBTPowerOn );
 
-    item[ BtuiModel::settingDisplay ] = 
+    item[ BtSettingModel::settingDisplayRole ] = 
             powerOn ? QVariant( tr( "On" ) ) : QVariant( tr( "Off" ) );
-    item[ BtuiModel::SettingValue ] = QVariant( powerOn );
+    item[ BtSettingModel::SettingValueRole ] = QVariant( powerOn );
 }
 
 void BtLocalSetting::setVisibilityMode( TBTVisibilityMode state )
 {
-    BtuiModelDataItem& item = mData[ BtuiModel::VisibilityCol ];
+    BtuiModelDataItem& item = mData[ BtSettingModel::VisibilityRow ];
 
     if ( item.isEmpty() ) {
-        item[ BtuiModel::SettingIdentity ] = QVariant( tr( "Phone visibility" ) );
+        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Phone visibility" ) );
     }
     
     if ( state == EBTVisibilityModeHidden )
         {
-        item [ BtuiModel::settingDisplay ] = QVariant( tr( "Hidden" ) );
+        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Hidden" ) );
         }
     else if ( state == EBTVisibilityModeGeneral )
         {
-        item [ BtuiModel::settingDisplay ] = QVariant( tr( "Visible" ) );
+        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Visible" ) );
         }
     else
         {
-        item [ BtuiModel::settingDisplay ] = QVariant( tr( "Temporarily visible" ) );
+        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Temporarily visible" ) );
         }
-    item [ BtuiModel::SettingValue ] = QVariant( QtVisibilityMode(state) );
+    item [ BtSettingModel::SettingValueRole ] = QVariant( QtVisibilityMode(state) );
 }
 
 /*!

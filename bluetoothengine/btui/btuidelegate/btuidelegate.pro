@@ -21,6 +21,8 @@ DEFINES += BUILD_BTUIDELEGATE
 INCLUDEPATH += . \
     ../inc
 
+RESOURCES += btuidelegate.qrc
+
 CONFIG += qt \
     hb \
     dll
@@ -29,13 +31,23 @@ HEADERS += btdelegateconsts.h \
     btdelegatefactory.h \
     btabstractdelegate.h \
     btdelegatevisibility.h \
-    btdelegatedevname.h
+    btdelegatedevname.h \
+    btdelegateinquiry.h \
+    btdelegateconnect.h \
+    btdelegatepair.h \
+    btdelegatedisconnect.h \
+    btdelegatedevsecurity.h
     
 SOURCES += btdelegatepower.cpp \
     btdelegatefactory.cpp \
     btabstractdelegate.cpp \
     btdelegatevisibility.cpp \
-    btdelegatedevname.cpp
+    btdelegatedevname.cpp \
+    btdelegateinquiry.cpp \
+    btdelegateconnect.cpp \
+    btdelegatepair.cpp \
+    btdelegatedisconnect.cpp \
+    btdelegatedevsecurity.cpp
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \
@@ -56,6 +68,7 @@ symbian: {
         -lbtengdevman \
         -lbtengconnman \
         -lcentralrepository \
-        -lflogger
+        -lflogger \
+        -lbtuimodel
     //MMP_RULES -= EXPORTUNFROZEN
 }

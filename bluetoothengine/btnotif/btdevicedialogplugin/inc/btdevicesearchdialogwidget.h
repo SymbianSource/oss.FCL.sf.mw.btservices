@@ -28,7 +28,8 @@
 #include <qstandarditemmodel.h>
 #include <hbradiobuttonlist.h>
 #include <hblistwidget.h>
-
+#include <hbpushbutton.h>
+#include <hblabel.h>
 
 struct device
     {
@@ -53,11 +54,12 @@ public: // from HbDeviceDialogInterface
     HbPopup *deviceDialogWidget() const;
     
 public slots:
-    void stopClicked();
+    void stopRetryClicked();
     void retryClicked();
-//    void viewByClicked();
+    void viewByClicked();
     void deviceSelected(const QModelIndex& modelIndex);
 //    void viewByItemSelected(int index);
+    void selectionDialogClosed(HbAction*);
     
 private:
     bool constructDialog(const QVariantMap &parameters);
@@ -85,6 +87,11 @@ private:
     QList<QString>      mDeviceTypeList;
     QList<device>       mDeviceList;
     HbListView*         mListView;
+    HbPushButton*       mStopRetryBtn;
+    HbPushButton*       mViewByBtn;
+    HbLabel*            mSearchLabel; 
+    HbLabel*            mSearchIconLabel;
+    HbLabel*            mSearchDoneLabel;
     bool                mViewByChosen;
     QList<device>       mDeviceLstOfType;
     int                 mDeviceLstIdx;

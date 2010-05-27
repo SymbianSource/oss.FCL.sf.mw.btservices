@@ -21,6 +21,17 @@
 #include <btengconstants.h>
 
 
+// RSSI value range: -127dB ~ +20dB
+const int RssiMinRange = -127;
+
+//const int RssiMaxRange = 20; // maybe useful in the future
+
+const int RssiMediumStrength = -75;
+
+const int RssiHighStrength = -46;
+
+const int RssiInvalid = RssiMinRange - 1;
+
 enum VisibilityMode {
     BtHidden = 0x10,  // using a different number space than TBTVisibilityMode
     BtVisible,

@@ -1,24 +1,19 @@
 /*
-* ============================================================================
-*  Name        : bluetoothnotification.cpp
-*  Part of     : bluetoothengine / btnotif
-*  Description : Class for managing an actual user notification or query.
-*                It hides UI framework-specifics in a private class.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.1
+* Description: Description: Class for managing an actual user notification or query.
+*              It hides UI framework-specifics in a private class.
+*
 */
 
 #include "bluetoothnotification.h"
@@ -87,29 +82,6 @@ CBluetoothNotification::~CBluetoothNotification()
 	BOstraceFunctionExit1( DUMMY_DEVLIST, this )
 }
 
-
-// ---------------------------------------------------------------------------
-// Resets the notification, clean all the internals.
-// ---------------------------------------------------------------------------
-//
-void CBluetoothNotification::Reset()
-    {
-	BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
-    iType = TBluetoothDialogParams::EInvalidDialog;
-    iResourceId = ENoResource;
-    iObserver = NULL;
-    iDialog->Cancel();
-    iDialog->SetObserver( NULL );   // Not interested in a callback anymore.
-    delete iNotificationData;
-    iNotificationData = NULL;
-    iNotificationData = CHbSymbianVariantMap::NewL();
-    delete iReturnData;
-    iReturnData = NULL;
-    iReturnData = CHbSymbianVariantMap::NewL();
-    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
-    }
-
-
 // ---------------------------------------------------------------------------
 // Sets the data to be shown to the user.
 // ---------------------------------------------------------------------------
@@ -142,7 +114,7 @@ TInt CBluetoothNotification::Update( const TDesC& aData )
     int ret = iDialog->Update( *iNotificationData );
     delete iNotificationData;
     iNotificationData = NULL;
-    iNotificationData = CHbSymbianVariantMap::NewL();
+    TRAP( ret, iNotificationData = CHbSymbianVariantMap::NewL() );
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     return ret;
     }
@@ -152,37 +124,20 @@ TInt CBluetoothNotification::Update( const TDesC& aData )
 // Show the notification, which means that it is added to the queue.
 // ---------------------------------------------------------------------------
 //
-TInt CBluetoothNotification::Show()
+void CBluetoothNotification::ShowL()
     {
 	BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
-    TRAPD( err, SetDataL( TBluetoothDialogParams::EDialogType, iType ) );
-    if( !err )
-        {
-        TRAP( err, SetDataL( TBluetoothDialogParams::EResource, iResourceId ) );
-        }
+    SetDataL( TBluetoothDialogParams::EDialogType, iType );
+    SetDataL( TBluetoothDialogParams::EResource, iResourceId );
     delete iReturnData;
     iReturnData = NULL;
-    if( !err )
-        {
-        TRAP( err, iReturnData = CHbSymbianVariantMap::NewL() );
-        }
-    if( !err )
-        {
-        err = iDialog->Show( KBTDevDialogId(), *iNotificationData, this );
-        }
+    iReturnData = CHbSymbianVariantMap::NewL();
+    iDialog->Show( KBTDevDialogId(), *iNotificationData, this );
     delete iNotificationData;
     iNotificationData = NULL;
     iNotificationData = CHbSymbianVariantMap::NewL();
-    
-    const TInt KPluginErr = CHbDeviceDialogSymbian::EPluginErrors + 1;
-    if( err == KPluginErr )
-        {
-        err = KErrNotFound;
-        }
-	BOstraceFunctionExitExt( DUMMY_DEVLIST, this, err );
-    return err;
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
-
 
 // ---------------------------------------------------------------------------
 // Stop showing the notification.
@@ -325,13 +280,22 @@ void CBluetoothNotification::DataReceived( CHbSymbianVariantMap& aData )
     {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     BtTraceBlock( debugHbSymbianVariantMap(aData); );
+    CHbSymbianVariant* value = NULL;
     for( TInt i = 0; i < aData.Keys().MdcaCount(); i++ )
         {
         TPtrC key( aData.Keys().MdcaPoint( i ).Ptr(), aData.Keys().MdcaPoint( i ).Length() );
         const CHbSymbianVariant* valueRef = aData.Get( key );
-        CHbSymbianVariant* value = CHbSymbianVariant::NewL( valueRef->Data(), valueRef->Type() );
-        TInt err = iReturnData->Add( key, value );
-        NOTIF_NOTHANDLED( !err )
+        value = NULL;
+        TRAP_IGNORE( value = 
+                CHbSymbianVariant::NewL( valueRef->Data(), valueRef->Type() ) );
+        if ( value )
+            {
+            TInt err = iReturnData->Add( key, value );
+            if ( err ) 
+                {
+                // todo: better exception handing than ignoring this failure?
+                }
+            }
         }
     iObserver->MBRDataReceived( aData );
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
@@ -433,6 +397,7 @@ void CBluetoothNotification::DeviceDialogClosed( TInt aCompletionCode )
             }
         iObserver->MBRNotificationClosed( aCompletionCode, resultPtr );
         }
+    resultBuf.Close();
     iManager->ReleaseNotification( this );
     // Note that we might get deleted after releasing ourselves.
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );

@@ -71,13 +71,13 @@ Sample usage:
  * Tracing media configuration
  */  
 #ifdef BLUETOOTHTRACE_ENABLED
-    #ifdef __WINS__
-    #define BLUETOOTHTRACE_MEDIA_FILE
-    #else 
+    //#ifdef __WINS__
+    //#define BLUETOOTHTRACE_MEDIA_FILE
+    //#else 
     // RDEBUG is used for tracing output before we migrate to OST tracing.
     #define BLUETOOTHTRACE_MEDIA_RDEBUG
     // #define BLUETOOTHTRACE_MEDIA_OST 
-    #endif // __WINS__
+    //#endif // __WINS__
 #endif //BLUETOOTHTRACE_ENABLED
 
 /*

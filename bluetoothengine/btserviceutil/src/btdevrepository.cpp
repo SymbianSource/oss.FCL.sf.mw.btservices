@@ -107,3 +107,12 @@ EXPORT_C const CBtDevExtension* CBtDevRepository::Device(
     {
     return iImpl->Device( aAddr );
     }
+
+// ---------------------------------------------------------------------------
+// Device
+// ---------------------------------------------------------------------------
+//
+EXPORT_C void CBtDevRepository::ReInitialize()
+    {
+    return iImpl->ReInitialize();
+    }

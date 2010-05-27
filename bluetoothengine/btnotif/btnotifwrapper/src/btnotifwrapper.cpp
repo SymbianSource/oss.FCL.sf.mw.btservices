@@ -165,17 +165,14 @@ void CBTNotifWrapper::StartL(const TDesC8& aBuffer, TInt aReplySlot,
     // returning from this call. We do it on the heap, so we do not permanently
     // consume memory for the buffer.
 
-    iParamsBuf = HBufC8::NewL( aBuffer.Size() );
-    *iParamsBuf = aBuffer;
-
+    iParamsBuf.CreateL( aBuffer );
     TInt len = aMessage.GetDesMaxLength( aReplySlot );
-    iResponseBuf = HBufC8::NewL( len );
-    // Copy in the response, to get the right buffer size.
-    iResponsePtr.Set( iResponseBuf->Des() );
-    aMessage.ReadL( aReplySlot, iResponsePtr );
+    
+    iResponseBuf.CreateL( len );
+    aMessage.ReadL( aReplySlot, iResponseBuf );
 
     iBTNotif.StartNotifierAndGetResponse( iActive->RequestStatus(),
-                iUid, *iParamsBuf, iResponsePtr );
+                iUid, iParamsBuf, iResponseBuf );
     iActive->GoActive();
     // record the request
     iReplySlot = aReplySlot;
@@ -199,10 +196,8 @@ void CBTNotifWrapper::Cancel()
         iMessage.Complete( KErrCancel );
         }
     iReplySlot = 0;
-    delete iParamsBuf;
-    iParamsBuf = NULL;
-    delete iResponseBuf;
-    iResponseBuf = NULL;
+    iParamsBuf.Close();
+    iResponseBuf.Close();
     }
 
 // ---------------------------------------------------------------------------
@@ -259,22 +254,14 @@ void CBTNotifWrapper::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus 
     if( !iMessage.IsNull() )
         {
         TInt err( aStatus );
-        if( !aStatus )
+        if( !err )
             {
-            // for testing:
-            //TPckgBuf<TBTDeviceResponseParams> response;
-            //response.Copy( *iResponseBuf );
-            //response().BDAddr();
-            err = iMessage.Write( iReplySlot, *iResponseBuf );
+            err = iMessage.Write( iReplySlot, iResponseBuf );
             }
         iMessage.Complete( err );
         }
     // Clean up after usage.
     iBTNotif.Close();
-    delete iParamsBuf;
-    iParamsBuf = NULL;
-    delete iResponseBuf;
-    iResponseBuf = NULL;
     delete iActive;
     iActive = NULL;
     }

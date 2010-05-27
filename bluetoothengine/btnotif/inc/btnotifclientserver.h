@@ -49,10 +49,9 @@ enum TBTNotifServerRequest
     EBTNotifStartAsyncNotifier,
     EBTNotifCancelNotifier,
     EBTNotifUpdateNotifier,
-    // Commands moved from BTEngine server.
-    EBTEngPrepareDiscovery = 43,
-    EBTEngPairDevice,
-    EBTEngCancelPairDevice,
+    EBTNotifPrepareDiscovery = 43,
+    EBTNotifPairDevice,
+    EBTNotifCancelPairDevice,
     };
 
 /**  

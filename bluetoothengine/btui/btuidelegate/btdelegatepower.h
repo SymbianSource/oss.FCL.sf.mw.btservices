@@ -36,7 +36,9 @@ class BtDelegatePower : public BtAbstractDelegate, public MBTEngSettingsObserver
     Q_OBJECT
 
 public:
-    explicit BtDelegatePower( BtuiModel& model, QObject *parent = 0 );
+    explicit BtDelegatePower(
+            BtSettingModel* settingModel, 
+            BtDeviceModel* deviceModel, QObject *parent = 0 );
     
     virtual ~BtDelegatePower();
 

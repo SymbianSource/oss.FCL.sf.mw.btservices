@@ -27,6 +27,8 @@
 
 #include "btdevicedialogpluginerrors.h"
 #include "btdevicesearchdialogwidget.h"
+#include "btmoredevicesdialogwidget.h"
+#include "btsenddialogwidget.h"
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
 
@@ -191,8 +193,14 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
         case TBluetoothDialogParams::EInput:
             deviceDialog = new BtDeviceDialogInputWidget(parameters);
             break;
+        case TBluetoothDialogParams::EMoreDevice:
+            deviceDialog = new BTMoreDevicesDialogWidget(parameters);
+            break;
         case TBluetoothDialogParams::EDeviceSearch:
             deviceDialog = new BTDeviceSearchDialogWidget(parameters);
+            break;
+        case TBluetoothDialogParams::ESend:
+            deviceDialog = new BTSendDialogWidget(parameters);
             break;
         case TBluetoothDialogParams::EGlobalNotif:
             deviceDialog = new BtDeviceDialogNotifWidget(parameters);

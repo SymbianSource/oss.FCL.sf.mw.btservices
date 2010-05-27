@@ -1,24 +1,19 @@
 /*
-* ============================================================================
-*  Name        : btnotifserver.cpp
-*  Part of     : bluetoothengine / btnotif
-*  Description : Server class for handling commands from clients, and the 
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description: Server class for handling commands from clients, and the 
 *                central class in btnotif thread.
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
-*
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
-*
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.1
 */
 
 #include "btnotifserver.h"
@@ -117,20 +112,18 @@ void CBTNotifServer::ConstructL()
 //
 void CBTNotifServer::AsyncConstructL()
     {
-    iSettingsTracker = CBTNotifSettingsTracker::NewL( this );
-    if( iSettingsTracker->GetPowerState() == EBTPowerOn )
-        {
-        iConnectionTracker = CBTNotifConnectionTracker::NewL( this );
-        }
+    // The server class owns this registry object and provides it
+    // as a singleton in the whole server process.
+    // Server itself does not handle any registry events.
+    // Classes that want to receive these events must register
+    // observers via CBtDevRepository interface.
+    iDevRep = CBtDevRepository::NewL();
     iNotificationMgr = CBTNotificationManager::NewL( this );
-    
+    iSettingsTracker = CBTNotifSettingsTracker::NewL( this );
+    iConnectionTracker = CBTNotifConnectionTracker::NewL( this );
     iTimer = CDeltaTimer::NewL(CActive::EPriorityLow);
     TCallBack shutdownCb( ShutdownTimeout, this );
     iShutdownTimerEntry.Set( shutdownCb );
-    // The server class does not handle any registry events.
-    // Classes that want to receive these events must register
-    // via observer interface.
-    iDevRep = CBtDevRepository::NewL();
     }
 
 // ---------------------------------------------------------------------------
@@ -178,16 +171,6 @@ CBTNotifServer::~CBTNotifServer()
 //
 void CBTNotifServer::HandlePowerStateChangeL( TBTPowerStateValue aState )
     {
-    if( aState && !iConnectionTracker )
-        {
-        // only construct tracker if it is not available yet
-        iConnectionTracker = CBTNotifConnectionTracker::NewL( this );
-        }
-    else
-        {
-        delete iConnectionTracker;
-        iConnectionTracker = NULL;
-        }
     CheckIdle( aState );
     }
 
@@ -237,72 +220,6 @@ CBTNotifDeviceSelector& CBTNotifServer::DeviceSelectorL()
         }
     return *iDevSelector;
     }
-
-// ---------------------------------------------------------------------------
-// Searches for a client message from a message handle and completes it.
-// ---------------------------------------------------------------------------
-//
-TInt CBTNotifServer::CompleteMessage( TInt aHandle, TInt aReason, const TDesC8& aReply )
-    {
-    TInt err = KErrNotFound;
-    iSessionIter.SetToFirst();
-    CBTNotifSession* session = NULL;
-    while( ( session = (CBTNotifSession*) iSessionIter++ ) != NULL )
-        {
-        err = session->CompleteMessage( aHandle, aReason, aReply );
-        if( err != KErrNotFound )
-            {
-            // Found the correct session, and message, and completed it.
-            break;
-            }
-        }
-    return err;
-    }
-
-
-// ---------------------------------------------------------------------------
-// Searches for a client message from a message handle and returns it.
-// ---------------------------------------------------------------------------
-//
-const RMessage2* CBTNotifServer::FindMessageFromHandle( TInt aHandle )
-    {
-    const RMessage2* message = NULL;
-    iSessionIter.SetToFirst();
-    CBTNotifSession* session = NULL;
-    while( ( session = (CBTNotifSession*) iSessionIter++ ) != NULL )
-        {
-        message = session->FindMessageFromHandle( aHandle );
-        if( message )
-            {
-            // Found the correct session and message to return.
-            break;
-            }
-        }
-    return message;
-    }
-
-
-// ---------------------------------------------------------------------------
-// Searches for a client message from a message handle and returns it.
-// ---------------------------------------------------------------------------
-//
-const RMessage2* CBTNotifServer::FindMessageFromUid( TInt aUid )
-    {
-    const RMessage2* message = NULL;
-    iSessionIter.SetToFirst();
-    CBTNotifSession* session = NULL;
-    while( ( session = (CBTNotifSession*) iSessionIter++ ) != NULL )
-        {
-        message = session->FindMessageFromUid( aUid );
-        if( message )
-            {
-            // Found the correct session and message to return.
-            break;
-            }
-        }
-    return message;
-    }
-
 
 // ---------------------------------------------------------------------------
 // From class CPolicyServer.

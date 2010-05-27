@@ -34,12 +34,15 @@ SOURCEPATH              ../btnotifsrv/src
 SOURCE                  btnotifserver.cpp
 SOURCE                  btnotifsession.cpp
 SOURCE                  btnotifconnectiontracker.cpp
-SOURCE                  btnotifconnection.cpp
-SOURCE                  btnotifpairinghelper.cpp
 SOURCE                  btnotifsettingstracker.cpp
 SOURCE                  btnotificationmanager.cpp
 SOURCE                  bluetoothnotification.cpp 
-SOURCE                  btnotifdeviceselector.cpp
+SOURCE                  btnotifdeviceselector.cpp 
+SOURCE                  btnotifpairnotifier.cpp 
+SOURCE                  btnotifbasepairinghandler.cpp 
+SOURCE                  btnotifincomingpairinghandler.cpp 
+SOURCE                  btnotifoutgoingpairinghandler.cpp 
+SOURCE                  btnotifpairingmanager.cpp
 
 USERINCLUDE             ../btnotifsrv/inc ../inc
 

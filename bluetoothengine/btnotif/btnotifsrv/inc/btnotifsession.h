@@ -1,23 +1,18 @@
 /*
-* ============================================================================
-*  Name        : btnotifsession.h
-*  Part of     : bluetoothengine / btnotif
-*  Description : Session class for handling commands from clients.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.2
+* Description: Session class for handling commands from clients.
+*
 */
 
 #ifndef BTNOTIFSESSION_H
@@ -64,35 +59,6 @@ public:
      */
     virtual void CreateL();
 
-    /**
-     * Complete a client message from a message handle.
-     *
-     * @since Symbian^4
-     * @param aHandle The handle identifying the message.
-     * @param aReason The reason code to complete the message with.
-     * @param aReply Data to write back to the client.
-     * @return KErrNone on success; KErrNotFound if the message is not found.
-     */
-    TInt CompleteMessage( TInt aHandle, TInt aReason, const TDesC8& aReply );
-
-    /**
-     * Find a message identified by an RMessage2 handle.
-     *
-     * @since Symbian^4
-     * @param aHandle The handle identifying the message.
-     * @return The message.
-     */
-    const RMessage2* FindMessageFromHandle( TInt aHandle ) const;
-
-    /**
-     * Find a message identified by an RNotifier notifier UID.
-     *
-     * @since Symbian^4
-     * @param aUid The UID identifying the message.
-     * @return The message.
-     */
-    const RMessage2* FindMessageFromUid( TInt aUid ) const;
-
 private:
 
     CBTNotifSession();
@@ -108,20 +74,7 @@ private:
     inline CBTNotifServer* Server() const
         { return (CBTNotifServer*) CSession2::Server(); }
 
-    /**
-     * Processes a message from a client.
-     *
-     * @since Symbian^4
-     * @param aMessage The message containing the details of the client request.
-     */
-    void DispatchMessageL( const RMessage2& aMessage );
-
 private: // data
-
-    /**
-     * Array of messages currently being processed.
-     */
-    RArray<RMessage2> iMessageQ;
 
     BTUNITTESTHOOK
 

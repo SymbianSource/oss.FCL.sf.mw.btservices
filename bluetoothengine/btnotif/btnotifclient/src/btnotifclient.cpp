@@ -153,8 +153,8 @@ EXPORT_C TInt RBTNotifier::UpdateNotifier( TUid aNotifierUid,
 EXPORT_C void RBTNotifier::PairDevice( const TBTDevAddrPckgBuf& aDevice, 
     TInt32 aDeviceClass, TRequestStatus& aStatus )
     {
-    SendReceive( EBTEngPairDevice,
-                TIpcArgs( (TInt) EBTEngPairDevice, &aDevice, aDeviceClass ), aStatus );
+    SendReceive( EBTNotifPairDevice,
+                TIpcArgs( (TInt) EBTNotifPairDevice, &aDevice, aDeviceClass ), aStatus );
     }
 
 // ---------------------------------------------------------------------------
@@ -163,5 +163,5 @@ EXPORT_C void RBTNotifier::PairDevice( const TBTDevAddrPckgBuf& aDevice,
 //
 EXPORT_C void RBTNotifier::CancelPairDevice()
     {
-    (void) SendReceive( EBTEngCancelPairDevice );
+    (void) SendReceive( EBTNotifCancelPairDevice );
     }

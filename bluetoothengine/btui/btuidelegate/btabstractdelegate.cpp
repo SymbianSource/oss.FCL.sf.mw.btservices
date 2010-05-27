@@ -17,13 +17,15 @@
 
 
 #include "btabstractdelegate.h"
-#include "btuimodel.h"
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 
 /*!
     Constructor.
  */
-BtAbstractDelegate::BtAbstractDelegate( BtuiModel& model, QObject *parent )
-    : QObject( parent ), mModel(model)
+BtAbstractDelegate::BtAbstractDelegate( BtSettingModel *settingModel, 
+        BtDeviceModel *deviceModel, QObject *parent )
+    : QObject( parent ), mSettingModel(settingModel),mDeviceModel(deviceModel)
 {
 }
 
@@ -34,7 +36,18 @@ BtAbstractDelegate::~BtAbstractDelegate()
 {
 }
 
-BtuiModel &BtAbstractDelegate::model()
+BtSettingModel *BtAbstractDelegate::getSettingModel()
 {
-    return mModel;
+    return mSettingModel;
 }
+
+BtDeviceModel *BtAbstractDelegate::getDeviceModel()
+{
+    return mDeviceModel;
+}
+
+void BtAbstractDelegate::cancel()
+{
+    
+}
+

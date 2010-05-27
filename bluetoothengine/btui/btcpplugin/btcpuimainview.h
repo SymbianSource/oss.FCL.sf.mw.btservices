@@ -20,7 +20,7 @@
 
 #include "btcpuibaseview.h"
 #include <btqtconstants.h>
-#include <QStringListModel>
+#include <btuimodelsortfilter.h>
 
 class HbLabel;
 class HbLineEdit;
@@ -30,20 +30,23 @@ class HbComboBox;
 class HbDocumentLoader;
 class HbGridView;
 class BtAbstractDelegate;
-
+class HbListView;
 
 class BtCpUiMainView : public BtCpUiBaseView
 {
     Q_OBJECT
 
 public:
-    enum ViewIndex {
-        MainView,
-        SearchView, 
-        DeviceView,
-        LastView
-    };
-    explicit BtCpUiMainView( BtuiModel &model, QGraphicsItem *parent = 0 );
+//    enum ViewIndex {
+//        MainView,
+//        SearchView, 
+//        DeviceView,
+//        LastView
+//    };
+    explicit BtCpUiMainView(
+            BtSettingModel &settingModel, 
+            BtDeviceModel &deviceModel, 
+            QGraphicsItem *parent = 0 );
     ~BtCpUiMainView();
     // from view manager
     void createViews();
@@ -60,9 +63,11 @@ public slots:
     void changeOrientation( Qt::Orientation orientation );
     void itemActivated(QModelIndex index); 
     void changePowerState();
-    void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     
+    void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+    void deviceSelected(const QModelIndex& modelIndex);
     void goToDiscoveryView();
+    void goToDeviceView(const QModelIndex& modelIndex);
     
     // from view manager
     void changeView(int targetViewId, bool fromBackButton, int cmdId, const QVariant& value = 0 );
@@ -95,8 +100,7 @@ private:
     HbLineEdit *mDeviceNameEdit;
     HbPushButton *mPowerButton;
     HbComboBox *mVisibilityMode;
-    QStringListModel *mVisiListModel;
-    HbGridView *mDeviceList;
+    HbListView *mDeviceList;
     
     // data structures for switching between views
     bool mEventFilterInstalled;
@@ -115,6 +119,7 @@ private:
     
     //poiter to abstract delegate, and it is instantiated at runtime
     BtAbstractDelegate* mAbstractDelegate;
+    BtuiModelSortFilter *mMainFilterModel;
     
 };
 #endif // BTCPUIMAINVIEW_H 

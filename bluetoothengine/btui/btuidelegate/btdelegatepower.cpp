@@ -17,7 +17,8 @@
 
 
 #include "btdelegatepower.h"
-#include "btuimodel.h"
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 #include <hbmessagebox.h>
 #include <bluetoothuitrace.h>
 #include <hbaction.h>
@@ -25,8 +26,10 @@
 /*!
     Constructor.
  */
-BtDelegatePower::BtDelegatePower( BtuiModel& model, QObject *parent )
-    : BtAbstractDelegate( model, parent )
+BtDelegatePower::BtDelegatePower(            
+        BtSettingModel* settingModel, 
+        BtDeviceModel* deviceModel, QObject *parent )
+    : BtAbstractDelegate( settingModel, deviceModel, parent )
 {
     TRAP_IGNORE( mBtengSettings = CBTEngSettings::NewL(this) );
     Q_CHECK_PTR( mBtengSettings );
@@ -67,12 +70,14 @@ void BtDelegatePower::switchBTOn()
         if (enabledInOffline){
         //if (1){
             // BT is allowed to be enabled in offline mode, show query.
-            HbMessageBox::question( tr("Turn Bluetooth on in offline mode?"),this, SLOT(btOnQuestionClose(HbAction*)));
+            HbMessageBox::question( tr("Turn Bluetooth on in offline mode?"),this, 
+				SLOT(btOnQuestionClose(HbAction*)));
 
         }
         else{
             //if BT is not allowed to be enabled in offline mode, show message and complete
-            HbMessageBox::warning(tr("Bluetooth not allowed to be turned on in offline mode"),this, SLOT(btOnWarningClose()));
+            HbMessageBox::warning(tr("Bluetooth not allowed to be turned on in offline mode"),this, 
+				SLOT(btOnWarningClose()));
         }
         
     }

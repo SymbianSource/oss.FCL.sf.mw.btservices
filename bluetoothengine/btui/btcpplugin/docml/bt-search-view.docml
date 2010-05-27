@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hbdocument version="0.9">
+<hbdocument version="1.1">
     <object name="viewByAction" type="HbAction">
         <string name="text" value="View by"/>
         <bool name="visible" value="TRUE"/>
@@ -21,7 +21,7 @@
     </object>
     <widget name="bt_search_view" type="HbView">
         <widget name="search_view_content" role="HbView:widget" type="HbWidget">
-    	<widget name="search_container" type="HbWidget">
+            <widget name="search_container" type="HbWidget">
                 <widget name="label_found_devices" type="HbLabel">
                     <real name="z" value="3"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="38.20896un"/>
@@ -33,8 +33,8 @@
                     <icon iconName="note_warning" name="icon"/>
                     <real name="z" value="2"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-                    <bool name="visible" value="TRUE"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+                    <bool name="visible" value="TRUE"/>
                 </widget>
                 <widget name="label_searching" type="HbLabel">
                     <real name="z" value="3"/>
@@ -56,17 +56,20 @@
                     <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
                     <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
                     <anchoritem dst="label_searching" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                 </layout>
+                </layout>
             </widget>
             <widget name="toolBar" type="HbToolBar">
                 <real name="z" value="2"/>
                 <sizehint height="7.46269un" type="PREFERRED" width="52.98508un"/>
                 <bool name="visible" value="TRUE"/>
-                <ref object="viewByAction" role="HbToolBar:addAction"/>
-                <ref object="stopAction" role="HbToolBar:addAction"/>
-                <ref object="retryAction" role="HbToolBar:addAction"/>
+                <ref object="viewByAction" role="HbWidget:addAction"/>
+                <ref object="stopAction" role="HbWidget:addAction"/>
+                <ref object="retryAction" role="HbWidget:addAction"/>
             </widget>
-            <widget name="deviceList" type="HbListWidget"/>
+            <widget name="deviceList" type="HbListView">
+                <enums name="verticalScrollBarPolicy" value="ScrollBarAsNeeded"/>
+                <enums name="horizontalScrollBarPolicy" value="ScrollBarAsNeeded"/>
+            </widget>
             <real name="z" value="0"/>
             <layout orientation="Vertical" type="linear">
                 <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
@@ -76,32 +79,33 @@
             </layout>
         </widget>
         <widget name="viewMenu" role="HbView:menu" type="HbMenu">
-            <ref object="exitAction" role="HbMenu:addAction"/>
-            <ref object="connectAction" role="HbMenu:addAction"/>
+            <ref object="exitAction" role="HbWidget:addAction"/>
+            <ref object="connectAction" role="HbWidget:addAction"/>
         </widget>
         <string name="title" value="Control Panel"/>
         <real name="z" value="1"/>
     </widget>
     <section name="landscape">
-    	<widget name="search_container" type="HbWidget">
-    			<sizehint height="10un" type="PREFERRED" width="51.19403un"/>
-    			<layout type="anchor">
-                    <anchoritem dst="label_found_devices" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                    <anchoritem dst="label_found_devices" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                    <anchoritem dst="label_found_devices" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                    <anchoritem dst="icon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                    <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="label_found_devices" srcEdge="RIGHT"/>
-                    <anchoritem dst="icon" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                    <anchoritem dst="label_searching" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                    <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
-                    <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                    <anchoritem dst="label_searching" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                </layout>
-         </widget>
-    </section>    
-    <metadata activeUIState="portrait_ui" display="NHD portrait" unit="un">
+        <widget name="search_container" type="HbWidget">
+            <sizehint height="10un" type="PREFERRED" width="51.19403un"/>
+            <layout type="anchor">
+                <anchoritem dst="label_found_devices" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
+                <anchoritem dst="label_found_devices" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
+                <anchoritem dst="label_found_devices" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="icon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
+                <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="label_found_devices" srcEdge="RIGHT"/>
+                <anchoritem dst="icon" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="label_searching" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
+                <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
+                <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="label_searching" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+            </layout>
+        </widget>
+    </section>
+    <metadata activeUIState="portrait_ui" display="NHD-3.2-inch_portrait" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="landscape_ui" sections="#common landscape"/>
         <uistate name="portrait_ui" sections="#common"/>
+        <dummydata objectName="deviceList" section="#common" value="app_list_template5"/>
     </metadata>
 </hbdocument>

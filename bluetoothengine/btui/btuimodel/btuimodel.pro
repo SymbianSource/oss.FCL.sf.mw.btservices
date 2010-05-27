@@ -26,20 +26,22 @@ INCLUDEPATH += . \
 CONFIG += qt \
     hb \
     dll
-    
 HEADERS += btdevicedata.h \
     btlocalsetting.h \
-    btuimodel.h \
-    activewrapper.h
+    ../inc/btsettingmodel.h \
+    ../inc/btdevicemodel.h \
+    ../inc/btuimodelsortfilter.h \
+    ../inc/btuiutil.h
+    
 SOURCES += btdevicedata.cpp \
     btlocalsetting.cpp \
-    btuimodel.cpp \
-    activewrapper.cpp
+    btsettingmodel.cpp \
+    btdevicemodel.cpp \
+    btuimodelsortfilter.cpp
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \
         ARMV5
-	BLD_INF_RULES.prj_exports += "btuimodel.h |../inc/btuimodel.h"
 	
     TARGET.EPOCALLOWDLLDATA = 1
     TARGET.UID3 = 0x2002434F

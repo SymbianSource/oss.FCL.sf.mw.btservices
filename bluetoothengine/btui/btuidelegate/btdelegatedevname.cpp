@@ -16,12 +16,12 @@
 */
 
 #include "btdelegatedevname.h"
-#include "btuimodel.h"
+#include <btsettingmodel.h>
 #include <bluetoothuitrace.h>
 #include <QRegExp>
 
-BtDelegateDevName::BtDelegateDevName( BtuiModel& model, QObject *parent ) :
-    BtAbstractDelegate( model, parent )
+BtDelegateDevName::BtDelegateDevName(QObject *parent ) :
+    BtAbstractDelegate( NULL, NULL, parent )
 {
     TRAP_IGNORE( mBtEngSettings = CBTEngSettings::NewL() );
     Q_CHECK_PTR( mBtEngSettings );

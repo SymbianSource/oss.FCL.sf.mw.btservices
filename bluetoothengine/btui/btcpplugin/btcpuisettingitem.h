@@ -19,7 +19,8 @@
 #define BTCPUISETTINGITEM_H
 
 #include <cpsettingformentryitemdata.h>
-#include <btuimodel.h>
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 
 #include "btcpuimainview.h"
 
@@ -45,7 +46,8 @@ private:
 	BtCpUiMainView *mBtMainView;
 	
 	//Owns this model.
-	BtuiModel *mModel;
+	BtSettingModel *mSettingModel;
+	BtDeviceModel *mDeviceModel;
 	
 	HbView *mCpView;
 	

@@ -3,7 +3,6 @@
 *  Name        : bld.inf
 *  Part of     : bluetoothengine / bluetoothengine
 *  Description : Build information file for bluetoothengine subsystem
-*  Version     : %version: 1 %
 *
 *  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
 *  All rights reserved.

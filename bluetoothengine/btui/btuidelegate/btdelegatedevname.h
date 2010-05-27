@@ -33,7 +33,7 @@ class BtDelegateDevName : public BtAbstractDelegate
     Q_OBJECT
 
 public:
-    explicit BtDelegateDevName( BtuiModel& model, QObject *parent = 0 );
+    explicit BtDelegateDevName( QObject *parent = 0 );
     
     virtual ~BtDelegateDevName();
 

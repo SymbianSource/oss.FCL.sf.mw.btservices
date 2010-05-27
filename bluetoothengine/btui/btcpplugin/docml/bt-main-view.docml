@@ -35,11 +35,6 @@
     </object>
     <widget name="view" type="HbView">
         <widget name="content" role="HbView:widget" type="HbWidget">
-            <widget name="gridView" type="HbGridView">
-                <widget name="gridItemPrototype" role="HbAbstractView:prototype" type="HbGridViewItem"/>
-                <integer name="columnCount" value="1"/>
-                <sizehint height="47.7612un" type="PREFERRED" width="47.7612un"/>
-            </widget>
             <widget name="toolBar" type="HbToolBar">
                 <sizehint height="7.46269un" type="PREFERRED" width="22.38806un"/>
                 <ref object="allAction" role="HbToolBar:addAction"/>
@@ -108,9 +103,14 @@
                     <linearitem itemname="container"/>
                 </layout>
             </widget>
+            <widget name="listView" type="HbListView">
+                <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem"/>
+                <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
+                <enums name="selectionMode" value="NoSelection"/>
+            </widget>
             <layout orientation="Vertical" type="linear">
                 <linearitem itemname="container_1"/>
-                <linearitem itemname="gridView"/>
+                <linearitem itemname="listView"/>
                 <linearitem itemname="toolBar"/>
             </layout>
         </widget>
@@ -133,8 +133,16 @@
         <widget name="lineEdit" type="HbLineEdit">
             <sizehint type="PREFERRED" width="29.25373un"/>
         </widget>
+        <widget name="pushButton" type="HbPushButton">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+        </widget>
         <widget name="combobox" type="HbComboBox">
             <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="31.34328un"/>
+        </widget>
+        <widget name="icon" type="HbLabel">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
         </widget>
         <widget name="container" type="HbWidget">
             <layout type="anchor">
@@ -152,35 +160,24 @@
                 <anchoritem dst="pushButton" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
             </layout>
         </widget>
-        <widget name="icon" type="HbLabel">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
-        </widget>
         <widget name="content" role="HbView:widget" type="HbWidget">
             <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
                 <linearitem itemname="groupBox"/>
                 <linearitem itemname="container"/>
-                <linearitem itemname="gridView"/>
+                <linearitem itemname="listView"/>
                 <linearitem itemname="toolBar"/>
             </layout>
-        </widget>
-        <widget name="pushButton" type="HbPushButton">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
         </widget>
     </section>
     <section name="landscape">
         <widget name="lineEdit" type="HbLineEdit">
             <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="33un"/>
         </widget>
-        <widget name="gridView" type="HbGridView">
-            <enums name="horizontalScrollBarPolicy" value="ScrollBarAlwaysOff"/>
-            <enums name="scrollDirections" value="Horizontal"/>
-            <integer name="columnCount" value="5"/>
-            <integer name="rowCount" value="1"/>
-        </widget>
         <widget name="combobox" type="HbComboBox">
             <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34.92537un"/>
+        </widget>
+        <widget name="icon" type="HbLabel">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
         </widget>
         <widget name="container" type="HbWidget">
             <layout type="anchor">
@@ -195,15 +192,12 @@
                 <anchoritem dst="pushButton" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="" srcEdge="TOP"/>
             </layout>
         </widget>
-        <widget name="icon" type="HbLabel">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-        </widget>
     </section>
     <metadata activeUIState="landscape" display="NHD landscape" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="portrait" sections="#common"/>
         <uistate name="portrait_UI" sections="#common portrait"/>
         <uistate name="landscape" sections="#common landscape"/>
-        <dummydata objectName="gridView" section="#common" value="app_grid_template2"/>
+        <dummydata objectName="listView" section="#common" value="app_list_template5"/>
     </metadata>
 </hbdocument>

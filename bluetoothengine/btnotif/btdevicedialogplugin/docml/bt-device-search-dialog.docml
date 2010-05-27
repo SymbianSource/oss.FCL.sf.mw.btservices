@@ -1,44 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hbdocument version="0.8">
-
+<hbdocument version="1.0">
     <widget name="dialog" type="HbDialog">
         <widget name="heading" role="HbDialog:headingWidget" type="HbLabel">
             <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
         </widget>
         <widget name="container" role="HbDialog:contentWidget" type="HbWidget">
-            <widget name="listView" type="HbListView">
-                <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem">
-                    <string name="state" value="normal"/>
+            <widget name="container_1" type="HbWidget">
+                <widget name="searchDoneLabel" type="HbLabel">
+                    <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
+                    <sizehint height="3.8806un" type="PREFERRED" width="26.86567un"/>
+                    <string name="plainText" value="Search Done"/>
                 </widget>
+                <widget name="searchLabel" type="HbLabel">
+                    <sizehint height="3.8806un" type="PREFERRED" width="18.95522un"/>
+                    <string name="plainText" value="Searching..."/>
+                </widget>
+                <widget name="iconLabel" type="HbLabel">
+                    <sizehint height="3.8806un" type="PREFERRED" width="3.43284un"/>
+                </widget>
+                <real name="z" value="0"/>
+                <sizehint height="25" type="PREFERRED" width="23.8806un"/>
+                <layout type="anchor">
+                    <anchoritem dst="iconLabel" dstEdge="LEFT" spacing="0.14925un" src="" srcEdge="LEFT"/>
+                    <anchoritem dst="iconLabel" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                    <anchoritem dst="searchDoneLabel" dstEdge="LEFT" spacing="0.14925un" src="" srcEdge="LEFT"/>
+                    <anchoritem dst="searchDoneLabel" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                    <anchoritem dst="searchLabel" dstEdge="LEFT" spacing="4.47761un" src="" srcEdge="LEFT"/>
+                    <anchoritem dst="searchLabel" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                </layout>
+            </widget>
+            <widget name="listView" type="HbListView">
+                <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem"/>
                 <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
                 <enums name="verticalScrollBarPolicy" value="ScrollBarAsNeeded"/>
             </widget>
-            <widget name="container_1" type="HbWidget">
-                <widget name="viewBy" type="HbPushButton">
-                    <string name="text" value="View by"/>
+            <widget name="container_3" type="HbWidget">
+                <widget name="viewby" type="HbPushButton">
+                    <string name="text" value="View"/>
                 </widget>
                 <widget name="stop" type="HbPushButton">
                     <string name="text" value="Stop"/>
                 </widget>
-                <widget name="retry" type="HbPushButton">
-                    <string name="text" value="Retry"/>
-                </widget>
                 <real name="z" value="0"/>
-                <sizehint height="10un" type="PREFERRED" width="27un"/>
-                <layout spacing="0.5un" type="grid">
-                    <griditem column="0" itemname="viewBy" row="0"/>
-                    <griditem column="1" itemname="stop" row="0"/>
-                    <griditem column="2" itemname="retry" row="0"/>
+                <sizehint height="9.85821un" type="PREFERRED" width="23.8806un"/>
+                <sizehint height="8.85821un" type="MINIMUM"/>
+                <layout orientation="Horizontal" type="linear">
+                    <linearitem itemname="viewby"/>
+                    <linearitem itemname="stop"/>
                 </layout>
             </widget>
             <layout type="grid">
-                <griditem column="0" itemname="listView" row="0"/>
-                <griditem column="0" itemname="container_1" row="1"/>
+                <griditem column="0" itemname="listView" row="1"/>
+                <griditem column="0" itemname="container_1" row="0"/>
+                <griditem column="0" itemname="container_3" row="2"/>
             </layout>
         </widget>
     </widget>
     <metadata activeUIState="Common ui state" display="NHD portrait" unit="un">
         <uistate name="Common ui state" sections="#common"/>
-        <dummydata objectName="listView" section="#common" value="0"/>
+        <dummydata objectName="listView" section="#common" value="empty_dummydata_template"/>
     </metadata>
 </hbdocument>

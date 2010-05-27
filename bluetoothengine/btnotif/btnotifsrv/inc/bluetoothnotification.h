@@ -1,24 +1,19 @@
 /*
-* ============================================================================
-*  Name        : bluetoothnotification.h
-*  Part of     : bluetoothengine / btnotif
-*  Description : Class for managing an actual user notification or query.
-*                It hides UI framework-specifics in a private class.
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.2
+* Description: Class for managing an actual user notification or query.
+*              It hides UI framework-specifics in a private class.
+*
 */
 
 #ifndef BLUETOOTHNOTIFICATION_H
@@ -73,13 +68,6 @@ public:
      */
     inline void RemoveObserver()
         { iObserver = NULL; }
-
-    /**
-     * Reset the notification.
-     *
-     * @since Symbian^4
-     */
-    void Reset();
 
     /**
      * Getter for the notification type.
@@ -151,7 +139,7 @@ public:
      * @param ?arg1 ?description
      * @return Error code
      */
-    TInt Show();
+    void ShowL();
 
     /**
      * Stop showing the notification.
@@ -200,8 +188,8 @@ private:
      * From MHbDeviceDialogObserver.
      * This callback is called when a device dialog is closed. Any data sent by
      * the dialog is indicated by the dataReceived() callback. If no observer is
-     * set in CHbDeviceDialog::Show the latest data can be retrieved with
-     * CHbDeviceDialog::receivedData().
+     * set in CHbDeviceDialogSymbian::Show the latest data can be retrieved with
+     * CHbDeviceDialogSymbian::receivedData().
      *
      * @since Symbian^4
      * @param aCompletionCode gives the result of the dialog completion. Code can be

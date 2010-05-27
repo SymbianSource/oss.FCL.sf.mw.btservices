@@ -30,4 +30,6 @@ EXPORTS
 	?NewL@CBtDevRepository@@SAPAV1@XZ @ 29 NONAME ; class CBtDevRepository * CBtDevRepository::NewL(void)
 	??1CBtSimpleActive@@UAE@XZ @ 30 NONAME ; CBtSimpleActive::~CBtSimpleActive(void)
 	?Device@CBtDevRepository@@QBEPBVCBtDevExtension@@ABVTBTDevAddr@@@Z @ 31 NONAME ; class CBtDevExtension const * CBtDevRepository::Device(class TBTDevAddr const &) const
+	?ReInitialize@CBtDevRepository@@QAEXXZ @ 32 NONAME ; void CBtDevRepository::ReInitialize(void)
+	?IsHeadset@CBtDevExtension@@SAHABVTBTDeviceClass@@@Z @ 33 NONAME ; int CBtDevExtension::IsHeadset(class TBTDeviceClass const &)
 
