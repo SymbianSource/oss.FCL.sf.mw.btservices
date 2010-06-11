@@ -1,0 +1,532 @@
+/*
+* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description: 
+*     This file contains all the resources for the obexutils.
+*     
+*
+*/
+
+
+//  RESOURCE IDENTIFIER
+NAME OBUT
+
+//  INCLUDES
+#include <obexutils.loc>
+#include "Obexutils.hrh"
+#include <eikon.rh>
+#include <avkon.rsg>
+#include <avkon.rh>
+#include <avkon.loc>
+#include <avkon.mbg>
+
+RESOURCE RSS_SIGNATURE { }
+
+//  RESOURCE DEFINITIONS 
+
+// Popup texts (information notes and error notes)
+
+// ---------------------------------------------------------
+//   
+//    r_ir_connecting
+//    this is the first shown when the user tries connect to other 
+//    remote device.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_connecting            {buf= qtn_ir_connecting;}
+
+// ---------------------------------------------------------
+//   
+//    r_ir_cannot_establish
+//    This informs that the IR connection cannot made to other remote device
+//    for some reason.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_cannot_establish      {buf= qtn_ir_cant_establish_conn;}
+
+// ---------------------------------------------------------
+//   
+//    r_ir_sending_data
+//    This is shown after the IR connection is made succesfully and we are
+//    sending message over IR.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_sending_data          {buf= qtn_ir_sending_data;}
+
+// ---------------------------------------------------------
+//   
+//    r_ir_sending_failed
+//    This is shown when the IR connection is made and some thing goes wrong
+//    during connection.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_sending_failed        {buf= qtn_ir_sending_failed;}
+
+// ---------------------------------------------------------
+//   
+//    r_ir_data_sent
+//    This is shown to the user when the message is sended succesfully.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_data_sent             {buf= qtn_ir_data_sent;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_connecting
+//    Informs state of Bluetooth connection.
+//    this is the first shown when the user tries connect to other 
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_connecting             {buf= qtn_bt_connecting;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_sending_data
+//    This is shown after the Bluetooth connection is made succesfully 
+//    and we are sending message over Bluetooth.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_sending_data           {buf= qtn_bt_sending_data;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_dev_not_avail
+//    This informs that the Bluetooth connection cannot made to other 
+//    remote device for some reason.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_dev_not_avail             {buf= qtn_bt_dev_not_avail;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_failed_to_send
+//    This is shown when the BT connection is made and some thing goes wrong
+//    during connection.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_failed_to_send        {buf= qtn_bt_failed_to_send;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_data_sent
+//    This is shown to the user when the message is sended succesfully via BT.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_data_sent             {buf= qtn_bt_data_sent;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_not_receive_one
+//    This is shown when one image could not be sent
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_not_receive_one        {buf= qtn_bt_bip_format_not_supported;}
+
+// ---------------------------------------------------------
+//   
+//    r_out_of_memory
+//    This is shown when not enough memory
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_out_of_memory	{buf= qtn_memlo_not_enough_memory;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_not_receive_all
+//    This is shown when no images could be sent
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_sent_image_number	{buf= qtn_bt_bip_some_files_sent;}
+RESOURCE TBUF r_bt_not_receive_any		{buf= qtn_bt_bip_no_formats_supported;}
+
+// Confirmation queries
+
+// ---------------------------------------------------------
+//   
+//    Confirmation query
+//    __RD_BT_MSG_RENOVATION not flagged
+//    This is shown when some images could not be sent
+//
+// ---------------------------------------------------------
+//
+RESOURCE DIALOG r_bt_not_send_all_query
+    {
+    flags   = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items   =
+        {
+        DLG_LINE
+            {
+            type    = EAknCtQuery;
+            id      = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout    = EConfirmationLayout;
+                label     = qtn_bt_bip_not_all_formats_supported;
+                animation = R_QGN_NOTE_QUERY_ANIM;
+                };
+            }
+        };
+    }
+
+// ---------------------------------------------------------
+//   
+//    Confirmation query
+//    This is shown when some images are not supported
+//
+// ---------------------------------------------------------
+//
+RESOURCE DIALOG r_bt_not_all_supported_query
+    {
+    flags   = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items   =
+        {
+        DLG_LINE
+            {
+            type    = EAknCtQuery;
+            id      = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout    = EConfirmationLayout;
+                label     = qtn_bt_bip_not_all_formats_supported;
+                animation = R_QGN_NOTE_QUERY_ANIM;
+                };
+            }
+        };
+    }
+    
+// ---------------------------------------------------------
+//   
+//    Confirmation query for mixed list
+//    __RD_BT_MSG_RENOVATION flagged
+//    This is shown when some images could not be sent
+//
+// ---------------------------------------------------------
+//
+RESOURCE DIALOG r_bt_not_send_all_query_mixed
+    {
+    flags   = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items   =
+        {
+        DLG_LINE
+            {
+            type    = EAknCtQuery;
+            id      = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout    = EConfirmationLayout;
+                label     = qtn_bt_bip_mixed_list;
+                animation = R_QGN_NOTE_QUERY_ANIM;
+                };
+            }
+        };
+    }
+
+
+
+// Notes
+
+// -----------------------------------------------------------------------------
+//
+// r_bt_connecting_wait_note
+// 
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE DIALOG r_bt_connecting_wait_note
+    {
+    flags = EAknProgressNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+            id = EConnectingWaitNote;
+            control = AVKON_NOTE
+                {
+                layout = EProgressLayout;
+                singular_label = qtn_bt_connecting;
+                imageid = EMbmAvkonQgn_note_progress;
+                imagemask = EMbmAvkonQgn_note_progress_mask;
+                animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+                };
+            }
+        };
+    }
+// -----------------------------------------------------------------------------
+//
+// r_ir_connecting_wait_note
+// 
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE DIALOG r_ir_connecting_wait_note
+    {
+    flags = EAknProgressNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+            id = EConnectingWaitNote;
+            control = AVKON_NOTE
+                {
+                layout = EProgressLayout;
+                singular_label = qtn_ir_connecting;
+                imageid = EMbmAvkonQgn_note_progress;
+                imagemask = EMbmAvkonQgn_note_progress_mask;
+                };
+            }
+        };
+    }
+
+
+// -----------------------------------------------------------------------------
+//
+// r_bt_printing_wait_note
+// 
+//
+// -----------------------------------------------------------------------------
+//
+
+// NOTE! The strings in the following resources need to be added into 
+//       localization file, once the UI specification is approved.
+//       
+
+RESOURCE DIALOG r_bt_printing_wait_note
+    {
+    flags   = EAknWaitNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items   =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+            id = EPrintingWaitNote;
+            control = AVKON_NOTE
+                {
+                layout = EWaitLayout;
+                singular_label = "Sending data...";
+	                animation = R_QGN_GRAF_WAIT_BAR_ANIM;
+                };
+            }
+        };
+    }
+
+// Skeletons (resources with changing text)
+
+// -----------------------------------------------------------------------------
+//
+// r_sending_progress_note
+// 
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE DIALOG r_sending_progress_note
+    {
+    flags = EAknProgressNoteFlags;
+    buttons = R_AVKON_SOFTKEYS_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtNote;
+            id = ESendingProgressNote;
+            control = AVKON_NOTE
+                {
+                layout = EProgressLayout;
+                singular_label  = qtn_bt_sending_data;
+                imageid = EMbmAvkonQgn_note_progress;
+                imagemask = EMbmAvkonQgn_note_progress_mask;
+                };
+            }
+        };
+    }
+    
+// ---------------------------------------------------------
+//   
+//    r_ir_failed_to_receive
+//    This is shown to the user when failing receive file via infrared.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_failed_to_receive     {buf=qtn_ir_failed_to_receive;}
+
+// ---------------------------------------------------------
+//   
+//    qtn_ir_receiving_data
+//    This is shown to the user when receiving data via IR.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_receiving_data        {buf=qtn_ir_receiving_data;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_receiving_data
+//    This is shown after the Bluetooth connection is made succesfully 
+//    and we are receiving message over Bluetooth.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_receiving_data           {buf= qtn_bt_receiving_data;}
+
+// ---------------------------------------------------------
+//   
+//    qtn_bt_failed_to_receive
+//    This is shown when the BT connection is made and some thing goes wrong
+//    when receiving data.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_failed_to_receive        {buf= qtn_bt_failed_to_receive;}    
+
+// Other resource texts
+
+// ---------------------------------------------------------
+//   
+//    r_ir_send_progress_sending
+//    descripes status of item that is currently sending state in the outbox.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_send_progress_sending {buf= qtn_mce_outbox_status_sending;} 
+
+// ---------------------------------------------------------
+//   
+//    r_ir_send_progress_sending
+//    descripes status of item that is currently sending state in the outbox.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_send_progress_sending {buf= qtn_mce_outbox_status_sending;} 
+
+// ---------------------------------------------------------
+//   
+//    r_ir_send_outbox_sending
+//    Displayed in the "To/From" section for Ir objects in message centre.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_ir_send_outbox_sending   {buf= qtn_mce_ir_message;}
+
+// ---------------------------------------------------------
+//   
+//    r_bt_send_outbox_sending
+//    Displayed in the "To/From" section for Ir objects in message centre.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_bt_send_outbox_sending   {buf= qtn_mce_bt_message;}
+
+// ---------------------------------------------------------
+//   
+//    r_message_not_opened
+//    This is shown, when the user tries open a message that is not
+//    supported type.
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_message_not_opened       {buf= qtn_mce_info_message_not_opened;}
+
+// ---------------------------------------------------------
+//   
+//    r_name_for_invalid_file
+//    Default invalid filename
+//
+// ---------------------------------------------------------
+//
+RESOURCE TBUF r_name_for_invalid_file  { buf=qtn_fldr_default_doc_name; }
+
+// ---------------------------------------------------------
+//   
+//    r_bt_to_from_in_inbox
+//    Displayed in the "To/From" section for Bluetooth objects.
+//
+// ---------------------------------------------------------
+// 
+RESOURCE TBUF       r_bt_to_from_in_inbox  { buf=qtn_mce_bt_message; }  
+
+// ---------------------------------------------------------
+//   
+//    r_ir_to_from_in_inbox
+//    Displayed in the "To/From" section for Ir objects.
+//
+// ---------------------------------------------------------
+// 
+RESOURCE TBUF       r_ir_to_from_in_inbox  { buf=qtn_mce_ir_message; }  
+
+RESOURCE TBUF r_bt_data_sent2 { buf= "Data sent"; }
+RESOURCE TBUF r_bt_failed_to_send2 { buf= "Sending failed"; }
+RESOURCE TBUF r_bt_printing_not_supported { buf = "Printer not supported"; }
+RESOURCE TBUF r_bt_sending_not_supported {buf = "Unsupported device";}
+
+RESOURCE TBUF r_bt_saved_single   { buf  = qtn_bt_saved_single; }
+RESOURCE TBUF r_bt_saved_multiple { buf = qtn_bt_saved_multiple; }
+RESOURCE TBUF r_bt_saved_search   { buf = qtn_bt_saved_search; }
+RESOURCE TBUF r_bt_saved_no_memory_card { buf = qtn_bt_saved_no_memory_card; }
+RESOURCE TBUF r_bt_saved_link_updated { buf = qtn_bt_saved_link_updated; }
+RESOURCE TBUF r_bt_saved_search_update   { buf  = qtn_bt_saved_search_update; }
+
+RESOURCE TBUF r_bt_ir_receiving_data_size_kb { buf = qtn_bt_ir_receiving_data_size_kb ; }
+RESOURCE TBUF r_bt_ir_receiving_data_size_mb { buf = qtn_bt_ir_receiving_data_size_mb ; }
+
+RESOURCE TBUF r_bt_ir_receiving_data_no_size { buf = qtn_bt_ir_receiving_data_no_size ; }
+
+// ---------------------------------------------------------
+//   
+//    Confirmation query for mixed list
+//    __RD_BT_MSG_RENOVATION flagged
+//    This is shown when some images could not be sent
+//
+// ---------------------------------------------------------
+//
+RESOURCE DIALOG r_bt_not_send_all_query_single
+    {
+    flags   = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_YES_NO;
+    items   =
+        {
+        DLG_LINE
+            {
+            type    = EAknCtQuery;
+            id      = EGeneralQuery;
+            control = AVKON_CONFIRMATION_QUERY
+                {
+                layout    = EConfirmationLayout;
+                label     = qtn_bt_bip_format_not_supported_send;
+                animation = R_QGN_NOTE_QUERY_ANIM;
+                };
+            }
+        };
+    }
+
+
+// End of File
