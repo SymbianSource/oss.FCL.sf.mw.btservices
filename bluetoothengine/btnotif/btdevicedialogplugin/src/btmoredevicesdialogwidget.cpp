@@ -29,24 +29,28 @@ const char* DOCML_BT_MORE_DEV_DIALOG = ":/docml/bt-more-devices-dialog.docml";
 
 
 BTMoreDevicesDialogWidget::BTMoreDevicesDialogWidget(const QVariantMap &parameters)
-:HbDialog()
     {
     mDeviceDialogData = 0;
+    mLoader = 0;
+    mContentItemModel = 0;
     constructDialog(parameters);
+/*    try 
+            {
+            //May throws badAlloc on exception
+            constructDialog(parameters);
+            }
+        catch(std::bad_alloc &badAlloc)
+            {
+            //Failure to allocate memory
+            Q_UNUSED(badAlloc);
+          //   = UnknownDeviceDialogError;
+            }*/
     }
 
 BTMoreDevicesDialogWidget::~BTMoreDevicesDialogWidget()
     {
-    if(mLoader)
-        {
-        delete mLoader;
-        mLoader = NULL;
-        }
-    if(mContentItemModel)
-        {
-        delete mContentItemModel;
-        mContentItemModel =NULL;
-        }
+    delete mLoader;
+    delete mContentItemModel;
     }
 
 bool BTMoreDevicesDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
@@ -75,10 +79,22 @@ int BTMoreDevicesDialogWidget::deviceDialogError() const
 void BTMoreDevicesDialogWidget::closeDeviceDialog(bool byClient)
     {
     Q_UNUSED(byClient);
-    this->close();
+    // below code is required and written based on the documentation of closeDeviceDialog API
+    mMoreDeviceDialog->close();
+    QVariantMap val;
+    QVariant index(-1);
+    val.insert("selectedindex",index);
+    emit deviceDialogData(val);    
+    //below signal is emitted to make dialog server aware that our dialog is closed
+    emit deviceDialogClosed();
     }
 
 HbPopup* BTMoreDevicesDialogWidget::deviceDialogWidget() const
+    {
+    return mMoreDeviceDialog;
+    }
+
+QObject* BTMoreDevicesDialogWidget::signalSender() const
     {
     return const_cast<BTMoreDevicesDialogWidget*>(this);
     }
@@ -91,15 +107,18 @@ bool BTMoreDevicesDialogWidget::constructDialog(const QVariantMap &/*parameters*
     mLoader->load(DOCML_BT_MORE_DEV_DIALOG, &ok);
     if(ok)
         {
-        HbLabel* label = qobject_cast<HbLabel*>(mLoader->findWidget("label"));
+        mMoreDeviceDialog = qobject_cast<HbDialog*>(mLoader->findWidget("lastuseddialog"));
+        mMoreDeviceDialog->setFrameType(HbDialog::Strong);
+        mMoreDeviceDialog->setBackgroundFaded(false);
+/*        HbLabel* label = qobject_cast<HbLabel*>(mLoader->findWidget("label"));
         if(label)
             {
             label->setTextWrapping(Hb::TextWordWrap);
             label->setPlainText("Send to:");
             }
-        this->setHeadingWidget(label);
-        HbPushButton* moreDevices = qobject_cast<HbPushButton*>(mLoader->findWidget("moreDevices"));
-        HbPushButton* cancel = qobject_cast<HbPushButton*>(mLoader->findWidget("cancel"));
+        this->setHeadingWidget(label);*/
+   //     HbPushButton* moreDevices = qobject_cast<HbPushButton*>(mLoader->findWidget("moreDevices"));
+    //    HbPushButton* cancel = qobject_cast<HbPushButton*>(mLoader->findWidget("cancel"));
         
         HbListView* listView = qobject_cast<HbListView*>(mLoader->findWidget("listView"));
         listView->setSelectionMode(HbAbstractItemView::SingleSelection);
@@ -125,23 +144,32 @@ bool BTMoreDevicesDialogWidget::constructDialog(const QVariantMap &/*parameters*
             }*/
         
         connect(listView, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
-        connect(moreDevices, SIGNAL(clicked()), this, SLOT(moreDevicesClicked()));
-        connect(cancel, SIGNAL(clicked()), this, SLOT(cancelClicked()));
+  //      connect(moreDevices, SIGNAL(clicked()), this, SLOT(moreDevicesClicked()));
+   //     connect(cancel, SIGNAL(clicked()), this, SLOT(cancelClicked()));
+        mMoreAction = static_cast<HbAction*>( mLoader->findObject( "moreaction" ) );
+        mMoreAction->disconnect(mMoreDeviceDialog);
         
-        QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
-        this->setContentWidget(widget);
+        mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelaction" ) );
+        mCancelAction->disconnect(mMoreDeviceDialog);
+//        QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
+  //      mMoreDeviceDialog->setContentWidget(widget);
+        
+         connect(mMoreAction, SIGNAL(triggered()), this, SLOT(moreDevicesClicked()));
+         connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+               
         }
 
 
-    this->setBackgroundFaded(false);
-    setDismissPolicy(HbPopup::NoDismiss);
-    setTimeout(HbPopup::NoTimeout);
+    mMoreDeviceDialog->setBackgroundFaded(false);
+    mMoreDeviceDialog->setDismissPolicy(HbPopup::NoDismiss);
+    mMoreDeviceDialog->setTimeout(HbPopup::NoTimeout);
     return true;
     }
 
-void BTMoreDevicesDialogWidget::hideEvent(QHideEvent *event)
+/*void BTMoreDevicesDialogWidget::hideEvent(QHideEvent *event)
     {
-    HbDialog::hideEvent(event);
+    //HbDialog::hideEvent(event);
+    mMoreDeviceDialog->hideEvent(event);
 //    if(mDeviceDialogData == 0)
         {
         QVariantMap val;
@@ -149,14 +177,14 @@ void BTMoreDevicesDialogWidget::hideEvent(QHideEvent *event)
         val.insert("selectedindex",index);
         emit deviceDialogData(val);    
         emit deviceDialogClosed();
-        }    
+        }*/    
  //   
-    }
+   // }
 
-void BTMoreDevicesDialogWidget::showEvent(QShowEvent *event)
+/*void BTMoreDevicesDialogWidget::showEvent(QShowEvent *event)
     {
-    HbDialog::showEvent(event);
-    }
+    //HbDialog::showEvent(event);
+    }*/
 
 void BTMoreDevicesDialogWidget::moreDevicesClicked()
     {
@@ -172,7 +200,12 @@ void BTMoreDevicesDialogWidget::moreDevicesClicked()
 void BTMoreDevicesDialogWidget::cancelClicked()
     {
     // TODO
-    this->close();
+    mMoreDeviceDialog->close();
+    QVariantMap val;
+    QVariant index(-1);
+    val.insert("selectedindex",index);
+    emit deviceDialogData(val);    
+    emit deviceDialogClosed();
     }
 
 void BTMoreDevicesDialogWidget::deviceSelected(const QModelIndex& modelIndex)
@@ -181,10 +214,6 @@ void BTMoreDevicesDialogWidget::deviceSelected(const QModelIndex& modelIndex)
     QVariantMap val;
     QVariant index(row);
     val.insert("selectedindex",index);
-    
-
-
-    
     emit deviceDialogData(val);
   //  mDeviceDialogData = 1;//flag is to say that device dialog data is emitted required when we cancel the dialog    
    // this->close();

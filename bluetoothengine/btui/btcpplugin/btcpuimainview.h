@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -31,18 +31,13 @@ class HbDocumentLoader;
 class HbGridView;
 class BtAbstractDelegate;
 class HbListView;
+class HbGroupBox;
 
 class BtCpUiMainView : public BtCpUiBaseView
 {
     Q_OBJECT
 
 public:
-//    enum ViewIndex {
-//        MainView,
-//        SearchView, 
-//        DeviceView,
-//        LastView
-//    };
     explicit BtCpUiMainView(
             BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
@@ -59,9 +54,7 @@ public:
     virtual void deactivateView();
 
 public slots: 
-    void commandCompleted( int cmdId, int err, const QString &diagnostic );
     void changeOrientation( Qt::Orientation orientation );
-    void itemActivated(QModelIndex index); 
     void changePowerState();
     
     void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -71,7 +64,6 @@ public slots:
     
     // from view manager
     void changeView(int targetViewId, bool fromBackButton, int cmdId, const QVariant& value = 0 );
-    void switchToPreviousViewReally();
     virtual void switchToPreviousView();
     
     void visibilityChanged (int index);
@@ -81,9 +73,16 @@ public slots:
     void powerDelegateCompleted(int status);
     void visibilityDelegateCompleted(int status);
     void btNameDelegateCompleted(int status, QVariant param);
+    void allActionTriggered();
+    void pairActiontriggered();
     
 protected:
 
+private:
+    enum filterType {
+        BtuiAll = 0,
+        BtuiPaired
+    };
     
 private:
     VisibilityMode indexToVisibilityMode(int index);
@@ -94,17 +93,17 @@ private:
     void setPrevBtLocalName();
     void setPrevVisibilityMode();
     
+    void updateDeviceListFilter(BtCpUiMainView::filterType filter);
+    
 private:
-    QAbstractItemModel* mSubModel;
+
     HbDocumentLoader *mLoader;
+
     HbLineEdit *mDeviceNameEdit;
     HbPushButton *mPowerButton;
     HbComboBox *mVisibilityMode;
     HbListView *mDeviceList;
-    
-    // data structures for switching between views
-    bool mEventFilterInstalled;
-    int mAutoCmdId;
+
     Qt::Orientation mOrientation;
     
     // from view manager
@@ -114,12 +113,14 @@ private:
     BtCpUiBaseView* mSearchView;
     BtCpUiBaseView* mCurrentView;
     int mCurrentViewId;
-    HbAction *mBackAction;
     QList<int> mPreviousViewIds;
     
     //poiter to abstract delegate, and it is instantiated at runtime
     BtAbstractDelegate* mAbstractDelegate;
     BtuiModelSortFilter *mMainFilterModel;
     
+    HbAction *mAllAction;
+    HbAction *mPairAction;
+    HbGroupBox *mGroupBox;
 };
 #endif // BTCPUIMAINVIEW_H 

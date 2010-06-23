@@ -28,8 +28,9 @@
 #include <qstandarditemmodel.h>
 #include <hbradiobuttonlist.h>
 #include <hblistwidget.h>
-#include <hbpushbutton.h>
 #include <hblabel.h>
+#include <hbaction.h>
+
 
 struct device
     {
@@ -38,7 +39,8 @@ struct device
     int     mDeviceIdx;
     };
 
-class BTDeviceSearchDialogWidget : public HbDialog,
+
+class BTDeviceSearchDialogWidget : public QObject,
                                 public HbDeviceDialogInterface
     {
     Q_OBJECT
@@ -52,6 +54,7 @@ public: // from HbDeviceDialogInterface
     int deviceDialogError() const;
     void closeDeviceDialog(bool byClient);
     HbPopup *deviceDialogWidget() const;
+    virtual QObject *signalSender() const;
     
 public slots:
     void stopRetryClicked();
@@ -60,6 +63,7 @@ public slots:
     void deviceSelected(const QModelIndex& modelIndex);
 //    void viewByItemSelected(int index);
     void selectionDialogClosed(HbAction*);
+    void searchDialogClosed(HbAction* action);
     
 private:
     bool constructDialog(const QVariantMap &parameters);
@@ -87,8 +91,6 @@ private:
     QList<QString>      mDeviceTypeList;
     QList<device>       mDeviceList;
     HbListView*         mListView;
-    HbPushButton*       mStopRetryBtn;
-    HbPushButton*       mViewByBtn;
     HbLabel*            mSearchLabel; 
     HbLabel*            mSearchIconLabel;
     HbLabel*            mSearchDoneLabel;
@@ -97,6 +99,11 @@ private:
     int                 mDeviceLstIdx;
     int                 mSelectedType;
     int                 mDeviceDialogData;
+    HbDialog *mSearchDevicesDialog;
+    HbAction *mStopRetryAction;
+    HbAction *mViewByAction;
+
+    int mStopRetryFlag;
     
     Q_DISABLE_COPY(BTDeviceSearchDialogWidget)
     };

@@ -23,7 +23,6 @@
 
 //  INCLUDES
 #include <mtudcbas.h>
-#include <obexutilsuilayer.h>
 
 // FORWARD DECLARATIONS
 

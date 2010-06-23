@@ -23,7 +23,6 @@
 #include <Stiftestinterface.h>
 #include <UiklafInternalCRKeys.h>
 #include <UikonInternalPSKeys.h>
-#include <Obexutils.rsg>
 #include <obex.h>
 #include "testlogger.h"
 #include "ObexServAPItest.h"
@@ -262,8 +261,10 @@ TInt CObexServAPItest::GetPubSubKeyIntValueL( CStifItemParser& /*aItem*/ )
 // -----------------------------------------------------------------------------
 //
 TInt CObexServAPItest::CreateOutBoxEntryL( CStifItemParser& /*aItem*/ )
-    {    
-    TRAPD(error, iMessageServerIndex = TObexUtilsMessageHandler::CreateOutboxEntryL( KUidMsgTypeBt, R_BT_SEND_OUTBOX_SENDING ));  
+    {
+    //todo resource is unavailable at the moment.
+    // need to change the string constant according to the coming new localisation file
+    TRAPD(error, iMessageServerIndex = TObexUtilsMessageHandler::CreateOutboxEntryL( KUidMsgTypeBt, 1 ));  
     if( error != KErrNone)
         {
         TestCompleted( error, TLFUNCLOG, _L("CreateOutBoxEntryL leaves")); 

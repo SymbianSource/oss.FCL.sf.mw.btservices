@@ -38,6 +38,9 @@ END
 SOURCEPATH      ../src
 USERINCLUDE     ../inc
 SYSTEMINCLUDE  ../../../inc ../../../../inc  
+SYSTEMINCLUDE /epoc32/include/mw/hb/hbwidgets
+SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
+
 #ifdef NO101APPDEPFIXES
 APP_LAYER_SYSTEMINCLUDE
 #else   //NO101APPDEPFIXES

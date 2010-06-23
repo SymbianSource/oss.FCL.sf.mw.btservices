@@ -20,6 +20,7 @@
 
 #include <e32base.h>
 #include <btengsettings.h>
+#include <btengconnman.h>
 #include "btabstractdelegate.h"
 
 class BtuiModel;
@@ -31,7 +32,8 @@ class HbAction;
 
     \\sa btuidelegate
  */
-class BtDelegatePower : public BtAbstractDelegate, public MBTEngSettingsObserver
+class BtDelegatePower : public BtAbstractDelegate, public MBTEngSettingsObserver, 
+        public MBTEngConnObserver 
 {
     Q_OBJECT
 
@@ -44,6 +46,8 @@ public:
 
     virtual void exec( const QVariant &params );
     
+    //from MBTEngSettingsObserver
+    
     virtual void PowerStateChanged( TBTPowerStateValue aState );
 
     virtual void VisibilityModeChanged( TBTVisibilityMode aState );
@@ -55,18 +59,34 @@ public slots:
     
     void btOffDialogClose(HbAction *action);
     
+    void disconnectDelegateCompleted(int err);
+    
+    
+protected:
+    //From MBTEngConnObserver
+    virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
+                                   RBTDevAddrArray* aConflicts );
+    virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );
+    
+    
 private:
     void switchBTOn();
     
     void switchBTOff();
     
-    bool checkOfflineMode(TBTEnabledInOfflineMode& aEnabledInOffline);
+    bool checkOfflineMode(bool& btEnabledInOffline);
     
-public slots:
+    void disconnectOngoingConnections();
+    
 
 private:
     CBTEngSettings* mBtengSettings;
-
+    bool mActiveHandling; 
+    TBTPowerStateValue mReqPowerState;
+    
+    BtAbstractDelegate* mDisconnectDelegate;
+    
+    
 private:
 
     Q_DISABLE_COPY(BtDelegatePower)

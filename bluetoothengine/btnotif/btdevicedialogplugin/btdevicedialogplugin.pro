@@ -17,7 +17,7 @@
 TEMPLATE = lib
 TARGET = btdevicedialogplugin
 CONFIG += hb plugin
-INCLUDEPATH += . ../inc
+INCLUDEPATH += . ../inc ../../btui/inc
 DEPENDPATH += .
 DESTDIR = $${HB_BUILD_DIR}/plugins/devicedialogs
 
@@ -33,7 +33,9 @@ HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btdevicesearchdialogwidget.h \
     inc/btmoredevicesdialogwidget.h \
     inc/btsenddialogwidget.h \
-    inc/btdevicedialogplugintrace.h 
+    inc/btdevicedialogplugintrace.h \
+    inc/btdevicedialogrecvquerywidget.h \
+    inc/btrecvprgrsdialogwidget.h
 
     
 SOURCES += src/btdevicedialogplugin.cpp \
@@ -42,7 +44,9 @@ SOURCES += src/btdevicedialogplugin.cpp \
     src/btdevicedialognotifwidget.cpp \
     src/btdevicesearchdialogwidget.cpp \
     src/btmoredevicesdialogwidget.cpp \
-    src/btsenddialogwidget.cpp
+    src/btsenddialogwidget.cpp \
+    src/btdevicedialogrecvquerywidget.cpp \
+    src/btrecvprgrsdialogwidget.cpp
 
 RESOURCES += btdevicedialogplugin.qrc
     
@@ -51,6 +55,9 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1
     TARGET.CAPABILITY = CAP_GENERAL_DLL
     TARGET.UID3 = 0x2002E6DF
+    
+    LIBS += -lbtdevice
+    
     hblib.sources = Hb.dll
     hblib.path = \sys\bin
     hblib.depends = "(0xEEF9EA38), 1, 0, 0, {\"Hb\"}"

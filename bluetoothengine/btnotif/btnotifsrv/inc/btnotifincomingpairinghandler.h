@@ -38,7 +38,7 @@ public:
      * @param aParent the owner of this observer
      * @param aAddr the remote device this observer is targeted to
      */
-    static CBTNotifBasePairingHandler* NewL( CBTNotifPairingManager& aParent, 
+    static CBTNotifBasePairingHandler* NewL( CBTNotifSecurityManager& aParent, 
             const TBTDevAddr& aAddr);
 
     /**
@@ -120,7 +120,7 @@ private:
     /**
      * C++ default constructor
      */
-    CBTNotifIncomingPairingHandler(CBTNotifPairingManager& aParent, const TBTDevAddr& aAddr);
+    CBTNotifIncomingPairingHandler(CBTNotifSecurityManager& aParent, const TBTDevAddr& aAddr);
     
     /**
      * 2nd phase constructor.

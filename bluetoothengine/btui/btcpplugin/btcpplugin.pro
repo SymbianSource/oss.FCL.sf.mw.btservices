@@ -19,39 +19,43 @@ TARGET = btcpplugin
 DEPENDPATH += .
 INCLUDEPATH += . ../inc/
 
-
 CONFIG += qt hb plugin
 LIBS += -lcpframework -lbtuimodel -lbtuidelegate
 
 MOC_DIR = moc
 OBJECTS_DIR = obj
 
-#TRANSLATIONS = telephone_cp.ts
+TRANSLATIONS += btviews.ts \
+                btdialogs.ts
 RESOURCES += btcpplugin.qrc
 
 # Input
-HEADERS += btcpplugin.h \
-           btcpuibaseview.h \
-           btcpuimainview.h \
-           btcpuisearchview.h \
-	   btcpuideviceview.h \
-           btcpuisettingitem.h \
-           btuiviewutil.h 
-
-SOURCES += btcpplugin.cpp \
-           btcpuibaseview.cpp \
-           btcpuimainview.cpp \
-           btcpuisearchview.cpp \
-	   btcpuideviceview.cpp \
-           btcpuisettingitem.cpp
-           
-symbian: {
+HEADERS += btcpuimainlistviewitem.h \
+	btcpuisearchlistviewitem.h \
+    btcpplugin.h \
+    btcpuibaseview.h \
+    btcpuimainview.h \
+    btcpuisearchview.h \
+    btcpuideviceview.h \
+    btcpuisettingitem.h \
+    btuiviewutil.h
+SOURCES += btcpuimainlistviewitem.cpp \
+	btcpuisearchlistviewitem.cpp \
+    btcpplugin.cpp \
+    btcpuibaseview.cpp \
+    btcpuimainview.cpp \
+    btcpuisearchview.cpp \
+    btcpuideviceview.cpp \
+    btcpuisettingitem.cpp
+symbian: { 
     DEFINES += PLUGINUID3=0x2002434E
     TARGET.UID3 = 0x2002434E
     TARGET.CAPABILITY = ALL -TCB
     
     TARGET.EPOCALLOWDLLDATA = 1  
 	INCLUDEPATH += $$MW_LAYER_SYSTEMINCLUDE
+	
+    LIBS += -lbtdevice
     
 	PLUGIN_STUB_PATH = /resource/qt/plugins/controlpanel
 	

@@ -21,7 +21,6 @@
 #define BT_SERVICE_BPP_CONTROLLER_H
 
 //  INCLUDES
-#include <obexutilsdialog.h>
 #include "BTServiceStarter.h"
 #include "BTServiceParameterList.h"
 #include "BTServiceClient.h"

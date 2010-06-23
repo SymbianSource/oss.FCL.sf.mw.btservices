@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002, 2003 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -14,13 +14,16 @@
 * Description: 
 *
 */
+#ifndef BTDEVSETTINGFRAMEWORK_IBY
+#define BTDEVSETTINGFRAMEWORK_IBY
 
+#include <data_caging_paths_for_iby.hrh>
+#include <bldvariant.hrh>
+#ifdef __BT
 
-enum
-{
-    ESendingProgressNote = 1,
-    EConnectingWaitNote,
-    EPrintingWaitNote
-};
+file=ABI_DIR/BUILD_DIR/btdevsettingframework.dll SHARED_LIB_DIR/btdevsettingframework.dll
 
-// End of File
+#endif //__BT
+
+#endif  // BTDEVSETTINGFRAMEWORK_IBY
+

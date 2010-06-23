@@ -52,7 +52,7 @@ private:
 
 private:
     CBTEngSettings* mBtengSettings;
-    bool mOperationOngoing;
+    bool mActiveHandling;
     TBTVisibilityMode mOperation;
 
 private:

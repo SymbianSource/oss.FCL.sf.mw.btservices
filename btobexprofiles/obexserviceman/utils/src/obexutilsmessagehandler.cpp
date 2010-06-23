@@ -18,7 +18,6 @@
 
 // INCLUDE FILES
 #include "obexutilsmessagehandler.h"
-#include "obexutilsuilayer.h"
 #include "obexutilsdebug.h"
 #include "obexutilsentryhandler.h"
 
@@ -28,7 +27,6 @@
 #include <txtrich.h>
 
 #include <biouids.h>
-#include <Obexutils.rsg>
 #include <bautils.h>
 
 #include <e32property.h>
@@ -50,6 +48,12 @@
 // CONSTANT
 const TInt KFFSBelowCritical = -2;
 const TInt KRenameOffSet = 4 ;
+
+// todo @ QT migration: take official definition from Messaging at app layer (btmsgtypeuid.h)
+const TUid KUidMsgTypeBt = {0x10009ED5};
+
+const TInt KObexUtilsMaxCharToFromField = 256;
+
 // ============================= LOCAL FUNCTIONS ===============================
 
 // -----------------------------------------------------------------------------
@@ -468,18 +472,18 @@ void TObexUtilsMessageHandler::DoCreateInboxAttachmentL(
     // 1st, 2nd, 3rd push
 
     TBuf<KObexUtilsMaxCharToFromField> toFrom;
-    TInt resourceId;
 
+    // todo @ QT migration: load from string id for localization
     if (aMtmId == KUidMsgTypeBt)
         {
-        resourceId = R_BT_TO_FROM_IN_INBOX;
+        _LIT(KBluetoothMsg, "Bluetooth message");
+        toFrom.Copy(KBluetoothMsg);
         }
     else
         {
-        resourceId = R_IR_TO_FROM_IN_INBOX;
+        _LIT(KInfraredMsg, "Infrared message");
+        toFrom.Copy(KInfraredMsg);    
         }
-   
-    TObexUtilsUiLayer::ReadResourceL( toFrom, resourceId );
     
     TMsvEntry parentTEntry;
     parentTEntry.iMtm = aMtmId;
@@ -835,19 +839,20 @@ EXPORT_C void TObexUtilsMessageHandler::SaveFileToFileSystemL(
     // 1st, 2nd, 3rd push
 
     TBuf<KObexUtilsMaxCharToFromField> toFrom;
-    TInt resourceId;
 
+    // todo @ QT migration: load from string id for localization
     if (aMtmId == KUidMsgTypeBt)
         {
-        resourceId = R_BT_TO_FROM_IN_INBOX;
+        _LIT(KBluetoothMsg, "Bluetooth message");
+        toFrom.Copy(KBluetoothMsg);
         }
     else
         {
-        resourceId = R_IR_TO_FROM_IN_INBOX;
+        _LIT(KInfraredMsg, "Infrared message");
+        toFrom.Copy(KInfraredMsg);    
         }
-    // NOTE: toFrom will be updated to Bluetooth sender's name
-    //
-    TObexUtilsUiLayer::ReadResourceL( toFrom, resourceId );  // read the toForm ( will be updated to sender's bt name in the future ) 
+    
+    // NOTE: toFrom will be updated to Bluetooth sender's bt name in the future.
 
     TMsvEntry parentTEntry;   
     parentTEntry.iMtm = aMtmId;
@@ -1147,11 +1152,9 @@ void TObexUtilsMessageHandler::MakeValidFileName(
     TParse fileParse;
     fileParse.Set(aFileName, NULL, NULL);
     
-    TBool nameempty = ETrue;
     if (fileParse.NameOrExtPresent())
         {        
         aFileName = fileParse.NameAndExt();
-        nameempty=EFalse;
         TText badChar;    
         TInt nameLength = aFileName.Length();
     
@@ -1174,18 +1177,6 @@ void TObexUtilsMessageHandler::MakeValidFileName(
                     }
             }    
         }    
-    
-    // Did we delete all the characters? If so then we must have some filename
-    if ( aFileName.Length() == 0 || nameempty )
-        {
-        TInt resourceId = R_NAME_FOR_INVALID_FILE;
-        TRAPD( retVal, TObexUtilsUiLayer::ReadResourceL( aFileName, resourceId ) );
-        if (retVal != KErrNone)
-            {
-            FLOG(_L("TObexUtilsMessageHandler::MakeValidFileName failed."));
-            }
-        }
-
     FLOG(_L("[OBEXUTILS]\t MakeValidFileName() completed"));
     }
 
@@ -1195,7 +1186,8 @@ void TObexUtilsMessageHandler::MakeValidFileName(
 //
 EXPORT_C TMsvId TObexUtilsMessageHandler::CreateOutboxEntryL(
     const TUid& aMtm,          // Message type id
-    const TInt& aResourceID )  // Resource id for the message entry text
+    //todo need to check whether to use the textmap id or send as a string here
+    const TInt& /*aResourceID*/ )  // Resource id for the message entry text
     {
     FLOG(_L("[OBEXUTILS]\t TObexUtilsMessageHandler::CreateOutboxEntryL()"));
 
@@ -1206,7 +1198,9 @@ EXPORT_C TMsvId TObexUtilsMessageHandler::CreateOutboxEntryL(
     // 1st, 2nd, 3rd push
 
     TBuf<KObexUtilsMaxCharToFromField> toFrom;
-    TObexUtilsUiLayer::ReadResourceL( toFrom, aResourceID );
+ //   TObexUtilsUiLayer::ReadResourceL( toFrom, aResourceID );
+    //todo need to change the string constant to orbit localisation file
+    toFrom.Copy(_L("Bluetooth message"));
 
     // Message entry fields
     TMsvEntry newTEntry;

@@ -41,6 +41,7 @@ enum TBTDialogResourceId
     EPairingSuccess,
     EPairingFailure,
     EVisibilityTimeout,
+    EUnpairedDevice,
     EUnusedResource	// The last ID
     };
 
@@ -65,7 +66,9 @@ public:
         EMoreDevice,
         EDeviceSearch,
         ESend,
-        EGlobalNotif
+        EGlobalNotif,
+        EUserAuthorization,
+        EReceiveProgress
         };
 
     /**  Enumeration for the notification parameters data type to be configured. */
@@ -77,6 +80,15 @@ public:
         EAddress,
         EDialogTitle,
         EDialogExt  // Id for first data type of derived class.
+        };
+    
+    /** Enumeration for the notification dialog heading type. */
+    enum TDialogTitleDataType
+        {
+        EReceive,
+        EReceiveFromPairedDevice,
+        EConnect,
+        EPairingRequest
         };
 
     inline TBluetoothDialogParams();
@@ -123,7 +135,10 @@ public:
         EDeviceName,
         EDeviceClass,
         EAdditionalInt,
-        EAdditionalDesc
+        EAdditionalDesc,
+        EReceivingFileName,
+        EReceivingFileSize,
+        EReceivedFileCount
         };
 
     inline TBluetoothDeviceDialog();

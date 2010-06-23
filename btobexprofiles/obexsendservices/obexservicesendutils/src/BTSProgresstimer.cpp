@@ -95,7 +95,7 @@ void CBTSProgressTimer::RunL()
     FLOG(_L("[OBEXUTILS]\t CBTSProgressTimer::RunL()"));
     if (iProgressObserverPtr)
         {
-        iProgressObserverPtr->UpdateProgressInfoL();
+ //       iProgressObserverPtr->UpdateProgressInfoL();
         }
 
     FLOG(_L("[OBEXUTILS]\t CBTSProgressTimer::RunL() completed"));

@@ -24,32 +24,36 @@
 
 #include <qstandarditemmodel.h>
 #include <hbaction.h>
+#include <xqconversions.h>
+#include <qtranslator.h>
+#include <qcoreapplication.h>
 
 const char* DOCML_BTDEV_SEARCH_DIALOG = ":/docml/bt-device-search-dialog.docml";
 
 
+#define LOC_SEARCHING_DEVICE hbTrId("txt_bt_subhead_searching")
+#define LOC_SEARCH_DONE hbTrId("txt_bt_subhead_search_done")
+#define LOC_SEARCH_STOP hbTrId("txt_common_button_stop")
+#define LOC_SEARCH_RETRY hbTrId("txt_common_button_retry")
+
+
 BTDeviceSearchDialogWidget::BTDeviceSearchDialogWidget(const QVariantMap &parameters)
-:HbDialog()
     {
     mDeviceLstIdx = 0;
     mViewByChosen = false;
     mSelectedType = 0;
     mDeviceDialogData = 0;
+    mLoader = 0;
+    mContentItemModel = 0;
+    mStopRetryFlag = 0; // Stop 
     constructDialog(parameters);
     }
 
 BTDeviceSearchDialogWidget::~BTDeviceSearchDialogWidget()
     {
-    if(mLoader)
-        {
-        delete mLoader;
-        mLoader = NULL;
-        }
-    if(mContentItemModel)
-        {
-        delete mContentItemModel;
-        mContentItemModel = NULL;
-        }
+    delete mLoader;
+    delete mContentItemModel;
+    
  //   delete mRbl;
  //   delete mViewByDialog;
     }
@@ -65,9 +69,9 @@ bool BTDeviceSearchDialogWidget::setDeviceDialogParameters(const QVariantMap &pa
         mSearchDoneLabel->show();
         mSearchDoneLabel->setTextWrapping(Hb::TextWordWrap);
         mSearchDoneLabel->setAlignment(Qt::AlignLeft);
-        mSearchDoneLabel->setPlainText("Search Done");
+        mSearchDoneLabel->setPlainText(LOC_SEARCH_DONE);
         
-        mStopRetryBtn->setText("Retry");
+        mStopRetryAction->setText(LOC_SEARCH_RETRY);
         }
     else
         {
@@ -121,10 +125,22 @@ int BTDeviceSearchDialogWidget::deviceDialogError() const
 void BTDeviceSearchDialogWidget::closeDeviceDialog(bool byClient)
     {
     Q_UNUSED(byClient);
-    this->close();
+    mSearchDevicesDialog->close();
+    //@ TODO to check below code is required which is written based on the documentation of closeDeviceDialog API
+    
+ /*   QVariantMap val;
+    QVariant index(-1);
+    val.insert("selectedindex",index);
+    emit deviceDialogData(val);    
+    emit deviceDialogClosed();*/
     }
 
 HbPopup* BTDeviceSearchDialogWidget::deviceDialogWidget() const
+    {
+    return mSearchDevicesDialog;
+    }
+
+QObject* BTDeviceSearchDialogWidget::signalSender() const
     {
     return const_cast<BTDeviceSearchDialogWidget*>(this);
     }
@@ -132,22 +148,24 @@ HbPopup* BTDeviceSearchDialogWidget::deviceDialogWidget() const
 bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
     {
     (void) parameters;
-    mLoader = new HbDocumentLoader();
     bool ok = false;
     
+    mLoader = new HbDocumentLoader();
     mLoader->load(DOCML_BTDEV_SEARCH_DIALOG, &ok);
     if(ok)
         {
-        HbLabel* heading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
+        mSearchDevicesDialog = qobject_cast<HbDialog*>(mLoader->findWidget("searchdialog"));
+
+ /*       HbLabel* heading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
         heading->setTextWrapping(Hb::TextWordWrap);
         heading->setAlignment(Qt::AlignHCenter);
         heading->setPlainText("Bluetooth - Found devices");
-        setHeadingWidget(heading);
+        setHeadingWidget(heading);*/
         
         mSearchLabel = qobject_cast<HbLabel*>(mLoader->findWidget("searchLabel"));
         mSearchLabel->setTextWrapping(Hb::TextWordWrap);
         mSearchLabel->setAlignment(Qt::AlignHCenter);
-        mSearchLabel->setPlainText("Searching...");
+        mSearchLabel->setPlainText(LOC_SEARCHING_DEVICE);
  
         mSearchIconLabel = qobject_cast<HbLabel*>(mLoader->findWidget("iconLabel"));
         mSearchIconLabel->setIcon(icon());
@@ -155,11 +173,12 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         mSearchDoneLabel = qobject_cast<HbLabel*>(mLoader->findWidget("searchDoneLabel"));
         mSearchDoneLabel->hide();
         
-        setFrameType(HbDialog::Strong);
-        setBackgroundFaded(false);
+        
+        mSearchDevicesDialog->setFrameType(HbDialog::Strong);
+        mSearchDevicesDialog->setBackgroundFaded(false);
 
-        mViewByBtn = qobject_cast<HbPushButton*>(mLoader->findWidget("viewby"));
-        mStopRetryBtn = qobject_cast<HbPushButton*>(mLoader->findWidget("stop"));
+ //       mViewByBtn = qobject_cast<HbPushButton*>(mLoader->findWidget("viewby"));
+  //      mStopRetryBtn = qobject_cast<HbPushButton*>(mLoader->findWidget("stop"));
         
         mListView = qobject_cast<HbListView*>(mLoader->findWidget("listView"));
         mListView->setSelectionMode(HbAbstractItemView::SingleSelection);
@@ -168,15 +187,26 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         mListView->setModel(mContentItemModel);//, prototype);
 
         connect(mListView, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
-        connect(mStopRetryBtn, SIGNAL(clicked()), this, SLOT(stopRetryClicked()));
-        connect(mViewByBtn, SIGNAL(clicked()), this, SLOT(viewByClicked()));
+ //       connect(mStopRetryBtn, SIGNAL(clicked()), this, SLOT(stopRetryClicked()));
+ //       connect(mViewByBtn, SIGNAL(clicked()), this, SLOT(viewByClicked()));
         
-        QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
-        setContentWidget(widget);
+        mViewByAction = static_cast<HbAction*>( mLoader->findObject( "viewaction" ) );
+        mViewByAction->disconnect(mSearchDevicesDialog);
+        
+        mStopRetryAction = static_cast<HbAction*>( mLoader->findObject( "stopretryaction" ) );
+        mStopRetryAction->disconnect(mSearchDevicesDialog);
+        
+        connect(mViewByAction, SIGNAL(triggered()), this, SLOT(viewByClicked()));
+        connect(mStopRetryAction, SIGNAL(triggered()), this, SLOT(stopRetryClicked()));
+
+        connect(mSearchDevicesDialog, SIGNAL(finished(HbAction*)), this, SLOT(searchDialogClosed(HbAction*)));
+        
+//        QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
+        //setContentWidget(widget);
         }
-    setBackgroundFaded(false);
-    setDismissPolicy(HbPopup::TapOutside);
-    setTimeout(HbPopup::NoTimeout);
+    mSearchDevicesDialog->setBackgroundFaded(false);
+    mSearchDevicesDialog->setDismissPolicy(HbPopup::TapOutside);
+    mSearchDevicesDialog->setTimeout(HbPopup::NoTimeout);
     
  /*   mViewByDialog = new HbDialog();
     mRbl = new HbRadioButtonList(mViewByDialog);
@@ -185,9 +215,9 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
     return true;
     }
 
-void BTDeviceSearchDialogWidget::hideEvent(QHideEvent *event)
+/*void BTDeviceSearchDialogWidget::hideEvent(QHideEvent *event)
     {
-    HbDialog::hideEvent(event);
+ //   HbDialog::hideEvent(event);
     QVariantMap val;
     QVariant index(-1);
     val.insert("selectedindex",index);
@@ -197,25 +227,26 @@ void BTDeviceSearchDialogWidget::hideEvent(QHideEvent *event)
 
 void BTDeviceSearchDialogWidget::showEvent(QShowEvent *event)
     {
-    HbDialog::showEvent(event);
-    }
+ //   HbDialog::showEvent(event);
+    }*/
 
 void BTDeviceSearchDialogWidget::stopRetryClicked()
     {
     QVariantMap val;
-    if(mStopRetryBtn->text().compare("Retry")==0)
+    if(mStopRetryFlag == 1)//mStopRetryAction->text().compare(LOC_SEARCH_RETRY)==0
         {
+        mStopRetryFlag = 0; // Stop 
         QVariant index("Retry");
         val.insert("Retry",index); 
         emit deviceDialogData(val);
         delete mContentItemModel;
         mContentItemModel = new QStandardItemModel(this);
         mListView->setModel(mContentItemModel);
-        mStopRetryBtn->setText("Stop");
+        mStopRetryAction->setText(LOC_SEARCH_STOP);
         
         mSearchLabel->setTextWrapping(Hb::TextWordWrap);
         mSearchLabel->setAlignment(Qt::AlignHCenter);
-        mSearchLabel->setPlainText("Searching...");
+        mSearchLabel->setPlainText(LOC_SEARCHING_DEVICE);
         
         mSearchIconLabel->setIcon(icon());     
         mSearchLabel->show();
@@ -226,7 +257,8 @@ void BTDeviceSearchDialogWidget::stopRetryClicked()
         }
     else
         {
-        mStopRetryBtn->setText("Retry");
+        mStopRetryFlag = 1; //Retry 
+        mStopRetryAction->setText(LOC_SEARCH_RETRY);
         
         mSearchLabel->hide();
         
@@ -235,7 +267,7 @@ void BTDeviceSearchDialogWidget::stopRetryClicked()
         mSearchDoneLabel->show();
         mSearchDoneLabel->setTextWrapping(Hb::TextWordWrap);
         mSearchDoneLabel->setAlignment(Qt::AlignLeft);
-        mSearchDoneLabel->setPlainText("Search Done");        
+        mSearchDoneLabel->setPlainText(LOC_SEARCH_DONE);        
         
         QVariantMap val;
         QVariant index("Stop");
@@ -311,6 +343,23 @@ void BTDeviceSearchDialogWidget::viewByClicked()
     mViewByDialog->setMaximumWidth(500);
 
     mViewByDialog->show();*/
+    }
+
+void BTDeviceSearchDialogWidget::searchDialogClosed(HbAction* action)
+    {
+    HbDialog *dlg=static_cast<HbDialog*>(sender());
+     if(dlg->actions().first() == action) {
+     } 
+     else if(dlg->actions().at(1) == action) {
+       }
+     else
+        {
+        QVariantMap val;
+        QVariant index(-1);
+        val.insert("selectedindex",index);
+        emit deviceDialogData(val);    
+        emit deviceDialogClosed();
+        }
     }
 
 void BTDeviceSearchDialogWidget::selectionDialogClosed(HbAction* action)

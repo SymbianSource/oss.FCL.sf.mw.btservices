@@ -24,7 +24,7 @@
 #include <btengconstants.h>
 #include <btservices/btsimpleactive.h>
 
-class CBTNotifPairingManager;
+class CBTNotifSecurityManager;
 
 /**
  *  Class CBTNotifBasePairingHandler
@@ -94,6 +94,12 @@ public:
      * @param the required minimum length of a pin code.
      */
     virtual void GetPinCode( TBTPinCode& aPin, const TBTDevAddr& aAddr, TInt aMinPinLength );
+ 
+    /**
+     * Show a dialog for pairing success or failure
+     * @param aResult The result of the pairing
+     */
+    void ShowPairingResultNoteL(TInt aResult);
     
 protected:
     
@@ -118,7 +124,7 @@ protected:
     /**
      * C++ default constructor
      */
-    CBTNotifBasePairingHandler(CBTNotifPairingManager& aParent, const TBTDevAddr& aAddr);
+    CBTNotifBasePairingHandler(CBTNotifSecurityManager& aParent, const TBTDevAddr& aAddr);
     
     /**
      * Symbian 2nd-phase constructor
@@ -161,7 +167,7 @@ protected:
     /**
      * Reference to the owner of this object.
      */
-    CBTNotifPairingManager& iParent;
+    CBTNotifSecurityManager& iParent;
     
     /**
      * Active object helper for asynchronous operations.

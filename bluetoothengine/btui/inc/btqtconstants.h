@@ -19,6 +19,7 @@
 #define BTQTCONSTANTS_H
 
 #include <btengconstants.h>
+#include <btserversdkcrkeys.h>
 
 
 // RSSI value range: -127dB ~ +20dB
@@ -32,20 +33,34 @@ const int RssiHighStrength = -46;
 
 const int RssiInvalid = RssiMinRange - 1;
 
+enum PowerStateQtValue {
+    BtPowerOff = 0,
+    BtPowerOn,     
+    BtPowerUnknown  // only for error situations
+};
+
+enum DisconnectOption {
+    ServiceLevel = 0,
+    PhysicalLink, 
+    AllOngoingConnections,
+    DisconUnknown
+};
+
 enum VisibilityMode {
     BtHidden = 0x10,  // using a different number space than TBTVisibilityMode
     BtVisible,
     BtTemporary,
-    BtUnknown
-    
+    BtVisibilityUnknown
 };
 
 // used for mapping between UI row and VisibilityMode item
 enum VisibilityModeUiRowMapping {
     UiRowBtHidden = 0,
     UiRowBtVisible,
-    UiRowBtTemporary
+    UiRowBtTemporary,
+    UiRowBtUnknown
 };
+
 
 inline VisibilityMode QtVisibilityMode(TBTVisibilityMode btEngMode)
 {
@@ -61,7 +76,7 @@ inline VisibilityMode QtVisibilityMode(TBTVisibilityMode btEngMode)
         mode = BtTemporary;
         break;
     default:
-        mode = BtUnknown;
+        mode = BtVisibilityUnknown;
     }
     return mode;
 }
@@ -85,5 +100,36 @@ inline TBTVisibilityMode  BtEngVisibilityMode(VisibilityMode btQtMode)
     return mode;
 }
 
+inline PowerStateQtValue QtPowerMode(TBTPowerStateValue btEngMode)
+{
+    PowerStateQtValue mode; 
+    switch(btEngMode) {
+    case EBTPowerOff:
+        mode = BtPowerOff;
+        break;
+    case EBTPowerOn:
+        mode = BtPowerOn;
+        break;
+    default:
+        mode = BtPowerUnknown;  // error
+    }
+    return mode;
+}
+
+inline TBTPowerStateValue BtEngPowerState(PowerStateQtValue qtPowerState)
+{
+    TBTPowerStateValue btEngPowerState;
+    switch (qtPowerState){
+    case BtPowerOff:
+        btEngPowerState = EBTPowerOff;
+        break;
+    case BtPowerOn:
+        btEngPowerState = EBTPowerOn;
+        break;
+    default:
+        btEngPowerState = (TBTPowerStateValue)KErrUnknown;
+    }
+    return btEngPowerState;
+}
 
 #endif // BTQTCONSTANTS_H

@@ -17,6 +17,8 @@
 
 #include "btdelegatepair.h"
 #include "btuiutil.h"
+#include "btdelegatefactory.h"
+#include "btqtconstants.h"
 
 #include <QModelIndex>
 #include <btsettingmodel.h>
@@ -36,6 +38,7 @@ BtDelegatePair::BtDelegatePair(
     BtAbstractDelegate(settingModel, deviceModel, parent), mBtengConnMan(0)
 {
     mLoader = new HbDocumentLoader();
+    mAbstractDelegate = NULL;
 }
 
 BtDelegatePair::~BtDelegatePair()
@@ -46,13 +49,48 @@ BtDelegatePair::~BtDelegatePair()
 
 void BtDelegatePair::exec( const QVariant &params )
 {
+    
+    deviceIndex = params.value<QModelIndex>();
+    
+    if(isBtPowerOn()) {
+        exec_pair();
+    }
+    else {
+        //If Bt Power is off, switch it on and then perform pairing.
+        //todo: Do we ask for user confirmation here..?
+        if (!mAbstractDelegate) { 
+            mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::ManagePower, 
+                    getSettingModel(), getDeviceModel() ); 
+            connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(powerDelegateCompleted(int)) );
+            mAbstractDelegate->exec(QVariant(BtPowerOn));
+        }
+    }
+    
+}
+
+void BtDelegatePair::powerDelegateCompleted(int error)
+{
+    if (mAbstractDelegate) {
+        disconnect(mAbstractDelegate);
+        delete mAbstractDelegate;
+        mAbstractDelegate = 0;
+    }
+    if ( error == KErrNone ) {
+        exec_pair();
+    } 
+    else {
+        // error
+        emitCommandComplete(error);
+    }
+}
+
+void BtDelegatePair::exec_pair()
+{
     int error = KErrNone;
-    QModelIndex index = params.value<QModelIndex>();
+    mdeviceName = getDeviceModel()->data(deviceIndex,BtDeviceModel::NameAliasRole).toString();
     
-    mdeviceName = getDeviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
-    
-    QString strBtAddr = getDeviceModel()->data(index,BtDeviceModel::ReadableBdaddrRole).toString();
-    int cod = getDeviceModel()->data(index,BtDeviceModel::CoDRole).toInt();
+    QString strBtAddr = getDeviceModel()->data(deviceIndex,BtDeviceModel::ReadableBdaddrRole).toString();
+    int cod = getDeviceModel()->data(deviceIndex,BtDeviceModel::CoDRole).toInt();
     
     if ( ! mBtengConnMan ){
         TRAP( error, mBtengConnMan = CBTEngConnMan::NewL(this) );
@@ -69,8 +107,9 @@ void BtDelegatePair::exec( const QVariant &params )
     if(error) {
         emitCommandComplete(error);
     }
-    
+
 }
+
 
 void BtDelegatePair::launchWaitDialog()
 {
@@ -126,15 +165,15 @@ void BtDelegatePair::PairingComplete( TBTDevAddr& aAddr, TInt aErr )
 
 void BtDelegatePair::emitCommandComplete(int error)
 {
-    QString str(hbTrId("Paired to %1"));
-    QString err(hbTrId("Pairing with %1 Failed"));
-    
-    if(error != KErrNone) {
-        HbNotificationDialog::launchDialog(err.arg(mdeviceName));
-    }
-    else {
-        HbNotificationDialog::launchDialog(str.arg(mdeviceName));
-    }
+//    QString str(hbTrId("Paired to %1"));
+//    QString err(hbTrId("Pairing with %1 Failed"));
+//    
+//    if(error != KErrNone) {
+//        HbNotificationDialog::launchDialog(err.arg(mdeviceName));
+//    }
+//    else {
+//        HbNotificationDialog::launchDialog(str.arg(mdeviceName));
+//    }
 
     emit commandCompleted(error);
 }

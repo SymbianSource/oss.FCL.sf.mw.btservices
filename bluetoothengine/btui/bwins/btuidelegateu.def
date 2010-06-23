@@ -16,4 +16,5 @@ EXPORTS
 	?getSettingModel@BtAbstractDelegate@@IAEPAVBtSettingModel@@XZ @ 15 NONAME ; class BtSettingModel * BtAbstractDelegate::getSettingModel(void)
 	?getDeviceModel@BtAbstractDelegate@@IAEPAVBtDeviceModel@@XZ @ 16 NONAME ; class BtDeviceModel * BtAbstractDelegate::getDeviceModel(void)
 	?trUtf8@BtAbstractDelegate@@SA?AVQString@@PBD0H@Z @ 17 NONAME ; class QString BtAbstractDelegate::trUtf8(char const *, char const *, int)
+	?isBtPowerOn@BtAbstractDelegate@@IAE_NXZ @ 18 NONAME ; bool BtAbstractDelegate::isBtPowerOn(void)
 

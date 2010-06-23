@@ -272,7 +272,8 @@ TInt CBTNotifServer::ShutdownTimeout( TAny* aPtr )
 //
 GLDEF_C TInt E32Main()
     {
-    __UHEAP_MARK;
+    // Disabled until memory leak in QT/Open C are fixed
+    // __UHEAP_MARK;
     CTrapCleanup* cleanup = CTrapCleanup::New();
     TInt err = KErrNoMemory;
     if ( cleanup )
@@ -280,7 +281,8 @@ GLDEF_C TInt E32Main()
         TRAP( err, RunServerL() );
         delete cleanup;
         }
-    __UHEAP_MARKEND;
+    // Disabled until memory leak in QT/Open C are fixed
+    // __UHEAP_MARKEND;
     return err;
     }
 

@@ -21,12 +21,13 @@
 
 #include <QVariantMap>
 
+#include <hbpopup.h>
 #include <hbdevicedialoginterface.h>
 #include <hbdevicedialog.h>
 #include <hbnotificationdialog.h>
 
 /*!
-    \class BtDeviceDialogQueryWidget
+    \class BtDeviceDialogNotifWidget
     \brief Widget class with properties setting. 
 
     BtDeviceDialogQueryWidget, inherited from HbNotificationDialog, 
@@ -36,38 +37,42 @@
     
  */
 class BtDeviceDialogNotifWidget :
-    public HbNotificationDialog, public HbDeviceDialogInterface
+    public QObject, public HbDeviceDialogInterface
 {
     Q_OBJECT
     
 public:
     BtDeviceDialogNotifWidget(const QVariantMap &parameters);
+    ~BtDeviceDialogNotifWidget();
     
     // From base class HbDeviceDialogInterface
     virtual bool setDeviceDialogParameters(const QVariantMap &parameters);
     virtual int deviceDialogError() const;
     virtual void closeDeviceDialog(bool byClient);
-    virtual HbDialog *deviceDialogWidget() const;
+    HbPopup *deviceDialogWidget() const;
+    virtual QObject *signalSender() const;
 
 signals: 
     // Required by the framework
     void deviceDialogClosed();
+    void deviceDialogData(QVariantMap data);
     
 private:
+    
     void processParam(const QVariantMap &parameters);
-    bool constructQueryDialog(const QVariantMap &parameters);
+    bool constructNotifDialog(const QVariantMap &parameters);
     void resetProperties();
         
-    // From base HbInputDialog, reimplement and emit signals. 
-    void hideEvent(QHideEvent *event);
-    void showEvent(QShowEvent *event);
-
+public slots:
+    void NotifClosed(HbAction *action);
+    
 private:
     Q_DISABLE_COPY(BtDeviceDialogNotifWidget)
 
     int mLastError;
     int mSendAction;
     bool mShowEventReceived;
+    HbNotificationDialog* mNotificationDialog;
 };
 
 #endif // BTDEVICEDIALOGNOTIFWIDGET_H

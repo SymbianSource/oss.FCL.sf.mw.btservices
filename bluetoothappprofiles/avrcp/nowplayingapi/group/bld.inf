@@ -30,4 +30,4 @@ PRJ_EXPORTS
 ../public/remcondatabaseunawarenowplayingtarget.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remcondatabaseunawarenowplayingtarget.h)
 ../public/remcondatabaseunawarenowplayingtargetobserver.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remcondatabaseunawarenowplayingtargetobserver.h)
 
-../public/remconnowplayingtargetbase.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(remcon/remconnowplayingtargetbase.h)
+../public/remconnowplayingtargetbase.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remcon/remconnowplayingtargetbase.h)

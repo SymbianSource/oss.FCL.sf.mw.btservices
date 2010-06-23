@@ -15,6 +15,9 @@
       <module name="btdialog">
         <unit unitID="lcdo.btservices.btdialog" mrp="" bldFile="&layer_real_source_path;/bluetoothengine/btnotif/btdevicedialogplugin" name="bluetooth_dialogs" proFile="btdevicedialogplugin.pro" qmakeArgs="" />
       </module>
+      <module name="obexhighway">
+        <unit unitID="lcdo.btservices.obexhighway" mrp="" bldFile="&layer_real_source_path;/btobexprofiles/obexsendservices/obexhighway" name="localconn_obexhighway" proFile="obexhighway.pro" qmakeArgs="" />
+      </module>
     </layer>
     <layer name="api_test_layer">
       <module name="btservices_test">

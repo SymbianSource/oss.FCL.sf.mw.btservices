@@ -138,7 +138,7 @@ private:
     * Handling of Service array 
     * 
     */	
-    void ServiceArray(CArrayPtr<CSrcsTransport> &aTransport, TBool aState);
+    void ServiceArrayL(CArrayPtr<CSrcsTransport> &aTransport, TBool aState);
     
 private:
     

@@ -33,6 +33,7 @@ namespace BtDelegate
         Pair,
         Disconnect,
         Unpair,
+        RemoteDevName
         };
     }
 

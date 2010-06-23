@@ -17,27 +17,28 @@
 
 
 // INCLUDE FILES
-#include    <avkon.hrh>                    // AVKON components
 #include    "oppcontroller.h"
 #include    "btengdevman.h"
 #include    <obexutilsmessagehandler.h>
 #include    "debug.h"
-#include    <Obexutils.rsg>
 #include    <bautils.h>
-#include    <UiklafInternalCRKeys.h>
-#include    <obexutilsuilayer.h>
 #include    <btengdomaincrkeys.h>
-#include    <AiwServiceHandler.h> // The AIW service handler
 #include    <sysutil.h>
 #include    <btengdomaincrkeys.h> 
 #include    <msvids.h>
-#include    <driveinfo.h> 
+#include    <driveinfo.h>
 #include    <es_sock.h>
 #include    <bt_sock.h>
+#include    <bluetoothdevicedialogs.h>
+#include <hbtextresolversymbian.h>
 
 // CONSTANTS
 
 const TInt    KBufferSize = 0x10000;  // 64 kB
+const TInt KFileManagerUID3 = 0x101F84EB; /// File Manager application UID3
+_LIT( KBTDevDialogId, "com.nokia.hb.btdevicedialog/1.0" );
+_LIT(KLocFileName, "btdialogs_");
+_LIT(KPath, "z:/resource/qt/translations/");  
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -68,6 +69,12 @@ void COPPController::ConstructL()
     TObexUtilsMessageHandler::GetCenRepKeyStringValueL(KCRUidBluetoothEngine, 
                                                        KLCReceiveFolder,
                                                        iCenRepFolder);
+    iDialog = CObexUtilsDialog::NewL(this);
+    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
+    if (!ok) 
+        {
+        User::Leave( KErrNotFound );
+        }
 	} 
 
 COPPController::~COPPController()
@@ -77,8 +84,6 @@ COPPController::~COPPController()
     delete iBuf;
     delete iLowMemoryActiveCDrive;
     delete iLowMemoryActiveMMC;
-    delete iProgressDialog;
-    delete iWaitDialog;
     delete iDevMan;
     if (iResultArray)
         {
@@ -86,6 +91,8 @@ COPPController::~COPPController()
         delete iResultArray;
         }
     iFs.Close();
+    delete iDialog;
+    delete iProgressDialog;
     }
 
 // ---------------------------------------------------------
@@ -123,7 +130,11 @@ void COPPController::HandleError(TBool aAbort)
         	{
 			if(iMediaType == ESrcsMediaBT)
 				{
-				TRAP_IGNORE( TObexUtilsUiLayer::ShowGlobalConfirmationQueryL( R_BT_FAILED_TO_RECEIVE ) );
+                TRAP_IGNORE(
+                        HBufC* note = HbTextResolverSymbian::LoadLC(_L("txt_bt_dpophead_receiving_failed"));
+                        iDialog->ShowErrorNoteL(note->Des());
+                        CleanupStack::PopAndDestroy(note);
+                        );
 				}
 			TRACE_ASSERT(iMediaType != ESrcsMediaIrDA, KErrNotSupported)
         	}
@@ -161,10 +172,13 @@ void COPPController::TransportUpIndication()
 // ObexConnectIndication()
 // ---------------------------------------------------------
 //
-TInt COPPController::ObexConnectIndication( const TObexConnectInfo& /*aRemoteInfo*/,
-                                            const TDesC8& /*aInfo*/)
+TInt COPPController::ObexConnectIndication( const TObexConnectInfo& aRemoteInfo,
+                                            const TDesC8& aInfo)
     {
-    TRACE_FUNC  
+    TRACE_FUNC
+    (void) aRemoteInfo;
+    (void) aInfo;
+    
     if ( iMediaType == ESrcsMediaBT )
         {
         TRACE_INFO( _L( "[oppreceiveservice] ObexConnectIndication: BT media \t" ) );
@@ -191,10 +205,10 @@ TInt COPPController::ObexConnectIndication( const TObexConnectInfo& /*aRemoteInf
 // ObexDisconnectIndication(
 // ---------------------------------------------------------
 //
-void COPPController::ObexDisconnectIndication(const TDesC8& /*aInfo*/)
+void COPPController::ObexDisconnectIndication(const TDesC8& aInfo)
     {
     TRACE_FUNC
-
+    (void) aInfo;
     }
 
 // ---------------------------------------------------------
@@ -225,7 +239,7 @@ CObexBufObject* COPPController::PutRequestIndication()
     // Checking if backup is running now - if backup process is active, then we
     // need to cancel transfer - otherwise phone will freeze during receiving
     // data
-    if ( TObexUtilsUiLayer::IsBackupRunning() )
+    if ( IsBackupRunning() )
         {
         TRACE_INFO ( _L ("Backup in progress! Canceling incoming transfer."));
         iObexTransferState = ETransferPutInitError;
@@ -275,7 +289,11 @@ TInt COPPController::PutPacketIndication()
             }
         if(!capacity)
             {
-            TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+            //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+            //todo: Need to use Localized string.
+            _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+            TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+    
             return KErrDiskFull;
             }
         }
@@ -293,7 +311,11 @@ TInt COPPController::PutPacketIndication()
     // Now we need to either create (in the first instance) or update the dialog on the UI.
     if(ReceivingIndicatorActive())
         {
-        UpdateReceivingIndicator();
+        TRAPD(err, UpdateReceivingIndicatorL());
+        if(err < KErrNone)
+            {
+            return err;
+            }
         }
     else if(!iNoteDisplayed)
         {
@@ -332,9 +354,10 @@ TInt COPPController::PutCompleteIndication()
 // GetRequestIndication()
 // ---------------------------------------------------------
 //
-CObexBufObject* COPPController::GetRequestIndication( CObexBaseObject* /*aRequiredObject*/)
+CObexBufObject* COPPController::GetRequestIndication( CObexBaseObject* aRequiredObject)
     {
     TRACE_FUNC
+    (void) aRequiredObject;
     return NULL;
     }
 
@@ -362,10 +385,13 @@ TInt COPPController::GetCompleteIndication()
 // SetPathIndication()
 // ---------------------------------------------------------
 //
-TInt COPPController::SetPathIndication( const CObex::TSetPathInfo& /*aPathInfo*/, 
-                                        const TDesC8& /*aInfo*/)
+TInt COPPController::SetPathIndication( const CObex::TSetPathInfo& aPathInfo, 
+                                        const TDesC8& aInfo)
     {
     TRACE_FUNC
+    
+    (void) aPathInfo;
+    (void) aInfo;
     // SetPath is not implemented in OPP - so following IrOBEX guidance, return
     // the Forbidden response code.
     return KErrIrObexRespForbidden;
@@ -429,7 +455,11 @@ void COPPController::HandlePutRequestL()
     //
     if (SysUtil::DiskSpaceBelowCriticalLevelL( &iFs, 0, iDrive ))
         {
-        TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+        //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+        //todo: Need to use Localized string.
+        _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+        TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+    
         User::Leave(KErrGeneral);
         }
         
@@ -692,65 +722,91 @@ void COPPController::LaunchReceivingIndicatorL()
     
     if(iTotalSizeByte > 0)
         {
-        iProgressDialog = CGlobalProgressDialog::NewL(this);  
         if(iReceivingFileName.Length() > 0)
             {
-            iProgressDialog->ShowProgressDialogNameSizeL(iReceivingFileName, iTotalSizeByte);
+            iProgressDialog = CHbDeviceDialogSymbian::NewL();
+            iProgressDialog->SetObserver(this);
+
+            CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+            CleanupStack::PushL(variantMap);
+            
+            TInt dialogIdx = TBluetoothDialogParams::EReceiveProgress;
+            CHbSymbianVariant* dialogType = CHbSymbianVariant::NewL( (TAny*) &(dialogIdx), 
+                                                                CHbSymbianVariant::EInt );
+            CleanupStack::PushL(dialogType);
+            TBuf16<6> dialogTypeKey;
+            dialogTypeKey.Num(TBluetoothDialogParams::EDialogType);
+            User::LeaveIfError(variantMap->Add(dialogTypeKey, dialogType));
+            CleanupStack::Pop(dialogType);
+            
+            CHbSymbianVariant* deviceName = CHbSymbianVariant::NewL( (TAny*) (&iRemoteDeviceName), 
+                                                                CHbSymbianVariant::EDes );
+            CleanupStack::PushL(deviceName);
+            TBuf16<6> deviceNameKey;
+            deviceNameKey.Num(TBluetoothDeviceDialog::EDeviceName);
+            User::LeaveIfError(variantMap->Add(deviceNameKey, deviceName));
+            CleanupStack::Pop(deviceName);
+            
+            CHbSymbianVariant* fileName = CHbSymbianVariant::NewL( (TAny*) (&iReceivingFileName), 
+                                                                CHbSymbianVariant::EDes );
+            CleanupStack::PushL(fileName);
+            TBuf16<6> fileNameKey;
+            fileNameKey.Num(TBluetoothDeviceDialog::EReceivingFileName);
+            User::LeaveIfError(variantMap->Add(fileNameKey, fileName));
+            CleanupStack::Pop(fileName);
+            
+            CHbSymbianVariant* fileSz = CHbSymbianVariant::NewL( (TAny*) &iTotalSizeByte, 
+                                                                CHbSymbianVariant::EInt );
+            CleanupStack::PushL(fileSz);
+            TBuf16<6> fileSzKey;
+            fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
+            User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
+            CleanupStack::Pop(fileSz);
+                    
+            iDialogActive = ETrue;
+            iProgressDialog->Show( KBTDevDialogId(), *variantMap, this );
+            CleanupStack::PopAndDestroy(variantMap);
             }
         else
             {
             if(iMediaType == ESrcsMediaBT)
                 {
-                iProgressDialog->ShowProgressDialogL(R_BT_RECEIVING_DATA);
+                //TODO - Remove the usage of the resources.
+                //iProgressDialog->ShowProgressDialogL(R_BT_RECEIVING_DATA);
                 }
             TRACE_ASSERT(iMediaType != ESrcsMediaIrDA, KErrNotSupported);
             }
         }
     else
         {
-        iWaitDialog = CGlobalDialog::NewL(this);
+    
+        /*
+         * TODO - The functionality provided by CGlobalDialog will be removed
+         * TODO - and this will be provided by CGlobalProgressDialog.
+         */
         if(iMediaType == ESrcsMediaBT)
             {
-            iWaitDialog->ShowNoteDialogL(R_BT_RECEIVING_DATA, ETrue);
+            // TODO 
             }
         TRACE_ASSERT(iMediaType != ESrcsMediaIrDA, KErrNotSupported);
         }
     }
 
-void COPPController::UpdateReceivingIndicator()
+void COPPController::UpdateReceivingIndicatorL()
     {
     if(iProgressDialog)
         {
-        iProgressDialog->UpdateProgressDialog(iObexObject->BytesReceived(), iTotalSizeByte);
-        }
-    // else we are using a wait note, so no "need" to update
-    }
-
-void COPPController::HandleGlobalProgressDialogL( TInt aSoftkey )
-    {
-    TRACE_FUNC
-    
-    if(aSoftkey == EAknSoftkeyCancel)
-        {
-        CancelTransfer();
-        }
-    else if(aSoftkey == EAknSoftkeyHide)
-        {
-        CloseReceivingIndicator(EFalse); // Don't reset state as only hiding
-        }
-    }
-
-void COPPController::HandleGlobalNoteDialogL( TInt aSoftkey )
-    {
-    TRACE_FUNC
-    
-    if(aSoftkey == EAknSoftkeyCancel)
-        {
-        CancelTransfer();
-        }
-    else if(aSoftkey == EAknSoftkeyHide)
-        {
-        CloseReceivingIndicator(EFalse); // Don't reset state as only hiding
+        CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+        CleanupStack::PushL(variantMap);
+        
+        TInt bytesReceived = iObexObject->BytesReceived();
+        CHbSymbianVariant* progress = CHbSymbianVariant::NewL( (TAny*) &bytesReceived, CHbSymbianVariant::EInt );
+        CleanupStack::PushL(progress);
+        User::LeaveIfError(variantMap->Add(_L("progress"), progress));
+        CleanupStack::Pop(progress);
+        
+        iProgressDialog->Update(*variantMap);
+        CleanupStack::PopAndDestroy(variantMap);
         }
     }
 
@@ -761,17 +817,13 @@ void COPPController::CloseReceivingIndicator(TBool aResetDisplayedState)
         {
         iNoteDisplayed = EFalse;
         }
+    
     if(iProgressDialog)
         {
-        iProgressDialog->ProcessFinished();
+        iProgressDialog->Cancel();
+        iDialogActive = EFalse;
         delete iProgressDialog;
         iProgressDialog = NULL;
-        }
-    if(iWaitDialog)
-        {
-        iWaitDialog->ProcessFinished();
-        delete iWaitDialog;
-        iWaitDialog = NULL;
         }
     }
 
@@ -830,9 +882,12 @@ void COPPController::CloseReceivingIndicator(TBool aResetDisplayedState)
  // Callback from devman
  // ----------------------------------------------------------
  //
- void COPPController::HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* /*aDeviceArray*/)
+ void COPPController::HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray)
     {
     TRACE_INFO( _L( "[oppreceiveservice] HandleGetDevicesComplete: enter \t" ) );
+    
+    (void) aDeviceArray;
+    
     if ( aErr == KErrNone )
         {
         if ( iResultArray->Count())
@@ -851,7 +906,77 @@ void COPPController::CloseReceivingIndicator(TBool aResetDisplayedState)
             }
         }
     }
+ TBool COPPController::IsBackupRunning()
+    {
+    const TUint32 KFileManagerBkupStatus = 0x00000001;
+    
+    TInt status = EFileManagerBkupStatusUnset;
+    TBool retValue = EFalse;
+    TInt err = RProperty::Get( TUid::Uid(KFileManagerUID3), KFileManagerBkupStatus,
+                              status );
+    if ( err == KErrNone )
+        {
+        if ( status == EFileManagerBkupStatusBackup || 
+             status == EFileManagerBkupStatusRestore )
+            {
+            TSecureId fileManagerSecureId( KFileManagerUID3 );
+            //only returning ETrue if backup process is still active
+            retValue = ProcessExists( fileManagerSecureId );
+            }
+        }
+   
+    return retValue;
+    }
  
+ TBool COPPController::ProcessExists( const TSecureId& aSecureId )
+     {
+     _LIT( KFindPattern, "*" );
+     TFindProcess finder(KFindPattern);
+     TFullName processName;
+     while( finder.Next( processName ) == KErrNone )
+         {
+         RProcess process;
+         if ( process.Open( processName ) == KErrNone )
+             {
+             TSecureId processId( process.SecureId() );
+             process.Close();
+             if( processId == aSecureId )
+                 {
+                 return ETrue;
+                 }
+             }
+         }
+     return EFalse;
+     }
+ 
+ void COPPController::DialogDismissed(TInt aButtonId)
+     {
+     (void) aButtonId;
+     }
+
+ void COPPController::DataReceived(CHbSymbianVariantMap& aData)
+     {
+     if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult")) == 0)
+         {
+         TInt val = *(static_cast<TInt*>(aData.Get(_L("actionResult"))->Data()));
+         if(!val)
+             {
+             //Cancel has been clicked
+             CancelTransfer();
+             }
+         else
+             {
+             //Hide has been clicked
+             CloseReceivingIndicator(EFalse);
+             }
+         }
+     }
+ 
+ void COPPController::DeviceDialogClosed(TInt aCompletionCode)
+     {
+     (void) aCompletionCode;
+     }
+
 //////////////////////////// Global part ////////////////////////////
 
 //  End of File  

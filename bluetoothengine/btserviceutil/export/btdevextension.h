@@ -77,14 +77,27 @@ public:
 
     /**
      * Two-phase constructor
-     * @param aDev a CBTDevice instance. The ownership is transferred.
+     * @param aAddr the inquiry socket address of the device.
+     * @param aName the device-name of the device.
      * @param aNameOption the option for formating the default device
-     *  name when the given aDev instance has no valid name.
+     *  name when the given name is empty.
      */
     IMPORT_C static CBtDevExtension* NewLC( 
             const TInquirySockAddr& aAddr, 
             const TDesC& aName = KNullDesC,
             TDefaultDevNameOption aNameOption = EColonSeperatedBDAddr );        
+
+    /**
+     * Two-phase constructor
+     * @param aAddr the bd_addr of the device.
+     * @param aName the device-name of the device.
+     * @param aNameOption the option for formating the default device
+     *  name when the given name is empty.
+     */
+    IMPORT_C static CBtDevExtension* NewLC( 
+            const TBTDevAddr& aAddr, 
+            const TDesC& aName = KNullDesC,
+            TDefaultDevNameOption aNameOption = EColonSeperatedBDAddr );      
     
     /**
      * Destructor

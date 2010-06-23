@@ -26,6 +26,7 @@
 
 // Forward declarations
 class BtDeviceDialogPluginPrivate;
+class QTranslator;
 
 /*!
     \class BtDeviceDialogPlugin
@@ -67,6 +68,8 @@ private:
 private:
     Q_DISABLE_COPY(BtDeviceDialogPlugin)
     BtDeviceDialogPluginPrivate *d;
+    QTranslator* mDialogTranslator;
+    QTranslator* mViewTranslator;
 };
 
 #endif // BTDEVICEDIALOGPLUGIN_P_H

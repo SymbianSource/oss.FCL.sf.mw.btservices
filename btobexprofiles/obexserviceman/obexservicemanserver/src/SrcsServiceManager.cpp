@@ -228,17 +228,17 @@ void CSrcsServiceManager::RealDoManageServiceL(TSrcsTransport aTransport, TBool 
     case ESrcsTransportBT:
         FLOG(_L("[SRCS]\tserver\tCSrcsServiceManager: ManageServicesL(Bluetooth)"));
         iTransportName.Set(KSrcsTransportBT);
-        ServiceArray(*iBTConnectionArray, aState);
+        ServiceArrayL(*iBTConnectionArray, aState);
         break;
     case ESrcsTransportUSB:
         FLOG(_L("[SRCS]\tserver\tCSrcsServiceManager: ManageServicesL(USB)"));
         iTransportName.Set(KSrcsTransportUSB);
-        ServiceArray(*iUSBConnectionArray, aState);
+        ServiceArrayL(*iUSBConnectionArray, aState);
         break;
     case ESrcsTransportIrDA:
         FLOG(_L("[SRCS]\tserver\tCSrcsServiceManager: ManageServicesL(IrDA)"));
         iTransportName.Set(KSrcsTransportIrDA);
-        ServiceArray(*iIrDAConnectionArray, aState);
+        ServiceArrayL(*iIrDAConnectionArray, aState);
         break;
     default:
         FTRACE(FPrint(_L("[SRCS]\tserver\tCSrcsServiceManager: ManageServicesL. Transport not supported.")));
@@ -252,9 +252,9 @@ void CSrcsServiceManager::RealDoManageServiceL(TSrcsTransport aTransport, TBool 
 // Method to manage Service arrays
 // ---------------------------------------------------------
 //     
-void CSrcsServiceManager::ServiceArray(CArrayPtr<CSrcsTransport> &aTransport, TBool aState)
+void CSrcsServiceManager::ServiceArrayL(CArrayPtr<CSrcsTransport> &aTransport, TBool aState)
     {
-    FLOG(_L("[SRCS]\tserver\tCSrcsServiceManager: ServiceArray"));
+    FLOG(_L("[SRCS]\tserver\tCSrcsServiceManager: ServiceArrayL"));
 
     // We start and stop services by aState value
     if ( aState ) // trun on service
@@ -320,7 +320,7 @@ void CSrcsServiceManager::ServiceArray(CArrayPtr<CSrcsTransport> &aTransport, TB
                 FTRACE(FPrint(_L("[SRCS]\tserver\tCSrcsServiceManager: ManageServicesL. Transport implementation not found.")));
                 }
 
-            // Clean up            
+            // Clean up.  todo (from reviewing): memory leak when some func above leaves.  To be fixed          
             infoArrayTranport.ResetAndDestroy();                 
             infoArrayServiceController.ResetAndDestroy();                
             CleanupStack::PopAndDestroy(2); //infoArrayServiceController

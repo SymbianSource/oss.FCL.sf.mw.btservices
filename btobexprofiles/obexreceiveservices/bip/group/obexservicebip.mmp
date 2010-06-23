@@ -41,6 +41,9 @@ END
 USERINCLUDE ../inc
 SYSTEMINCLUDE  ../../../inc ../../../../inc
 MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
+SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets
+SYSTEMINCLUDE  /epoc32/include/platform/mw/btservices
 
 LIBRARY         euser.lib           // Base library
 LIBRARY         irobex.lib          // For Object exchange
@@ -62,7 +65,8 @@ LIBRARY			btmanclient.lib
 LIBRARY 		btengdevman.lib				//btengdevman.dll
 LIBRARY 		btengsettings.lib			//btengsettings.dll
 LIBRARY 		btengconnman.lib			//btengconnman.dll
-
+LIBRARY			HbCore.lib		
+LIBRARY			HbWidgets.lib
 
 DEBUGLIBRARY 	flogger.lib         // For logging
 

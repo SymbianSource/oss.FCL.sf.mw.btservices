@@ -18,11 +18,8 @@
 
 #include "btlocalsetting.h"
 #include <btdevice.h>
-//#include <QStringList>
 #include <btmanclient.h>
 #include <bt_subscribe.h>
-//#include <centralrepository.h>
-//#include <coreapplicationuissdkcrkeys.h>
 #include "btqtconstants.h"
 
 const int KLocalDeviceNameWatcher = 10;
@@ -211,18 +208,12 @@ void BtLocalSetting::updateDeviceName( const QString &name )
     BtuiModelDataItem& item = 
             mData[ BtSettingModel::LocalBtNameRow ];
     
-    if ( item.isEmpty() ) {
-        // Initialize with additional information on the setting
-        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Local Bluetooth name" ) );
-    }
-    
     bool setByUser = !name.isEmpty();
     
     // The additional parameter is the flag indicating whether the 
     // Bluetooth name has been set by the user.
     // The flag is set to true if the name has been set.    
-    // requirement does not 
-    //nitem[ BtSettingModel::SettingValueParamRole ] = QVariant( setByUser );
+    // item[ BtSettingModel::SettingValueParamRole ] = QVariant( setByUser );
     
     QString resolvedName( name );
     if ( resolvedName.isEmpty() ) {
@@ -240,38 +231,14 @@ void BtLocalSetting::setPowerSetting( TBTPowerStateValue state )
 {
     BtuiModelDataItem& item = 
             mData[ BtSettingModel::PowerStateRow ];
-    if ( item.isEmpty() ) {
-        // Initialize with additional information on the setting
-        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Bluetooth power" ) );
-    }
     
-    bool powerOn = ( state == EBTPowerOn );
-
-    item[ BtSettingModel::settingDisplayRole ] = 
-            powerOn ? QVariant( tr( "On" ) ) : QVariant( tr( "Off" ) );
-    item[ BtSettingModel::SettingValueRole ] = QVariant( powerOn );
+    item[ BtSettingModel::SettingValueRole ] = QVariant( QtPowerMode(state) );
 }
 
 void BtLocalSetting::setVisibilityMode( TBTVisibilityMode state )
 {
     BtuiModelDataItem& item = mData[ BtSettingModel::VisibilityRow ];
 
-    if ( item.isEmpty() ) {
-        item[ BtSettingModel::SettingNameRole ] = QVariant( tr( "Phone visibility" ) );
-    }
-    
-    if ( state == EBTVisibilityModeHidden )
-        {
-        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Hidden" ) );
-        }
-    else if ( state == EBTVisibilityModeGeneral )
-        {
-        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Visible" ) );
-        }
-    else
-        {
-        item [ BtSettingModel::settingDisplayRole ] = QVariant( tr( "Temporarily visible" ) );
-        }
     item [ BtSettingModel::SettingValueRole ] = QVariant( QtVisibilityMode(state) );
 }
 

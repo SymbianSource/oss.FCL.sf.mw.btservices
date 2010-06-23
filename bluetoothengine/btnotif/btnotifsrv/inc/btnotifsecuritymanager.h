@@ -15,8 +15,8 @@
 *
 */
 
-#ifndef BTNOTIFPAIRINGMANAGER_H
-#define BTNOTIFPAIRINGMANAGER_H
+#ifndef BTNOTIFSECURITYMANAGER_H
+#define BTNOTIFSECURITYMANAGER_H
 
 #include <bttypes.h>
 #include <bt_sock.h>
@@ -29,9 +29,10 @@ class CBTNotifBasePairingHandler;
 class CBTNotifPairNotifier;
 class CBTNotifConnectionTracker;
 class CBtDevRepository;
+class CBTNotifServiceAuthorizer;
 
 /**
- *  Class CBTNotifPairingManager
+ *  Class CBTNotifSecurityManager
  *
  *  This class manages pairing with BT devices.
  *  The responsibility of handling incoming and outgoing pairings is
@@ -40,7 +41,7 @@ class CBtDevRepository;
  *
  *  @since Symbian^4
  */
-NONSHARABLE_CLASS( CBTNotifPairingManager ) : 
+NONSHARABLE_CLASS( CBTNotifSecurityManager ) : 
     public CBase, 
     public MBtSimpleActiveObserver,
     public MBtDevRepositoryObserver
@@ -50,14 +51,14 @@ public:
     /**
      * Two-phase constructor
      */
-    static CBTNotifPairingManager* NewL( 
+    static CBTNotifSecurityManager* NewL( 
             CBTNotifConnectionTracker& aParent, 
             CBtDevRepository& aDevRepository );
 
     /**
      * Destructor
      */
-    ~CBTNotifPairingManager();
+    ~CBTNotifSecurityManager();
 
     /**
      * Cancels an outstanding pairing request.
@@ -69,7 +70,7 @@ public:
      */
     void HandleBondingRequestL( const RMessage2& aMessage );
 
-    void HandlePairingNotifierRequestL( const RMessage2& aMessage );
+    void HandleNotifierRequestL( const RMessage2& aMessage );
     
     /**
      * Gets the instance of pairing server.
@@ -117,6 +118,11 @@ public:
      * Unpair a device via registry
      */
     void UnpairDevice( const TBTDevAddr& aAddr );
+
+    /**
+     * Block a device via registry
+     */
+    void BlockDevice( const TBTDevAddr& aAddr , TBool aBanned);
     
     /**
      * Add the bit indicating the device is user-aware Just worked paired to
@@ -145,6 +151,16 @@ public:
      * @return one of TBTEngConnectionStatus enums
      */
     TBTEngConnectionStatus ConnectStatus( const TBTDevAddr& aAddr );
+    
+    /**
+     * Activate / deactivate a pair observer
+     */
+    TInt SetPairObserver(const TBTDevAddr& aAddr, TBool aActivate);
+    
+    /**
+     * Trust a device via the registry
+     */
+    void TrustDevice( const TBTDevAddr& aAddr );
     
 private: 
     
@@ -236,7 +252,7 @@ private:
     /**
      * C++ default constructor
      */
-    CBTNotifPairingManager(
+    CBTNotifSecurityManager(
             CBTNotifConnectionTracker& aParent,
             CBtDevRepository& aDevRepository );
     
@@ -252,12 +268,7 @@ private:
     void SubscribeLocalAddress();
 
     TBool IsLocalAddressAvailable();
-
-    /**
-     * Activate / deactivate a pair observer
-     */
-    TInt SetPairObserver(const TBTDevAddr& aAddr, TBool aActivate);
-    
+   
     /**
      * Pair a BT device.
      */
@@ -392,9 +403,11 @@ private:
      * Provides access to the BT local device address.
      */
     RProperty iPropertyLocalAddr;
+    
+    CBTNotifServiceAuthorizer* iServiceAuthorizer;
     };
 
-#endif /*BTNOTIFPAIRINGMANAGER_H*/
+#endif /*BTNOTIFSECURITYMANAGER_H*/
 
 
 

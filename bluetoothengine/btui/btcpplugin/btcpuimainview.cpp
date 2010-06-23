@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -33,13 +33,15 @@
 #include <hbmenu.h>
 #include <hbaction.h>
 #include <hbcombobox.h>
+#include <hbgroupbox.h>
 #include "btcpuisearchview.h"
 #include "btcpuideviceview.h"
 #include <bluetoothuitrace.h>
 #include <btdelegatefactory.h>
 #include <btabstractdelegate.h>
 #include "btqtconstants.h"
-
+#include "btcpuimainlistviewitem.h"
+#include "btuidevtypemap.h"
 
 // docml to load
 const char* BTUI_MAINVIEW_DOCML = ":/docml/bt-main-view.docml";
@@ -57,7 +59,7 @@ BtCpUiMainView::BtCpUiMainView(
       mAbstractDelegate(0), mMainFilterModel(0)
 {
     bool ret(false);
-    
+
     mMainWindow = hbInstance->allMainWindows().first();
     mMainView = this;
     
@@ -66,11 +68,11 @@ BtCpUiMainView::BtCpUiMainView(
     // name in docml.
     setObjectName("view");
 
-    QObjectList objectList;
-    objectList.append(this);
+    mLoader = new HbDocumentLoader();
     // Pass the view to documentloader. Document loader uses this view
     // when docml is parsed, instead of creating new view.
-    mLoader = new HbDocumentLoader();
+    QObjectList objectList;
+    objectList.append(this);
     mLoader->setObjectTree(objectList);
 
     bool ok = false;
@@ -103,6 +105,14 @@ BtCpUiMainView::BtCpUiMainView(
     mVisibilityMode=0;
     mVisibilityMode = qobject_cast<HbComboBox *>( mLoader->findWidget( "combobox" ) );
     BTUI_ASSERT_X( mVisibilityMode != 0, "bt-main-view", "visibility combobox not found" );
+    // add new item for temporary visibility
+    // NOTE:  translation (at least default english) gives string "(p)Visible for 5 min", 
+    // if setting 1 min --> "(s)Visible for 1 min", ie p=plural, s=singular, but these should
+    // not be shown to the user!
+    // ToDo:  change this to use translation once it starts working
+//    QString tempVis(hbTrId("txt_bt_setlabel_visibility_val_visible_for_l1_min", TEMP_VISIBILITY_DEFAULT));  
+    QString tempVis(hbTrId("Visible for 5 min"));  
+    mVisibilityMode->addItem(tempVis, Qt::DisplayRole);
         
     mDeviceList=0;
     mDeviceList = qobject_cast<HbListView *>( mLoader->findWidget( "listView" ) );
@@ -120,7 +130,22 @@ BtCpUiMainView::BtCpUiMainView(
     HbAction *discoverAction = static_cast<HbAction*>( mLoader->findObject( "discoverAction" ) );
     BTUI_ASSERT_X( discoverAction, "bt-main-view", "discover action missing" ); 
     ret = connect(discoverAction, SIGNAL(triggered()), this, SLOT(goToDiscoveryView()));
-    BTUI_ASSERT_X( ret, "bt-main-view", "orientation toggle can't connect" ); 
+    BTUI_ASSERT_X( ret, "bt-main-view", "discover action can't connect" ); 
+
+    // load tool bar actions
+    mAllAction = static_cast<HbAction*>( mLoader->findObject( "allAction" ) );
+    BTUI_ASSERT_X( mAllAction, "bt-main-view", "All action missing" ); 
+    ret = connect(mAllAction, SIGNAL(triggered()), this, SLOT(allActionTriggered()));
+    BTUI_ASSERT_X( ret, "bt-main-view", "all action can't connect" ); 
+
+    // load tool bar actions
+    mPairAction = static_cast<HbAction*>( mLoader->findObject( "pairedAction" ) );
+    BTUI_ASSERT_X( mPairAction, "bt-main-view", "Pair action missing" ); 
+    ret = connect(mPairAction, SIGNAL(triggered()), this, SLOT(pairActiontriggered()));
+    BTUI_ASSERT_X( ret, "bt-main-view", "pair action can't connect" ); 
+
+    mGroupBox = qobject_cast<HbGroupBox *>( mLoader->findWidget( "groupBox" ) );
+    BTUI_ASSERT_X( mGroupBox != 0, "bt-main-view", "Group Box not found" ); 
     
     //*********************Testing device view START****************************//
     HbAction *removePairedDevices = static_cast<HbAction*>( mLoader->findObject( "removePairedDevices" ) );
@@ -158,14 +183,14 @@ BtCpUiMainView::BtCpUiMainView(
     mMainFilterModel = new BtuiModelSortFilter(this);
     
     mMainFilterModel->setSourceModel( mDeviceModel );
-    // filter to match only InRegistry devices
-    mMainFilterModel->addDeviceMajorFilter(
-            BtDeviceModel::InRegistry, 
-            BtuiModelSortFilter::AtLeastMatch);
+    updateDeviceListFilter(BtuiPaired);
+	    // List view item
+    BtCpUiMainListViewItem *prototype = new BtCpUiMainListViewItem(mDeviceList);
+    prototype->setModelSortFilter(mMainFilterModel);
+    mDeviceList->setItemPrototype(prototype);
 
     mDeviceList->setModel(mMainFilterModel);
 
-    
 }
 
 /*!
@@ -174,13 +199,8 @@ BtCpUiMainView::BtCpUiMainView(
 BtCpUiMainView::~BtCpUiMainView()
 {
     delete mLoader; // Also deletes all widgets that it constructed.
-    
     mMainWindow->removeView(mSearchView);
-    delete mSearchView;
-    
     mMainWindow->removeView(mDeviceView);
-    delete mDeviceView;
-        
 	if (mAbstractDelegate) {
         delete mAbstractDelegate;
     }
@@ -202,11 +222,6 @@ void BtCpUiMainView::activateView(const QVariant& value, int cmdId )
 void BtCpUiMainView::deactivateView()
 {
 
-}
-
-void BtCpUiMainView::itemActivated(QModelIndex index)
-{
-    Q_UNUSED(index);
 }
 
 void BtCpUiMainView::goToDiscoveryView()
@@ -244,7 +259,7 @@ void BtCpUiMainView::changeBtLocalName()
 void BtCpUiMainView::setPrevBtLocalName()
 {
     //Should we notify user this as Error...?
-    HbNotificationDialog::launchDialog(hbTrId("Error"));
+    HbNotificationDialog::launchDialog(hbTrId("Error"));  // ToDo:  missing text id
     QModelIndex index = mSettingModel->index( BtSettingModel::LocalBtNameRow,0 );
     
     mDeviceNameEdit->setText( mSettingModel->data(
@@ -276,12 +291,12 @@ void BtCpUiMainView::visibilityChanged (int index)
     
     VisibilityMode mode = indexToVisibilityMode(index);
     list.append(QVariant((int)mode));
-    if(BtTemporary == VisibilityMode(mode)) {
+    if( BtTemporary == VisibilityMode(mode) ) {
         //Right now hardcoded to 5 Mins.
         list.append(QVariant(5));
     }
     //Error handling has to be done.    
-    if (!mAbstractDelegate) {
+    if ( !mAbstractDelegate ) {
         mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::Visibility, 
                 mSettingModel, mDeviceModel); 
         connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(visibilityDelegateCompleted(int)) );
@@ -295,24 +310,49 @@ void BtCpUiMainView::visibilityChanged (int index)
 
 void BtCpUiMainView::setPrevVisibilityMode()
 {
-    bool ret(false);
-    
-    //Should we notify this error to user..?
-    HbNotificationDialog::launchDialog(hbTrId("Error"));
+   
     QModelIndex index = mSettingModel->index( BtSettingModel::VisibilityRow, 0 );
-    
-    ret = disconnect(mVisibilityMode, SIGNAL(currentIndexChanged (int)), 
-                    this, SLOT(visibilityChanged (int)));
-    BTUI_ASSERT_X( ret, "BtCpUiMainView::setPrevVisibilityMode", "can't disconnect signal" );
     
     mVisibilityMode->setCurrentIndex ( visibilityModeToIndex((VisibilityMode)
                 mSettingModel->data(index,BtSettingModel::SettingValueRole).toInt()) );
     
-    //Handle Visibility Change User Interaction
-    ret = connect(mVisibilityMode, SIGNAL(currentIndexChanged (int)), 
-            this, SLOT(visibilityChanged (int)));
-    BTUI_ASSERT_X( ret, "BtCpUiMainView::setPrevVisibilityMode", "can't connect signal" );
+}
 
+
+void BtCpUiMainView::allActionTriggered()
+{
+    updateDeviceListFilter(BtuiAll);
+}
+
+void BtCpUiMainView::pairActiontriggered()
+{
+    updateDeviceListFilter(BtuiPaired);
+}
+
+void BtCpUiMainView::updateDeviceListFilter(BtCpUiMainView::filterType filter)
+{
+    mMainFilterModel->clearDeviceMajorFilters();
+    
+    switch (filter) {
+        case BtuiAll:
+            mGroupBox->setHeading(hbTrId("txt_bt_subhead_bluetooth_all_devices"));
+            mPairAction->setEnabled(true);
+            mAllAction->setEnabled(false);
+            mMainFilterModel->addDeviceMajorFilter(
+                    BtuiDevProperty::InRegistry, 
+                    BtuiModelSortFilter::AtLeastMatch);
+
+            break;
+        case BtuiPaired:
+            mGroupBox->setHeading(hbTrId("txt_bt_subhead_bluetooth_paired_devices"));
+            mPairAction->setEnabled(false);
+            mAllAction->setEnabled(true);
+            mMainFilterModel->addDeviceMajorFilter(
+                    BtuiDevProperty::InRegistry | BtuiDevProperty::Bonded, 
+                    BtuiModelSortFilter::AtLeastMatch);
+
+            break;
+    }
 }
 
 
@@ -351,21 +391,14 @@ void BtCpUiMainView::changeOrientation( Qt::Orientation orientation )
     }
 }
 
-void BtCpUiMainView::commandCompleted( int cmdId, int err, const QString &diagnostic )
-{
-    Q_UNUSED(cmdId);
-    Q_UNUSED(err);
-    Q_UNUSED(diagnostic);
-
-}
-
 /*!
     Slot for receiving notification of local setting changes from the model.
     Identify the setting changed and update the corresponding UI item.
  */
 void BtCpUiMainView::updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {   
-
+    bool val(false);
+    
     // update only the part of the view specified by the model's row(s)
     for (int i=topLeft.row(); i <= bottomRight.row(); i++) {
         QModelIndex index = mSettingModel->index( i, 0);
@@ -376,8 +409,17 @@ void BtCpUiMainView::updateSettingItems(const QModelIndex &topLeft, const QModel
                     mSettingModel->data(index,BtSettingModel::settingDisplayRole).toString() );
             break;
         case BtSettingModel::PowerStateRow:
-            mPowerButton->setText( mSettingModel->data(index,
-                    BtSettingModel::settingDisplayRole).toString() );
+            val = mSettingModel->data(index, BtSettingModel::SettingValueRole).toBool();
+            if (val) {
+                HbIcon icon("qtg_mono_bluetooth");
+                icon.setIconName("qtg_mono_bluetooth");
+                mPowerButton->setIcon(icon);  
+            }
+            else {
+                HbIcon icon("qtg_mono_bluetooth_off");
+                icon.setIconName("qtg_mono_bluetooth_off");
+                mPowerButton->setIcon(icon);
+            }
             break;
         case BtSettingModel::VisibilityRow:
             mVisibilityMode->setCurrentIndex ( visibilityModeToIndex((VisibilityMode)
@@ -393,15 +435,24 @@ void BtCpUiMainView::updateSettingItems(const QModelIndex &topLeft, const QModel
  */
 void BtCpUiMainView::changePowerState()
 {
-    
     QModelIndex index = mSettingModel->index(BtSettingModel::PowerStateRow, 0);
-    QVariant powerState = mSettingModel->data(index, Qt::EditRole);
+    PowerStateQtValue powerState = (PowerStateQtValue)mSettingModel->data(index, Qt::EditRole).toInt();
+    BTUI_ASSERT_X(((powerState == BtPowerOn) || (powerState == BtPowerOff)), 
+            "BtCpUiMainView::changePowerState()", "incorrect qt power state");
+
+    if (powerState == BtPowerOff) {
+        powerState = BtPowerOn;
+    }
+    else {
+        powerState = BtPowerOff;
+    } 
+    
     if (!mAbstractDelegate)//if there is no other delegate running
     { 
         mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::ManagePower, 
                 mSettingModel, mDeviceModel ); 
         connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(powerDelegateCompleted(int)) );
-        mAbstractDelegate->exec(powerState);
+        mAbstractDelegate->exec(QVariant((int)powerState));
     }
    
 }
@@ -424,7 +475,7 @@ void BtCpUiMainView::powerDelegateCompleted(int status)
  */
 VisibilityMode BtCpUiMainView::indexToVisibilityMode(int index)
 {
-    VisibilityMode mode; 
+    VisibilityMode mode = BtVisibilityUnknown;
     switch(index) {
     case UiRowBtHidden:  
         mode = BtHidden;
@@ -436,7 +487,7 @@ VisibilityMode BtCpUiMainView::indexToVisibilityMode(int index)
         mode = BtTemporary;
         break;
     default:
-        mode = BtUnknown;
+        BTUI_ASSERT_X(false, "BtCpUiMainView::indexToVisibilityMode", "invalid mode");
     }
     return mode;
 }
@@ -446,7 +497,7 @@ VisibilityMode BtCpUiMainView::indexToVisibilityMode(int index)
  */
 int BtCpUiMainView::visibilityModeToIndex(VisibilityMode mode)
 {
-    int uiRow;
+    int uiRow = UiRowBtUnknown;
     switch(mode) {
     case BtHidden:  
         uiRow = UiRowBtHidden;
@@ -458,15 +509,12 @@ int BtCpUiMainView::visibilityModeToIndex(VisibilityMode mode)
         uiRow = UiRowBtTemporary;
         break;
     default:
-        uiRow = -1;  // error
+        BTUI_ASSERT_X(false, "BtCpUiMainView::visibilityModeToIndex", "invalid mode");
     }
     return uiRow;
 }
-//////////////////////
-//
-// from view manager
-// 
-//////////////////////
+
+
 
 /*!
     Create views(main view, device view and search view).
@@ -553,21 +601,6 @@ BtCpUiBaseView * BtCpUiMainView::idToView(int targetViewId)
     }
     return 0;
 }
-
-/*
-   Jump to previous view.  This function is used when back button is pressed.
- */
-void BtCpUiMainView::switchToPreviousViewReally()
-{  
-//    // jump to previous view of current view.
-//    if( (mCurrentViewId >= 0) && (mCurrentViewId < LastView)) {
-//        changeView( mPreviousViewIds[mCurrentViewId], true, 0 );
-//    } 
-//    else {
-//        BTUI_ASSERT_X(false, "BtCpUiMainView::switchToPreviousViewReally", "invalid view id");
-//    }
-}
-
 
 void BtCpUiMainView::setSoftkeyBack()
 {

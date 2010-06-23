@@ -27,11 +27,11 @@
 #include <mtmuidsdef.hrh>       //kuidmtmquerymaxbodysizevalue etc
 #endif
 #include <msvuids.h>
-#include <Obexutils.rsg> 
 #include <obexutilsmessagehandler.h>
 
 
-const TInt KBtMtmUiNfcContext       = 2;
+// todo @ QT migration: take official definition from Messaging at app layer (btmsgtypeuid.h)
+const TUid KUidMsgTypeBt = {0x10009ED5};
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -78,8 +78,10 @@ CBtMtmUiData::~CBtMtmUiData()
 TInt CBtMtmUiData::OperationSupportedL( TInt /*aOperationId*/, 
                                        const TMsvEntry& /*aContext*/) const
 	{
-    FLOG( _L( " CBtMtmUiData: OperationSupportedL\t" ) );    
-	return TObexUtilsUiLayer::OperationNotSupported(); 
+    FLOG( _L( " CBtMtmUiData: OperationSupportedL\t" ) );
+    
+    //todo: This was returning avkon resource Id of sting "This item is not available".
+    return 0;
 	}
 
 // ---------------------------------------------------------
@@ -128,21 +130,13 @@ TInt CBtMtmUiData::QueryCapability( TUid aCapability,
 // Handles received msg icon.
 // ---------------------------------------------------------
 //
-const CBaseMtmUiData::CBitmapArray& CBtMtmUiData::ContextIcon( const TMsvEntry& aContext, 
+const CBaseMtmUiData::CBitmapArray& CBtMtmUiData::ContextIcon( const TMsvEntry& /*aContext*/, 
                                                               TInt /*aStateFlags*/) const
 	{
 	// Check if NFC context
 	TInt icon = 0;
-	if ( aContext.MtmData1() == KBtMtmUiNfcContext )
-	    {
-      icon = TObexUtilsUiLayer::ContextIcon( aContext, ENfc );
-	    }
-	else
-	    {
-	    icon = TObexUtilsUiLayer::ContextIcon( aContext, EBluetooth );
-	    }
-
-	return *iIconArrays->At( icon/2 ); 
+	//todo: This function will not work as iIconArrays is not populated might cause panic.
+	return *iIconArrays->At(icon); 
 	}
 
 // ---------------------------------------------------------
@@ -153,7 +147,7 @@ const CBaseMtmUiData::CBitmapArray& CBtMtmUiData::ContextIcon( const TMsvEntry& 
 void CBtMtmUiData::PopulateArraysL()
 	{
     FLOG( _L( " CBtMtmUiData: PopulateArraysL\t" ) );
-	TObexUtilsUiLayer::CreateIconsL( KUidMsgTypeBt, iIconArrays );
+	//todo: Was populating iIconArrays which should be removed.
 	}
 
 // ---------------------------------------------------------
@@ -161,12 +155,10 @@ void CBtMtmUiData::PopulateArraysL()
 // Gives resource filename.
 // ---------------------------------------------------------
 //
-void CBtMtmUiData::GetResourceFileName( TFileName& aFileName ) const
+void CBtMtmUiData::GetResourceFileName( TFileName& /*aFileName*/ ) const
 	{ 
     FLOG( _L( " CBtMtmUiData: GetResourceFileName\t" ) );
-    aFileName = KObexUtilsFileDrive;
-    aFileName += KDC_RESOURCE_FILES_DIR;
-    aFileName += KObexUtilsResourceFileName;
+    //todo: This was returning avkon resource file, which is not required now.
 	}
 
 // ---------------------------------------------------------
@@ -186,7 +178,8 @@ TBool CBtMtmUiData::CanCreateEntryL( const TMsvEntry& aParent,
 		return ( aParent.iMtm.iUid == KMsvLocalServiceIndexEntryIdValue );
 		}
 	// --- Can't create other types ---
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+	//todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -207,7 +200,8 @@ TBool CBtMtmUiData::CanOpenEntryL( const TMsvEntry& aContext,
 			return ETrue;
 			}
 		}
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+	//todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -228,7 +222,8 @@ TBool CBtMtmUiData::CanCloseEntryL( const TMsvEntry& aContext,
 			return ETrue;
 			}
 		}
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+	//todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -248,8 +243,9 @@ TBool CBtMtmUiData::CanViewEntryL( const TMsvEntry& aContext,
 			aReasonResourceId = 0;
 			return ETrue;
 			}
-		}   
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+		}
+	//todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -262,7 +258,8 @@ TBool CBtMtmUiData::CanEditEntryL( const TMsvEntry& aContext,
                                   TInt& aReasonResourceId ) const
 	{
     FLOG( _L( " CBtMtmUiData: CanEditEntryL\t" ) );
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	if( CheckEntry( aContext ) )
 		{
 		if ( ( aContext.iType.iUid == KUidMsvMessageEntryValue ) || 
@@ -283,8 +280,9 @@ TBool CBtMtmUiData::CanEditEntryL( const TMsvEntry& aContext,
 TBool CBtMtmUiData::CanDeleteServiceL( const TMsvEntry& /*aService*/, 
                                       TInt& aReasonResourceId ) const
 	{
-    FLOG( _L( " CBtMtmUiData: CanDeleteServiceL\t" ) );   
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+    FLOG( _L( " CBtMtmUiData: CanDeleteServiceL\t" ) );
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
     return EFalse; 
 	}
 
@@ -296,7 +294,8 @@ TBool CBtMtmUiData::CanDeleteServiceL( const TMsvEntry& /*aService*/,
 TBool CBtMtmUiData::CanDeleteFromEntryL( const TMsvEntry& /*aContext*/, 
                                         TInt& aReasonResourceId ) const
 	{
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported();
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0;
 	return EFalse;
 	}
 
@@ -308,7 +307,8 @@ TBool CBtMtmUiData::CanDeleteFromEntryL( const TMsvEntry& /*aContext*/,
 TBool CBtMtmUiData::CanCopyMoveToEntryL( const TMsvEntry& /*aContext*/, 
                                         TInt& aReasonResourceId ) const
 	{
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -320,7 +320,8 @@ TBool CBtMtmUiData::CanCopyMoveToEntryL( const TMsvEntry& /*aContext*/,
 TBool CBtMtmUiData::CanCopyMoveFromEntryL( const TMsvEntry& /*aContext*/,
                                           TInt& aReasonResourceId ) const
 	{
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported(); 
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0; 
 	return EFalse;
 	}
 
@@ -332,7 +333,8 @@ TBool CBtMtmUiData::CanCopyMoveFromEntryL( const TMsvEntry& /*aContext*/,
 TBool CBtMtmUiData::CanReplyToEntryL( const TMsvEntry& /*aContext*/, 
                                      TInt& aReasonResourceId ) const
 	{
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported();
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0;
 	return EFalse;	// Not Ok to do
 	}
 
@@ -344,7 +346,8 @@ TBool CBtMtmUiData::CanReplyToEntryL( const TMsvEntry& /*aContext*/,
 TBool CBtMtmUiData::CanForwardEntryL( const TMsvEntry& /*aContext*/, 
                                      TInt& aReasonResourceId ) const
 	{
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported();
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0;
 	return EFalse;	// Not Ok to do
 	}
 
@@ -368,7 +371,8 @@ TBool CBtMtmUiData::CanCancelL( const TMsvEntry& /*aContext*/,
                                TInt& aReasonResourceId ) const
     {
     // No way of sending a message from the outbox, so no need to cancel.
-	aReasonResourceId = TObexUtilsUiLayer::OperationNotSupported();
+    //todo: This was using avkon resource Id of sting "This item is not available".
+	aReasonResourceId = 0;
 	return EFalse;
     }
 
@@ -381,8 +385,9 @@ HBufC* CBtMtmUiData::StatusTextL( const TMsvEntry& /*aContext*/ ) const
     {  
     FLOG( _L( " CBtMtmUiData: StatusTextL\t" ) );
     TBuf<80> buffer;
-    TInt resourceId = R_BT_SEND_PROGRESS_SENDING;
-    TObexUtilsUiLayer::ReadResourceL( buffer, resourceId );
+    //todo: Need to use localised string.
+    _LIT(KText, "Sending");
+    buffer.Copy(KText);
     return buffer.AllocL();
     }
 

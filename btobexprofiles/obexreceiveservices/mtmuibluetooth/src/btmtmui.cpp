@@ -32,8 +32,6 @@
 
 #include <mtmuidef.hrh>
 #include <mtclreg.h>
-#include <obexutilsuilayer.h>
-#include <Obexutils.rsg>
 #include <msvuids.h>
 #include <msvids.h>
 #include <obexconstants.h>
@@ -81,6 +79,7 @@ CBtMtmUi::~CBtMtmUi()
 	{
     FLOG( _L( "[CBtMtmUi] CBtMtmUi: ~CBtMtmUi\t" ) );
 	delete iClientRegistry;
+	delete iDialog;
 	}
 
 // Symbian OS default constructor can leave.
@@ -88,6 +87,7 @@ void CBtMtmUi::ConstructL()
 	{
     FLOG( _L( "[CBtMtmUi] CBtMtmUi: ConstructL\t" ) );
     CBaseMtmUi::ConstructL();
+    iDialog = CObexUtilsDialog::NewL(this);
 	}
 
 // ---------------------------------------------------------
@@ -98,9 +98,8 @@ void CBtMtmUi::ConstructL()
 void CBtMtmUi::GetResourceFileName( TFileName& aFileName ) const
 	{ 
 	FLOG( _L( "[CBtMtmUi] CBtMtmUi: GetResourceFileName\t" ) );
-    aFileName = KObexUtilsFileDrive;
-    aFileName += KDC_RESOURCE_FILES_DIR;
-    aFileName += KObexUtilsResourceFileName;
+	(void)aFileName;
+	//todo: This function should be removed it is using avkon resource file.
 	}
 
 // ---------------------------------------------------------
@@ -278,8 +277,11 @@ CMsvOperation* CBtMtmUi::EditL( TRequestStatus& aStatus )
                         }
                     if ( retVal != KErrNone ||iState  != KErrNone )
                         {
-                        resourceId = R_BT_DEV_NOT_AVAIL;                        
-						TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+                        //resourceId = R_BT_DEV_NOT_AVAIL;                        
+						//TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+                        //todo: Need to use Localized string.
+                        _LIT(KText, "Cannot establish Bluetooth connection");
+                        iDialog->ShowInformationNoteL(KText);
                         CleanupStack::PopAndDestroy(3); // BtDevice, BtConnection, password
                         return CMsvCompletedOperation::NewL(
                              Session(), 
@@ -515,8 +517,12 @@ TInt CBtMtmUi::DisplayProgressSummaryL( const TDesC8& aProgress ) const
 	const TInt error = progress.iError;
     if ( error == KErrInUse )
 		{
-        resourceId = R_BT_DEV_NOT_AVAIL;
-		TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+        //resourceId = R_BT_DEV_NOT_AVAIL;
+		//TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+        //todo: Need to use Localized string.
+        _LIT(KText, "Cannot establish Bluetooth connection");
+        iDialog->ShowInformationNoteL(KText);
+
 	    return KErrNone;
 		}
     
@@ -526,8 +532,12 @@ TInt CBtMtmUi::DisplayProgressSummaryL( const TDesC8& aProgress ) const
             {
             FLOG( _L( "[CBtMtmUi] CBtMtmUi:DisplayProgressSummaryL: EDisconnected\t" ) );
             // Allowed to send again.
-            resourceId = R_BT_DATA_SENT;
-			TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+            //resourceId = R_BT_DATA_SENT;
+			//TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+            //todo: Need to use Localized string.
+            _LIT(KText, "Message sent!");
+            iDialog->ShowInformationNoteL(KText);
+
 		    break;
             }
         case TObexMtmProgress::ESendError:
@@ -535,13 +545,21 @@ TInt CBtMtmUi::DisplayProgressSummaryL( const TDesC8& aProgress ) const
             FLOG( _L( "[CBtMtmUi] CBtMtmUi:DisplayProgressSummaryL: ESendError\t" ) );
             if( error == KErrIrObexClientNoDevicesFound )
                 {
-                resourceId = R_BT_DEV_NOT_AVAIL;
-				TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+                //resourceId = R_BT_DEV_NOT_AVAIL;
+				//TObexUtilsUiLayer::ShowInformationNoteL( resourceId );
+                //todo: Need to use Localized string.
+                _LIT(KText, "Cannot establish Bluetooth connection");
+                iDialog->ShowInformationNoteL(KText);
+
                 }
             else
                 {
-                resourceId = R_BT_FAILED_TO_SEND;
-				TObexUtilsUiLayer::ShowErrorNoteL( resourceId );
+                //resourceId = R_BT_FAILED_TO_SEND;
+				//TObexUtilsUiLayer::ShowErrorNoteL( resourceId );
+                //todo: Need to use Localized string.
+                _LIT(KText, "Failed to send message");
+                iDialog->ShowErrorNoteL(KText);
+
                 }
             break;
             }
@@ -666,9 +684,13 @@ CMsvOperation* CBtMtmUi::LaunchEditorApplicationL( TRequestStatus& aStatus,
                                                   CMsvSession& aSession)
 	{
 	FLOG( _L( "[CommonMtmUi] CBtMtmUi: LaunchEditorApplicationL\t" ) );
-	CMsvEntry* message;
-	message = &iBaseMtm.Entry();    
-	return TObexUtilsUiLayer::LaunchEditorApplicationOperationL( aSession, message, aStatus );
+	(void)aStatus;
+	(void)aSession;
+	//CMsvEntry* message;
+	//message = &iBaseMtm.Entry();
+	//todo: need to replace this 
+	//return TObexUtilsUiLayer::LaunchEditorApplicationOperationL( aSession, message, aStatus );
+	return NULL;
 	}
 
 // ---------------------------------------------------------
@@ -804,5 +826,10 @@ void CBtMtmUi::DeviceSearchComplete( CBTDevice* /*aDevice*/, TInt aErr )
     iState=aErr;        
     iWaiter.AsyncStop();
     }            
+
+void CBtMtmUi::DialogDismissed(TInt /*aButtonId*/)
+    {
+    
+    }
 
 // End of File

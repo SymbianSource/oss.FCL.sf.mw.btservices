@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -22,7 +22,7 @@
 #include "BTSUDebug.h"
 #include "BTSUImageConverter.h"
 #include "BTSUXmlParser.h"
-#include <Obexutils.rsg>
+#include <hbtextresolversymbian.h>
 
 
 
@@ -48,6 +48,10 @@ _LIT8( KBTSBIPDescriptorEnd,       "\"/>\r</image-descriptor>" );
 _LIT(KBTSBIPTempPathDrive,"c:");
 const TInt KBTSUMaxPathLenght=256;
 const TInt KBTSUMaxPrivatePathLenght=20;
+
+_LIT(KBTNotSendSomeText,"txt_bt_info_receiving_device_does_not_support_all");
+_LIT(KBTNotSendOneText,"txt_bt_info_receiving_device_does_not_support_this");
+
 
 
 
@@ -235,7 +239,7 @@ void CBTSBIPController::GetCompleted( TInt aStatus,
         }
     else if( aStatus != KErrAbort && aGetResponse->BytesReceived()==0 )
         {
-        TRAPD( error,iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageListSize(),iListPtr->ImageCount() ) );
+        TRAPD( error,iObserverPtr->LaunchProgressNoteL( iClient,iListPtr->ImageCount() ) );
         error=KErrNone;
         TRAP(error, SendL() );    	 
         if ( error != KErrNone )
@@ -291,7 +295,7 @@ void CBTSBIPController::SendL()
         
         TBTSUImageParam imageparam = iListPtr->ImageAtL( iFileIndex );        
         RBuf filename;
-        filename.CreateL(256);
+        filename.CreateL(KMaxFileName);
         CleanupClosePushL(filename);
         imageparam.iFile.Name(filename);
         
@@ -557,7 +561,6 @@ void CBTSBIPController::HandleGetCompleteIndicationL( CObexBufObject* aGetRespon
     TBool found;
     TBool allSupported;
     TInt picindex,capindex;
-    TInt confirm=0;
     CBTSUXmlParser* xmlParser = CBTSUXmlParser::NewL();
     CleanupStack::PushL( xmlParser );
     GenerateTempFileNameL( iTempFileName );
@@ -631,42 +634,20 @@ void CBTSBIPController::HandleGetCompleteIndicationL( CObexBufObject* aGetRespon
     
     if(!allSupported  && iListPtr->ImageCount() > 1)
     	{      	
-    	
-    	confirm=iObserverPtr->LaunchConfirmationQuery(R_BT_NOT_SEND_ALL_QUERY_MIXED);    	
-    		
-    	if(confirm==EAknSoftkeyYes)
-    		{
-    		// Everything went ok. Start sending images
-    		//
-    		iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageListSize(),iListPtr->ImageCount() );
-    
-		    // Start sending images
-    		//
-   			SendL();
-    		}
-    	
-    		
+        HBufC* sendText = HbTextResolverSymbian::LoadLC(KBTNotSendSomeText);
+    	iObserverPtr->LaunchConfirmationQuery(sendText->Des());
+    	CleanupStack::PopAndDestroy( sendText );
     	}
     else if ( !allSupported  &&  iListPtr->ImageCount() == 1)
         {
         // We allow user to choose wheather to send the image file which is not supported on target device
-        // Original codeline: iObserverPtr->ControllerComplete( EBTSBIPOneNotSend ); 
-        confirm=iObserverPtr->LaunchConfirmationQuery(R_BT_NOT_SEND_ALL_QUERY_SINGLE);       
-                    
-        if(confirm==EAknSoftkeyYes)
-            {
-            // Everything went ok. Start sending the images
-            //
-            iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageListSize(),iListPtr->ImageCount() );
-            
-            // Start sending images
-            //
-            SendL();
-            }
+        HBufC* sendText = HbTextResolverSymbian::LoadLC(KBTNotSendOneText);
+        iObserverPtr->LaunchConfirmationQuery(sendText->Des());
+        CleanupStack::PopAndDestroy( sendText );
         } 	
     else if( allSupported )  	
         {
-    	iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageListSize() + iListPtr->ObjectListSizeL(),iListPtr->ImageCount() + iListPtr->ObjectCount());
+    	iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageCount() + iListPtr->ObjectCount());
     
 	    // Start sending images
     	//   	
@@ -687,5 +668,24 @@ void CBTSBIPController::ConnectTimedOut()
     iObserverPtr->ConnectTimedOut();    
     }
 
+
+
+void CBTSBIPController::SendUnSupportedFiles()
+    {
+    // Everything went ok. Start sending images
+
+    // group leaving functions in one trap for better performance:
+    TRAPD(err, {
+            iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ImageCount() );
+            SendL(); } );
+    
+    if ( err != KErrNone )
+        {
+        DeleteTempFile( iTempFileName );
+        // Error on capability handling
+        //
+        iObserverPtr->ControllerComplete( EBTSGettingFailed );
+        }
+    }
 
 //  End of File  

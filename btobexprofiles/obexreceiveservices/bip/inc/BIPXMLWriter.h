@@ -22,7 +22,6 @@
 //INCLUDES
 #include <e32base.h>
 #include <f32file.h>
-#include <obexutilsuilayer.h>
 #include "debug.h"
 
 // CONSTANTS

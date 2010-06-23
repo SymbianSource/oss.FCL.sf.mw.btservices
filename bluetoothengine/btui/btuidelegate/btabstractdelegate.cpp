@@ -17,6 +17,8 @@
 
 
 #include "btabstractdelegate.h"
+#include "btqtconstants.h"
+
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
 
@@ -50,4 +52,14 @@ void BtAbstractDelegate::cancel()
 {
     
 }
+
+bool BtAbstractDelegate::isBtPowerOn()
+{
+    QModelIndex powerIndex = getSettingModel()->index(BtSettingModel::PowerStateRow, 0);
+    PowerStateQtValue powerState = (PowerStateQtValue)getSettingModel()->data(powerIndex, BtSettingModel::SettingValueRole).toInt();
+    
+    return (BtPowerOn == powerState);
+}
+
+
 

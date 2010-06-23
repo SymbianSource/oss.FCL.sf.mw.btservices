@@ -23,8 +23,6 @@
 #include <eiksvdef.h>
 #include <apgcli.h>
 #include <apgtask.h>
-#include <apacmdln.h>
-#include <e32property.h>
 
 #include "hidtranslate.h"
 #include "finder.h"
@@ -52,7 +50,6 @@ const TInt KRepeatEndTimeout = 5000000; // 5 seconds
 
 const TInt KKeyRepeatDelay = 500000;
 const TInt KKeyRepeatInterval = 75000;
-_LIT(KAppName, "PaintCursor.exe");
 //----------------------------------------------------------------------------
 // CHidKeyboardDriver::CHidKeyboardDriver
 //----------------------------------------------------------------------------
@@ -112,8 +109,6 @@ void CHidKeyboardDriver::ConstructL()
     iPhoneAppId = PhoneAppId();
     iIdleAppId = IdleAppId();
 
-    iComboDevice = EFalse;
-
     iSettings = CBtHidSettings::NewL();
     }
 
@@ -136,58 +131,10 @@ CHidKeyboardDriver::~CHidKeyboardDriver()
         iKeys[i].Reset();
         }
 
-    iPointBufQueue.Close();
-
-    if (iComboDevice)
-        {
-        RProperty::Set( KPSUidBthidSrv, KBTMouseCursorState, ECursorNotInitialized );
-        }
-
     if (iSettings)
         delete iSettings;
     }
 
-void CHidKeyboardDriver::MoveCursor(const TPoint& aPoint)
-    {
-    DBG(RDebug::Print(
-                    _L("CHidKeyboard::MoveCursor")));
-
-    PostPointer(aPoint);
-    }
-// ---------------------------------------------------------------------------
-// CHidMouseDriver::PostPointer
-// Save the event to the buffer
-// ---------------------------------------------------------------------------
-//
-TInt CHidKeyboardDriver::PostPointer(const TPoint& aPoint)
-    {
-    DBG(RDebug::Print(_L("CHidKeyboard::PostPointer")));
-    iPointerBuffer.iPoint[iPointerBuffer.iNum] = aPoint;
-    iPointerBuffer.iType[iPointerBuffer.iNum] = KBufferPlainPointer;
-    iPointerBuffer.iNum++;
-    TInt ret = KErrNone;
-
-    if (iPointerBuffer.iNum > KPMaxEvent)
-        {
-        ret = iPointBufQueue.Send(iPointerBuffer);
-        iPointerBuffer.iNum = 0;
-        }
-    return ret;
-    }
-
-TInt CHidKeyboardDriver::SendButtonEvent(TBool aButtonDown)
-    {
-    DBG(RDebug::Print(
-                    _L("CHidKeyboard::SendButtonEvent")));
-    iPointerBuffer.iPoint[iPointerBuffer.iNum] = TPoint(0, 0);
-    iPointerBuffer.iType[iPointerBuffer.iNum] = aButtonDown
-                                                            ? KBufferPenDown
-                                                               : KBufferPenUp;
-    iPointerBuffer.iNum++;
-    TInt ret = iPointBufQueue.Send(iPointerBuffer);
-    iPointerBuffer.iNum = 0;
-    return ret;
-    }
 //----------------------------------------------------------------------------
 // CHidKeyboardDriver:::StartL
 //----------------------------------------------------------------------------
@@ -233,24 +180,9 @@ void CHidKeyboardDriver::StartL(TInt aConnectionId)
         //Used the layoutID from CenRep
         iLayoutMgr.SetLayout(iLastSelectedLayout);
         }
-    TInt err = iPointBufQueue.OpenGlobal(KMsgBTMouseBufferQueue);   
-    if (err == KErrNotFound)
-        {
-        User::LeaveIfError(iPointBufQueue.CreateGlobal(KMsgBTMouseBufferQueue, KPointQueueLen));    
-        }
-    else
-        {
-        User::LeaveIfError( err );
-        }    
 
     // Ready to process keyboard events:
     iDriverState = EInitialised;
-
-    if (iComboDevice)
-        {
-        LaunchApplicationL(KAppName);
-        RProperty::Set( KPSUidBthidSrv, KBTMouseCursorState, ECursorShow );
-        }
 
     }
 
@@ -286,41 +218,6 @@ void CHidKeyboardDriver::Stop()
     {
     iDriverState = EDisabled;
     CancelAllKeys();
-    if (iComboDevice)
-        {
-        RProperty::Set( KPSUidBthidSrv, KBTMouseCursorState, ECursorNotInitialized );
-        }
-    }
-
-//----------------------------------------------------------------------------
-// CHidMouseDriver::LaunchApplicationL
-//----------------------------------------------------------------------------
-//
-void CHidKeyboardDriver::LaunchApplicationL(const TDesC& aName)
-    {
-    //Check if application is already running in the background
-    TApaTaskList tasks(iWsSession);
-    TApaTask task = tasks.FindApp(aName);
-    if (task.Exists())
-        {
-        // Application is active, so just bring to foreground
-        }
-    else
-        {
-        // If application is not running, then create a new one
-        CApaCommandLine* cmd = CApaCommandLine::NewLC();
-        cmd->SetExecutableNameL(aName);
-        cmd->SetCommandL(EApaCommandBackground); // EApaCommandRun
-
-        RApaLsSession arcSession;
-        //connect to AppArc server
-        User::LeaveIfError(arcSession.Connect());
-        CleanupClosePushL(arcSession);
-        User::LeaveIfError(arcSession.StartApp(*cmd));
-        arcSession.Close();
-        CleanupStack::PopAndDestroy(2);
-        }
-
     }
 
 // ----------------------------------------------------------------------
@@ -339,21 +236,6 @@ TInt CHidKeyboardDriver::DataIn(CHidTransport::THidChannelType aChannel,
         case CHidTransport::EHidChannelInt:
             if (EInitialised == iDriverState)
                 {
-                if (iComboDevice)
-                    {
-                    TInt mouseStatus;
-                    TInt err = RProperty::Get( KPSUidBthidSrv, KBTMouseCursorState, mouseStatus );
-                    if ( !err &&
-                        ((static_cast<THidMouseCursorState>(mouseStatus) == ECursorRedraw)|| 
-                         (static_cast<THidMouseCursorState>(mouseStatus) == ECursorReset)) )
-                        {
-                        err = RProperty::Set( KPSUidBthidSrv, KBTMouseCursorState, ECursorShow );
-                        DBG(RDebug::Print(
-                                 _L("[BTHID]\tCHidKeyboardDriver::DataIn() ECursorRedraw ||ECursorReset ")) );
-                        }
-
-                    CursorRedraw();
-                    }
                 InterruptData(aPayload);
                 }
             break;
@@ -386,127 +268,6 @@ void CHidKeyboardDriver::Disconnected(TInt aReason)
     Stop();
     }
 
-void CHidKeyboardDriver::UpdateXY(TInt aFieldIndex, const TDesC8& aReport)
-    {
-    //    DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateModifiers()")));
-
-    // Translate the HID usage values into a boot protocol style
-    // modifier bitmask:
-    //
-    TReportTranslator report(aReport, iMouseField[aFieldIndex]);
-
-    TInt Xvalue = 0;
-    TInt Yvalue = 0;
-
-    TInt errX = report.GetValue(Xvalue, EGenericDesktopUsageX);
-    TInt errY = report.GetValue(Yvalue, EGenericDesktopUsageY);
-
-    DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateXY (%d,%d)"), Xvalue, Yvalue));
-    if ((Xvalue != 0) || (Yvalue != 0))
-        {
-        MoveCursor(TPoint(Xvalue, Yvalue));
-        }
-    }
-
-void CHidKeyboardDriver::UpdateWheel(TInt aFieldIndex, const TDesC8& aReport)
-    {
-    TReportTranslator report(aReport, iMouseField[aFieldIndex]);
-
-    TInt Yvalue = 0;
-
-    TInt errY = report.GetValue(Yvalue, EGenericDesktopUsageWheel);
-    DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateWheel (%d)"), Yvalue));
-    TInt absValue(Abs(Yvalue));
-    if ((errY == KErrNone) && (absValue >= 1))
-        {
-        TRawEvent rawEvent;
-        for (TInt ii = 0; ii < absValue; ii++)
-            {
-            rawEvent.Set(TRawEvent::EKeyDown,
-                    (Yvalue > 0) ? EStdKeyUpArrow : EStdKeyDownArrow);
-            UserSvr::AddEvent(rawEvent);
-            rawEvent.Set(TRawEvent::EKeyUp,
-                    (Yvalue > 0) ? EStdKeyUpArrow : EStdKeyDownArrow);
-            UserSvr::AddEvent(rawEvent);
-            }
-        }
-    DBG(RDebug::Print(_L("[HID]\t  new iModifiers = %02x"), iModifiers));
-    }
-
-void CHidKeyboardDriver::UpdateButtons(TInt aFieldIndex,
-        const TDesC8& aReport)
-    {
-    DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateButtons()")));
-    // Translate the HID usage values into a boot protocol style
-    // modifier bitmask:
-    //
-    const TInt KButton1 = 1;
-    const TInt KButton2 = 2;
-    const TInt KButton3 = 3;
-
-    TBool buttonPressed(EFalse);
-
-    DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateButtons() %d, %d, %d"),
-                    iMouseField[aFieldIndex]->UsagePage(),
-                    iMouseField[aFieldIndex]->UsageMin(),
-                    iMouseField[aFieldIndex]->UsageMax()));
-    (void) aFieldIndex;
-    // Hack but works
-    // We dont come here if the report is wrong?
-    TInt buttonByte = aReport[1];
-    if (KButton1 == buttonByte)
-        {
-        DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateButtons() Button1")));
-        buttonPressed = ETrue;
-        }
-
-    if (KButton2 == buttonByte)
-        {
-        DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateButtons() Button2")));
-        if (!iButton2Down)
-            {
-            iButton2Down = ETrue;
-            TRawEvent rawEvent;
-            rawEvent.Set(TRawEvent::EKeyDown, EStdKeyApplication0);
-            CursorRedraw();
-            UserSvr::AddEvent(rawEvent);
-            }
-        }
-    else
-        {
-        if (iButton2Down)
-            {
-            iButton2Down = EFalse;
-            TRawEvent rawEvent;
-            rawEvent.Set(TRawEvent::EKeyUp, EStdKeyApplication0);
-            CursorRedraw();
-            UserSvr::AddEvent(rawEvent);
-            }
-        }
-
-    if (KButton3 == buttonByte)
-        {
-        DBG(RDebug::Print(_L("[HID]\tCHidMouseDriver::UpdateButtons() Button3")));
-        buttonPressed = ETrue;
-        }
-
-    if (buttonPressed)
-        {
-        if (!iButtonDown)
-            {
-            iButtonDown = ETrue;
-            SendButtonEvent(ETrue);//Send Mouse Button Down
-            }
-        }
-    else
-        {
-        if (iButtonDown)
-            {
-            iButtonDown = EFalse;
-            SendButtonEvent(EFalse); //Send Mouse Button Up
-            }
-        }
-    }
 //----------------------------------------------------------------------------
 // CHidKeyboardDriver::InterruptData
 //----------------------------------------------------------------------------
@@ -531,30 +292,6 @@ void CHidKeyboardDriver::InterruptData(const TDesC8& aPayload)
                         ii, nextByte));
         }
 #endif
-    TBool mouseEvent(EFalse);
-    if (iMouseField[EMouseXY] && iMouseField[EMouseXY]->IsInReport(firstByte))
-        {
-        UpdateXY(EMouseXY, aPayload);
-        mouseEvent = ETrue;
-        }
-
-    if (iMouseField[EMouseButtons] && iMouseField[EMouseButtons]->IsInReport(
-            firstByte))
-        {
-        UpdateButtons(EMouseButtons, aPayload);
-        mouseEvent = ETrue;
-        }
-    if (iMouseField[EMouseXY] && iMouseField[EMouseXY]->IsInReport(firstByte))
-        {
-        UpdateWheel(EMouseWheel, aPayload);
-        mouseEvent = ETrue;
-        }
-    DBG(RDebug::Print(_L("[HID]\tCHidKeyboardDriver::InterruptData()  mouseevent %d"),
-                    mouseEvent));
-    if (mouseEvent)
-        {
-        return;
-        }
     // First check for any rollover errors:
     //
     TInt i;
@@ -1523,18 +1260,6 @@ TInt CHidKeyboardDriver::CanHandleReportL(CReportRoot* aReportRoot)
         {
         valid = KErrNone;
         }
-
-    TMouseFinder mousefinder;
-    search.SearchL(aReportRoot, &mousefinder);
-    iMouseField[EMouseButtons] = mousefinder.ButtonsField();
-    iMouseField[EMouseXY] = mousefinder.XYField();
-    iMouseField[EMouseWheel] = mousefinder.WheelField();
-
-    if ((iMouseField[EMouseButtons] != 0) && (iMouseField[EMouseXY] != 0))
-        {
-        iComboDevice = ETrue;
-        }
-
         TRACE_INFO( (
                         _L("CHidKeyboard::CanHandleReport() returning %d"), valid));
 
@@ -1935,19 +1660,6 @@ void CHidKeyboardDriver::TimerExpired()
     {
     DBG(RDebug::Print(_L("[HID]\tCHidKeyboardDriver::TimerExpired, cancel all key presses")));
     CancelAllKeys();
-    }
-
-void CHidKeyboardDriver::CursorRedraw()
-    {
-    TInt mouseStatus;
-
-    TInt err = RProperty::Get( KPSUidBthidSrv, KBTMouseCursorState, mouseStatus );
-    if ( !err )
-        {
-        err = RProperty::Set( KPSUidBthidSrv, KBTMouseCursorState, ECursorRedraw );
-        DBG(RDebug::Print(
-             _L("[BTHID]\tCHidKeyboardDriver::CursorRedraw() X->ECursorRedraw") ) );
-        }
     }
 
 // ----------------------------------------------------------------------

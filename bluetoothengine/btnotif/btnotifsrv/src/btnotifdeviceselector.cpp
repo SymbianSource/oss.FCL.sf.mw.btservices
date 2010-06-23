@@ -26,6 +26,8 @@
 #include "btnotifserver.h"
 #include "btnotificationmanager.h"
 #include "btnotifclientserver.h"
+// Key description length
+const TInt KMaxKeyDesCLength  = 20;
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -187,8 +189,8 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
                 devParams().SetDeviceClass(iDevices[val]->Device().DeviceClass());
                 devParams().SetDeviceName(iDevices[val]->Alias());
                 err = iMessage.Write( EBTNotifSrvReplySlot, devParams );
-                iNotification->Close(); // Also dequeues the notification from the queue.
                 iNotification->RemoveObserver();
+                iNotification->Close(); // Also dequeues the notification from the queue.
                 iNotification = NULL;                
                 }
             iMessage.Complete( err );
@@ -208,8 +210,8 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
         }
     else if(aData.Keys().MdcaPoint(0).Compare(_L("MoreDevices"))==KErrNone)
         {
-        iNotification->Close(); // Also dequeues the notification from the queue.
         iNotification->RemoveObserver();
+        iNotification->Close(); // Also dequeues the notification from the queue.
         iNotification = NULL;
         iDevices.ResetAndDestroy();
         TRAP_IGNORE( {
@@ -243,8 +245,13 @@ void CBTNotifDeviceSelector::HandleNextDiscoveryResultL(
     CBtDevExtension* devext = CBtDevExtension::NewLC( aAddr, aName );
     iDevices.AppendL( devext );
     CleanupStack::Pop( devext );
+    
+    if(iNotification)
+        {// conditional check required as CAdvanceDevDiscoverer sends discovered devices at times
+         // even after canceldiscovery is issued and notification is set to NULL
+         // this causes EExcDataAbort
     CHbSymbianVariantMap* map = iNotification->Data();
-    TBuf<8> keyStr;
+        TBuf<KMaxKeyDesCLength> keyStr;
     CHbSymbianVariant* devEntry;
 
     keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );
@@ -252,6 +259,7 @@ void CBTNotifDeviceSelector::HandleNextDiscoveryResultL(
             CHbSymbianVariant::EDes );
     map->Add( keyStr, devEntry );
     iNotification->Update();
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -262,7 +270,7 @@ void CBTNotifDeviceSelector::HandleDiscoveryCompleted( TInt aErr )
     {
     (void) aErr;
     CHbSymbianVariantMap* map = iNotification->Data();
-    TBuf<25> keyStr;
+    TBuf<KMaxKeyDesCLength> keyStr;
     
 
     //TODO compile fail here we need to send the discovery completed text to the dialog 
@@ -345,6 +353,11 @@ void CBTNotifDeviceSelector::PrepareNotificationL(
     TBTDialogResourceId aResourceId )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    if(iNotification)
+        {
+        iNotification->RemoveObserver();
+        iNotification = NULL;
+        }
     iNotification = iServer.NotificationManager()->GetNotification();
     User::LeaveIfNull( iNotification ); // For OOM exception, leaves with KErrNoMemory
     iNotification->SetObserver( this );
@@ -367,7 +380,7 @@ void CBTNotifDeviceSelector::LoadUsedDevicesL()
             {
             iDevices.AppendL( devArray[i]->CopyL() );
             CHbSymbianVariantMap* map = iNotification->Data();
-            TBuf<8> keyStr;
+            TBuf<KMaxKeyDesCLength> keyStr;
             CHbSymbianVariant* devEntry;
 
             keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );

@@ -15,13 +15,14 @@
 *
 */
 
-#include "btnotifpairingmanager.h"
+#include "btnotifsecuritymanager.h"
 #include "btnotifoutgoingpairinghandler.h"
 #include "btnotifincomingpairinghandler.h"
 #include "btnotifpairnotifier.h"
 #include "btnotifclientserver.h"
 #include <e32property.h>
 #include "btnotifconnectiontracker.h"
+#include "btnotifserviceauthorizer.h"
 
 /**  Identification for active object */
 enum TPairManActiveRequestId
@@ -55,7 +56,7 @@ TBool MatchDeviceAddress(const TBTDevAddr* aAddr, const TBTNamelessDevice& aDev)
 // C++ default constructor
 // ---------------------------------------------------------------------------
 //
-CBTNotifPairingManager::CBTNotifPairingManager(
+CBTNotifSecurityManager::CBTNotifSecurityManager(
         CBTNotifConnectionTracker& aParent,
         CBtDevRepository& aDevRepository)
     : iParent( aParent ), iDevRepository( aDevRepository )
@@ -66,7 +67,7 @@ CBTNotifPairingManager::CBTNotifPairingManager(
 // Symbian 2nd-phase constructor
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::ConstructL()
+void CBTNotifSecurityManager::ConstructL()
     {
     // Connect to pairing server for authentication & simple pairing 
     // results directly from the BT stack.
@@ -96,18 +97,19 @@ void CBTNotifPairingManager::ConstructL()
     SubscribeLocalAddress();
     iPairNotifier = CBTNotifPairNotifier::NewL( *this );
     iDevRepository.AddObserverL( this );
+    iServiceAuthorizer = CBTNotifServiceAuthorizer::NewL(*this);
     }
 
 // ---------------------------------------------------------------------------
 // NewL
 // ---------------------------------------------------------------------------
 //
-CBTNotifPairingManager* CBTNotifPairingManager::NewL(
+CBTNotifSecurityManager* CBTNotifSecurityManager::NewL(
         CBTNotifConnectionTracker& aParent,
         CBtDevRepository& aDevRepository )
     {
-    CBTNotifPairingManager* self = NULL;
-    self = new  CBTNotifPairingManager( aParent, aDevRepository );
+    CBTNotifSecurityManager* self = NULL;
+    self = new  CBTNotifSecurityManager( aParent, aDevRepository );
     CleanupStack::PushL( self );
     self->ConstructL();
     CleanupStack::Pop( self );
@@ -118,7 +120,7 @@ CBTNotifPairingManager* CBTNotifPairingManager::NewL(
 // Destructor
 // ---------------------------------------------------------------------------
 //
-CBTNotifPairingManager::~CBTNotifPairingManager()
+CBTNotifSecurityManager::~CBTNotifSecurityManager()
     {
     delete iSSPResultActive;
     delete iAuthenResultActive;
@@ -139,6 +141,7 @@ CBTNotifPairingManager::~CBTNotifPairingManager()
         {
         iMessage.Complete( KErrCancel );
         }
+    delete iServiceAuthorizer;
     }
 
 // ---------------------------------------------------------------------------
@@ -150,7 +153,7 @@ CBTNotifPairingManager::~CBTNotifPairingManager()
 // new devices for new pairings.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::SubscribeLocalAddress()
+void CBTNotifSecurityManager::SubscribeLocalAddress()
     {
     // Check that we have the Bluetooth local address. If we don't then initialise anyway, but subscribe for an update.
     // This allows us to refresh our paired devices list to include updates made to the remote devices table of the 
@@ -171,7 +174,7 @@ void CBTNotifPairingManager::SubscribeLocalAddress()
 // KPropertyKeyBluetoothGetLocalDeviceAddress.
 // ---------------------------------------------------------------------------
 //
-TBool CBTNotifPairingManager::IsLocalAddressAvailable()
+TBool CBTNotifSecurityManager::IsLocalAddressAvailable()
     {
     // Attempt to read address from P&S key.
     TBuf8<KBTDevAddrSize> btAddrDes;
@@ -197,7 +200,7 @@ TBool CBTNotifPairingManager::IsLocalAddressAvailable()
 // Handles pairing related requests from BTNotif clients.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::HandleBondingRequestL( const RMessage2& aMessage )
+void CBTNotifSecurityManager::HandleBondingRequestL( const RMessage2& aMessage )
     {
     TInt opcode = aMessage.Function();
     TBTDevAddrPckgBuf addrPkg;
@@ -211,6 +214,7 @@ void CBTNotifPairingManager::HandleBondingRequestL( const RMessage2& aMessage )
                 }
             TBTDevAddrPckgBuf addrPkg;
             aMessage.ReadL( EBTNotifSrvParamSlot, addrPkg );
+            BlockDevice(addrPkg(),EFalse);
             UnpairDevice( addrPkg() );
             PairDeviceL( addrPkg(), aMessage.Int2() );
             iMessage = RMessage2( aMessage );
@@ -238,17 +242,25 @@ void CBTNotifPairingManager::HandleBondingRequestL( const RMessage2& aMessage )
 // Process a client message related to notifiers.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::HandlePairingNotifierRequestL( const RMessage2& aMessage )
+void CBTNotifSecurityManager::HandleNotifierRequestL( const RMessage2& aMessage )
     {
-    iPairNotifier->StartPairingNotifierL( aMessage );
-    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    if(aMessage.Int0() == KBTManAuthNotifierUid.iUid)
+        {
+        iServiceAuthorizer->StartNotifierL( aMessage );
+        }
+    else
+        {
+        iPairNotifier->StartPairingNotifierL( aMessage );
+        }
+    
+    BOstraceFunctionExit0( DUMMY_DEVLIST);
     }
 
 // ---------------------------------------------------------------------------
 // Returns the RBluetoothPairingServer instance.
 // ---------------------------------------------------------------------------
 //
-RBluetoothPairingServer* CBTNotifPairingManager::PairingServer()
+RBluetoothPairingServer* CBTNotifSecurityManager::PairingServer()
     {
     return iPairingServ;
     }
@@ -257,7 +269,7 @@ RBluetoothPairingServer* CBTNotifPairingManager::PairingServer()
 // Access the reference of RSockServ
 // ---------------------------------------------------------------------------
 //
-RSocketServ& CBTNotifPairingManager::SocketServ()
+RSocketServ& CBTNotifSecurityManager::SocketServ()
     {
     return iParent.SocketServerSession();
     }
@@ -266,7 +278,7 @@ RSocketServ& CBTNotifPairingManager::SocketServ()
 // Access the reference of RBTRegSrv
 // ---------------------------------------------------------------------------
 //
-CBtDevRepository& CBTNotifPairingManager::BTDevRepository()
+CBtDevRepository& CBTNotifSecurityManager::BTDevRepository()
     {
     return iDevRepository;
     }
@@ -275,7 +287,7 @@ CBtDevRepository& CBTNotifPairingManager::BTDevRepository()
 // Access the reference of CBTNotifConnectionTracker
 // ---------------------------------------------------------------------------
 //
-CBTNotifConnectionTracker& CBTNotifPairingManager::ConnectionTracker()
+CBTNotifConnectionTracker& CBTNotifSecurityManager::ConnectionTracker()
     {
     return iParent;
     }
@@ -285,7 +297,7 @@ CBTNotifConnectionTracker& CBTNotifPairingManager::ConnectionTracker()
 // to the specified.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::RenewPairingHandler( 
+void CBTNotifSecurityManager::RenewPairingHandler( 
         CBTNotifBasePairingHandler* aPairingHandler )
     {
     delete iPairingHandler;
@@ -296,7 +308,7 @@ void CBTNotifPairingManager::RenewPairingHandler(
 // Find the session who requested this and completes its request.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::OutgoingPairCompleted( TInt aErr )
+void CBTNotifSecurityManager::OutgoingPairCompleted( TInt aErr )
     {
     // the meaning of KHCIErrorBase equals KErrNone. Hide this specific BT stack
 	// detail from clients:
@@ -310,9 +322,9 @@ void CBTNotifPairingManager::OutgoingPairCompleted( TInt aErr )
 // A session will be ended, completes the pending request for this session.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::SessionClosed( CSession2* aSession )
+void CBTNotifSecurityManager::SessionClosed( CSession2* aSession )
     {
-    // TRACE_FUNC_ARG( ( _L( " session %x"), aSession ) )
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST," session %x", aSession);
     if ( !iMessage.IsNull() && iMessage.Session() == aSession )
         {
         iMessage.Complete( KErrCancel );
@@ -323,7 +335,7 @@ void CBTNotifPairingManager::SessionClosed( CSession2* aSession )
 // Unpair the device from registry
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::UnpairDevice( const TBTDevAddr& aAddr )
+void CBTNotifSecurityManager::UnpairDevice( const TBTDevAddr& aAddr )
     {
     TIdentityRelation<TBTNamelessDevice> addrComp( CompareDeviceByAddress );
     TBTNamelessDevice dev;
@@ -337,7 +349,7 @@ void CBTNotifPairingManager::UnpairDevice( const TBTDevAddr& aAddr )
         // Unpair the device in registry (synchronously)
         iRegistry.UnpairDevice( dev.Address(), status );
         User::WaitForRequest( status );
-        // TRACE_INFO( ( _L( "Delete link key, res %d"), status.Int() ) )
+        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"Delete link key, res %d", status.Int());
         if ( status == KErrNone )
             {
             TBTDeviceSecurity security = dev.GlobalSecurity();
@@ -352,7 +364,7 @@ void CBTNotifPairingManager::UnpairDevice( const TBTDevAddr& aAddr )
                 // Remove the UI cookie bit for Just Works pairing.
                 TInt32 cookie = dev.UiCookie() & ~EBTUiCookieJustWorksPaired;
                 dev.SetUiCookie( cookie );
-                // TRACE_INFO( ( _L( "UI cookie %x cleared"), EBTUiCookieJustWorksPaired ) );
+                BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"UI cookie %x cleared", EBTUiCookieJustWorksPaired );
                 }
             // modify the device in registry synchronously
             // status.Int() could be -1 if the device is not in registry 
@@ -362,7 +374,29 @@ void CBTNotifPairingManager::UnpairDevice( const TBTDevAddr& aAddr )
         }
     }
 
-TInt CBTNotifPairingManager::AddUiCookieJustWorksPaired( const TBTNamelessDevice& aDev )
+void CBTNotifSecurityManager::BlockDevice( const TBTDevAddr& aAddr , TBool aBanned)
+    {
+    TIdentityRelation<TBTNamelessDevice> addrComp( CompareDeviceByAddress );
+    TBTNamelessDevice dev;
+    dev.SetAddress( aAddr );
+    TRequestStatus status( KRequestPending );
+    // Unpair the device in registry (synchronously)
+    iRegistry.GetDevice(dev,status);
+    User::WaitForRequest( status ); 
+    if(status == KErrNone)
+        {
+        TBTDeviceSecurity security = dev.GlobalSecurity();
+        security.SetBanned(aBanned);
+        if ( aBanned )
+            {
+            security.SetNoAuthorise(EFalse);
+            }
+        dev.SetGlobalSecurity(security);
+        (void)UpdateRegDevice(dev);
+        }
+    }
+
+TInt CBTNotifSecurityManager::AddUiCookieJustWorksPaired( const TBTNamelessDevice& aDev )
     {
     TInt err( KErrNone );
     // There might be UI cookies used by other applications,
@@ -376,7 +410,7 @@ TInt CBTNotifPairingManager::AddUiCookieJustWorksPaired( const TBTNamelessDevice
         cookie |= EBTUiCookieJustWorksPaired;
         dev.SetUiCookie( cookie );
         err = UpdateRegDevice( dev );
-        // TRACE_INFO( ( _L( "[BTENG] CBTEngOtgPair write Ui cookie ret %d"), err ) );
+        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"Outgoing Pairing write Ui cookie ret %d", err );
         }
     return err;
     }
@@ -385,13 +419,13 @@ TInt CBTNotifPairingManager::AddUiCookieJustWorksPaired( const TBTNamelessDevice
 // update a nameless device in registry
 // ---------------------------------------------------------------------------
 //
-TInt CBTNotifPairingManager::UpdateRegDevice( const TBTNamelessDevice& aDev )
+TInt CBTNotifSecurityManager::UpdateRegDevice( const TBTNamelessDevice& aDev )
     {
     TRequestStatus status( KRequestPending );
     // update the device in registry synchronously
     iRegistry.ModifyDevice( aDev, status );
     User::WaitForRequest( status );
-    // TRACE_INFO( ( _L( "UpdateRegDevice, ret %d"), status.Int() ) )
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"UpdateRegDevice, ret %d", status.Int());
     return status.Int();
     }
 
@@ -400,7 +434,7 @@ TInt CBTNotifPairingManager::UpdateRegDevice( const TBTNamelessDevice& aDev )
 // The placeholder for future extension (pin code passed in for pairing)
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::GetPinCode(
+void CBTNotifSecurityManager::GetPinCode(
         TBTPinCode& aPin, const TBTDevAddr& aAddr, TInt aMinPinLength )
     {
     if ( iPairingHandler )
@@ -418,7 +452,7 @@ void CBTNotifPairingManager::GetPinCode(
 // Ask server class the connection status of the specified device
 // ---------------------------------------------------------------------------
 //
-TBTEngConnectionStatus CBTNotifPairingManager::ConnectStatus( const TBTDevAddr& aAddr )
+TBTEngConnectionStatus CBTNotifSecurityManager::ConnectStatus( const TBTDevAddr& aAddr )
     {
     const CBtDevExtension* devExt = iDevRepository.Device(aAddr);
     TBTEngConnectionStatus status = EBTEngNotConnected;
@@ -434,9 +468,9 @@ TBTEngConnectionStatus CBTNotifPairingManager::ConnectStatus( const TBTDevAddr& 
 // Checks if there is an authentication result.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus )
+void CBTNotifSecurityManager::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus )
     {
-    // TRACE_FUNC_ARG( ( _L( "aId: %d, aStatus: %d"), aId, aStatus ) )
+    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,"aId: %d, aStatus: %d", aActive->RequestId(), aStatus);
     // Check which request is completed.
     switch( aActive->RequestId() )
         {
@@ -482,7 +516,7 @@ void CBTNotifPairingManager::RequestCompletedL( CBtSimpleActive* aActive, TInt a
 // cancels an outstanding request according to the given id.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::CancelRequest( TInt aRequestId )
+void CBTNotifSecurityManager::CancelRequest( TInt aRequestId )
     {
     switch ( aRequestId )
         {
@@ -511,9 +545,9 @@ void CBTNotifPairingManager::CancelRequest( TInt aRequestId )
 // From class MBtSimpleActiveObserver.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::HandleError( CBtSimpleActive* aActive, TInt aError )
+void CBTNotifSecurityManager::HandleError( CBtSimpleActive* aActive, TInt aError )
     {
-    // TRACE_FUNC_ARG( ( _L( "request id: %d, error: %d" ), aId, aError ) )
+    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,"request id: %d, error: %d", aActive->RequestId(), aError);
     (void) aActive;
     (void) aError;
     }
@@ -522,7 +556,7 @@ void CBTNotifPairingManager::HandleError( CBtSimpleActive* aActive, TInt aError 
 // From class MBtDevRepositoryObserver.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::RepositoryInitialized()
+void CBTNotifSecurityManager::RepositoryInitialized()
     {
     TRAPD(err, UpdatePairedDeviceListL() );
     if ( !err && iPairingHandler )
@@ -537,7 +571,7 @@ void CBTNotifPairingManager::RepositoryInitialized()
 // From class MBtDevRepositoryObserver.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::DeletedFromRegistry( const TBTDevAddr& aAddr )
+void CBTNotifSecurityManager::DeletedFromRegistry( const TBTDevAddr& aAddr )
     {
     // We are only interested in the removal of a paired device.
     // thus check whether it is in our local paired list:
@@ -552,7 +586,7 @@ void CBTNotifPairingManager::DeletedFromRegistry( const TBTDevAddr& aAddr )
 // From class MBtDevRepositoryObserver.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::AddedToRegistry( const CBtDevExtension& aDevice )
+void CBTNotifSecurityManager::AddedToRegistry( const CBtDevExtension& aDevice )
     {
     // We are only interested in paired device.
     if ( CBtDevExtension::IsBonded( aDevice.Device().AsNamelessDevice() ) )
@@ -567,7 +601,7 @@ void CBTNotifPairingManager::AddedToRegistry( const CBtDevExtension& aDevice )
 // From class MBtDevRepositoryObserver.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::ChangedInRegistry(
+void CBTNotifSecurityManager::ChangedInRegistry(
         const CBtDevExtension& aDevice, TUint aSimilarity )
     {
     // We are only interested in paired device.
@@ -619,7 +653,7 @@ void CBTNotifPairingManager::ChangedInRegistry(
 // This class is not interested in such events.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::ServiceConnectionChanged(
+void CBTNotifSecurityManager::ServiceConnectionChanged(
         const CBtDevExtension& aDevice, TBool aConnected )
     {
     (void) aDevice;
@@ -630,10 +664,10 @@ void CBTNotifPairingManager::ServiceConnectionChanged(
 // Activate or deactivate a pairing handler
 // ---------------------------------------------------------------------------
 //
-TInt CBTNotifPairingManager::SetPairObserver(const TBTDevAddr& aAddr, TBool aActivate)
+TInt CBTNotifSecurityManager::SetPairObserver(const TBTDevAddr& aAddr, TBool aActivate)
     {
-    // TRACE_FUNC_ARG( ( _L( "%d" ), aActivate ) )
-    // TRACE_BDADDR( aAddr )
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"%d", aActivate);
+    BtTraceBtAddr0(TRACE_DEBUG,DUMMY_DEVLIST, aAddr );
     TInt err( KErrNone );
     if ( !aActivate )
         {
@@ -663,7 +697,7 @@ TInt CBTNotifPairingManager::SetPairObserver(const TBTDevAddr& aAddr, TBool aAct
 // Delegates the request to current pair handler
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::PairDeviceL( const TBTDevAddr& aAddr, TUint32 aCod )
+void CBTNotifSecurityManager::PairDeviceL( const TBTDevAddr& aAddr, TUint32 aCod )
     {
     if ( !iPairingHandler)
         {
@@ -679,7 +713,7 @@ void CBTNotifPairingManager::PairDeviceL( const TBTDevAddr& aAddr, TUint32 aCod 
 // Pairing Server
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::CancelSubscribePairingAuthenticate()
+void CBTNotifSecurityManager::CancelSubscribePairingAuthenticate()
     {
     if( iSSPResultActive )
         {
@@ -697,7 +731,7 @@ void CBTNotifPairingManager::CancelSubscribePairingAuthenticate()
 // subscribed).
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::SubscribeSspPairingResult()
+void CBTNotifSecurityManager::SubscribeSspPairingResult()
     {
     if ( !iSSPResultActive->IsActive() )
         {
@@ -711,7 +745,7 @@ void CBTNotifPairingManager::SubscribeSspPairingResult()
 // subscribed).
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::SubscribeAuthenticateResult()
+void CBTNotifSecurityManager::SubscribeAuthenticateResult()
     {
     if ( !iAuthenResultActive->IsActive() )
         {
@@ -725,10 +759,11 @@ void CBTNotifPairingManager::SubscribeAuthenticateResult()
 // Handle a pairing result from the pairing server.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::HandlePairingResultL( const TBTDevAddr& aAddr, TInt aResult )
+void CBTNotifSecurityManager::HandlePairingResultL( const TBTDevAddr& aAddr, TInt aResult )
     {
-    // TRACE_FUNC_ARG( (_L("result %d"), aResult ) )
-    // TRACE_BDADDR( aAddr );
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"result %d", aResult);
+    BtTraceBtAddr0(TRACE_DEBUG,DUMMY_DEVLIST, aAddr );
+ 
     if ( !iPairingHandler && ( aResult == KErrNone || aResult == KHCIErrorBase ) )
         {
         // we only create new handler if incoming pairing succeeds.
@@ -760,15 +795,12 @@ void CBTNotifPairingManager::HandlePairingResultL( const TBTDevAddr& aAddr, TInt
 // copy the nameless devices to local array
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::UpdatePairedDeviceListL()
+void CBTNotifSecurityManager::UpdatePairedDeviceListL()
     {
     iPairedDevices.Reset();
     const RDevExtensionArray& alldevs = iDevRepository.AllDevices();
     for ( TInt i = 0; i < alldevs.Count(); i++ )
         {
-        // TRACE_BDADDR( iPairedDevicesResp->Results()[i]->BDAddr() );
-        // TRACE_INFO((_L("[BTENG]\t linkkeytype %d"), 
-        //        iPairedDevicesResp->Results()[i]->LinkKeyType()))
         if ( CBtDevExtension::IsBonded( alldevs[i]->Device().AsNamelessDevice() ) )
             {
             iPairedDevices.AppendL( alldevs[i]->Device().AsNamelessDevice() );
@@ -780,7 +812,7 @@ void CBTNotifPairingManager::UpdatePairedDeviceListL()
 // Create incoming pairing handler if no one exists yet.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairingManager::HandleRegistryBondingL(
+void CBTNotifSecurityManager::HandleRegistryBondingL(
         const TBTNamelessDevice& aNameless)
     {
     TInt err = iPairedDevices.Append( aNameless );
@@ -806,4 +838,22 @@ void CBTNotifPairingManager::HandleRegistryBondingL(
         }
     }
 
+void CBTNotifSecurityManager::TrustDevice( const TBTDevAddr& aAddr )
+    {
+    TIdentityRelation<TBTNamelessDevice> addrComp( CompareDeviceByAddress );
+    TBTNamelessDevice dev;
+    dev.SetAddress( aAddr );
+    TRequestStatus status( KRequestPending );
+    
+    iRegistry.GetDevice(dev,status);
+    User::WaitForRequest( status ); 
+    if(status == KErrNone)
+        {
+        TBTDeviceSecurity security = dev.GlobalSecurity();
+        security.SetNoAuthorise(ETrue);
+        security.SetBanned(EFalse);
+        dev.SetGlobalSecurity(security);
+        (void)UpdateRegDevice(dev);
+        }
+    }
 

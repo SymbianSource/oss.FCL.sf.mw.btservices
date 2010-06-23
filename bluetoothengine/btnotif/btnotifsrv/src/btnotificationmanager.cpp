@@ -63,8 +63,10 @@ CBTNotificationManager* CBTNotificationManager::NewL( const CBTNotifServer* aSer
 //
 CBTNotificationManager::~CBTNotificationManager()
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     iNotificationQ.ResetAndDestroy();
     iNotificationQ.Close();
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 
@@ -74,6 +76,7 @@ CBTNotificationManager::~CBTNotificationManager()
 //
 CBluetoothNotification* CBTNotificationManager::GetNotification()
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     CBluetoothNotification* notification = NULL;
     TRAP_IGNORE( notification = CBluetoothNotification::NewL( this ) );
     if( notification )
@@ -86,6 +89,7 @@ CBluetoothNotification* CBTNotificationManager::GetNotification()
             notification = NULL;
             }
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     return notification;
     }
 
@@ -96,17 +100,14 @@ CBluetoothNotification* CBTNotificationManager::GetNotification()
 //
 void CBTNotificationManager::ReleaseNotification( CBluetoothNotification* aNotification )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     __ASSERT_ALWAYS( aNotification, PanicServer( EBTNotifPanicBadArgument ) );
     TInt pos = iNotificationQ.Find( aNotification );
     __ASSERT_ALWAYS( pos > KErrNotFound, PanicServer( EBTNotifPanicMissing ) );
+    delete iNotificationQ[pos];
     iNotificationQ.Remove( pos );
-    // Just delete the notification.
-    delete aNotification;    
-    if(!iNotificationQ.Count() )
-        {
-        // the queue is empty, reset it.
-        iNotificationQ.Compress();
-        }
+    iNotificationQ.Compress();
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 
@@ -118,10 +119,12 @@ void CBTNotificationManager::QueueNotificationL(
         CBluetoothNotification* aNotification,
         TNotificationPriority aPriority )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     (void) aPriority;
     TInt pos = iNotificationQ.Find( aNotification );
     __ASSERT_ALWAYS( pos > KErrNotFound, PanicServer( EBTNotifPanicMissing ) );
-    if( /*aPriority == EPriorityHigh &&*/ pos != 0 )
+    // Always move the newly added notification on top
+    if(pos != 0 )
         {
         CBluetoothNotification* notification = NULL;
         notification = iNotificationQ[pos];
@@ -129,6 +132,7 @@ void CBTNotificationManager::QueueNotificationL(
         iNotificationQ.InsertL(notification,0);
         }
     ProcessNotificationQueueL();
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +141,7 @@ void CBTNotificationManager::QueueNotificationL(
 //
 void CBTNotificationManager::ProcessNotificationQueueL()
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     if( iNotificationQ.Count() )
         {
         iNotificationQ[0]->ShowL();
@@ -146,5 +151,6 @@ void CBTNotificationManager::ProcessNotificationQueueL()
         // No outstanding notifications
         iNotificationQ.Compress(); // the queue is empty, reset it.
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 

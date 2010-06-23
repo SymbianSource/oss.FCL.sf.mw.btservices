@@ -20,8 +20,6 @@
 
 //  INCLUDES
 #include <mtmconfig.rh>
-#include <avkon.loc> 
-
 
 
 #include <e32capability.h>
@@ -34,7 +32,8 @@ RESOURCE MTM_INFO_FILE
 		{		
 		MTM_COMPONENT_V2
 			{
-			human_readable_name = qtn_query_send_via_ir;
+            //todo: Need to use localized string.
+			human_readable_name = "Via Infrared ";
 			component_uid = KUidMtmServerComponentVal;
 			entry_point = 1;
 			version = VERSION_V2 {};
@@ -42,7 +41,8 @@ RESOURCE MTM_INFO_FILE
 			},
 		MTM_COMPONENT_V2
 			{
-			human_readable_name = qtn_query_send_via_ir;
+			//todo: Need to use localized string.
+			human_readable_name = "Via Infrared ";
 			component_uid = KUidMtmClientComponentVal;
 			entry_point = 1;
 			version = VERSION_V2 {};
@@ -50,7 +50,8 @@ RESOURCE MTM_INFO_FILE
 			},
 		MTM_COMPONENT_V2
 			{
-			human_readable_name = qtn_query_send_via_ir;
+			//todo: Need to use localized string.
+			human_readable_name = "Via Infrared ";
 			component_uid = KUidMtmUiComponentVal;
 			entry_point = 2;
 			version = VERSION_V2 {};
@@ -58,7 +59,8 @@ RESOURCE MTM_INFO_FILE
 			},
 		MTM_COMPONENT_V2
 			{
-			human_readable_name = qtn_query_send_via_ir;
+			//todo: Need to use localized string.
+			human_readable_name = "Via Infrared ";
 			component_uid = KUidMtmUiDataComponentVal;
 			entry_point = 1;
 			version = VERSION_V2 {};

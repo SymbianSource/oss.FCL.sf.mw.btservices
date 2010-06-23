@@ -22,7 +22,7 @@
 #include <hbaction.h>
 #include <hbdialog.h>
 #include "btdevicedialogpluginerrors.h"
-
+#include <btuiiconutil.h>
 /*!
     class Constructor
  */
@@ -32,9 +32,20 @@ BtDeviceDialogNotifWidget::BtDeviceDialogNotifWidget( const QVariantMap &paramet
     // set properties
     mLastError = NoError;
     mShowEventReceived = false;
+    mNotificationDialog = new HbNotificationDialog();
     resetProperties();
-    constructQueryDialog(parameters);
+    constructNotifDialog(parameters);
     TRACE_EXIT
+}
+
+/*!
+    class Constructor
+ */
+BtDeviceDialogNotifWidget::~BtDeviceDialogNotifWidget()
+{
+    TRACE_ENTRY
+    delete mNotificationDialog;
+    return;
 }
 
 /*!
@@ -70,8 +81,8 @@ void BtDeviceDialogNotifWidget::closeDeviceDialog(bool byClient)
     Q_UNUSED(byClient);
     // Closed by client or internally by server -> no action to be transmitted.
     mSendAction = false;
-    close();
-    // If show event has been received, close is signalled from hide event. If not,
+    mNotificationDialog->close();
+     // If show event has been received, close is signalled from hide event. If not,
     // hide event does not come and close is signalled from here.
     if (!mShowEventReceived) {
         emit deviceDialogClosed();
@@ -82,22 +93,27 @@ void BtDeviceDialogNotifWidget::closeDeviceDialog(bool byClient)
 /*!
     Return display widget, implementation of interface
  */
-HbDialog *BtDeviceDialogNotifWidget::deviceDialogWidget() const
+HbPopup *BtDeviceDialogNotifWidget::deviceDialogWidget() const
 {
     TRACE_ENTRY
     TRACE_EXIT
-    return const_cast<BtDeviceDialogNotifWidget*>(this);
+    return mNotificationDialog;
 }
+
+QObject* BtDeviceDialogNotifWidget::signalSender() const
+    {
+    return const_cast<BtDeviceDialogNotifWidget*>(this);
+    }
 
 /*!
     Construct display widget
  */
-bool BtDeviceDialogNotifWidget::constructQueryDialog(const QVariantMap &parameters)
+bool BtDeviceDialogNotifWidget::constructNotifDialog(const QVariantMap &parameters)
 {
     TRACE_ENTRY
     // analyze the parameters to compose the properties of the message box widget 
     processParam(parameters);
- 
+    connect(mNotificationDialog, SIGNAL(finished(HbAction*)), this, SLOT(NotifClosed(HbAction*)));
     TRACE_EXIT
     return true;
 }
@@ -108,7 +124,8 @@ bool BtDeviceDialogNotifWidget::constructQueryDialog(const QVariantMap &paramete
 void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
-    QString keyStr, prompt;
+    QString keyStr, prompt,title;
+    QVariant classOfDevice;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -117,32 +134,41 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         mLastError = UnknownDeviceDialogError;
         return;
     }
-
+    HbIcon icon;
     QVariant param = parameters.value( keyStr );
     int key = param.toInt();
     switch ( key ) {
-        // Note dialogs
         case EPairingSuccess:
-            prompt = QString( tr( "Pairing with %1 complete" ) );
+            title = QString(hbTrId( "txt_bt_dpophead_paired" ));
+            prompt = QString( hbTrId( "txt_bt_dpopinfo_paired_to_1" ) );
+            classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
+            icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
+            mNotificationDialog->setIcon(icon);
             break;
-        case EPairingFailure:
-            prompt = QString( tr( "Unable to pair with %1" ) );
-            break;            
+        // todo: remove this Unpaired notification if not used
+        case EUnpairedDevice:
+            title = QString(hbTrId( "txt_bt_dpophead_unpaired" ));
+            prompt = QString( hbTrId( "txt_bt_dpopinfo_with_1" ) );
+            classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
+            icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
+            mNotificationDialog->setIcon(icon);
+            break;
         case EVisibilityTimeout:
-            prompt = QString( tr( "Phone is not detectable in searches made by other devices" ) );
+            title = QString(hbTrId( "txt_bt_dpophead_bluetooth" ));
+            prompt = QString( hbTrId( "txt_bt_dpopinfo_is_now_hidden" ) );
+            mNotificationDialog->setIcon(HbIcon("qtg_large_bluetooth"));
             break;
         default:
             mLastError = ParameterError;
             break;
     }
-    // Could use QChar with ReplacementCharacter?
     int repls = prompt.count( QString( "%" ) );
     if ( repls > 0 ) {
         QVariant name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
         prompt = prompt.arg( name.toString() );
     }
-    // set property value to this dialog widget
-    HbNotificationDialog::setTitle( prompt );
+    mNotificationDialog->setTitle( title );
+    mNotificationDialog->setText( prompt );
     TRACE_EXIT
 }
 
@@ -157,20 +183,10 @@ void BtDeviceDialogNotifWidget::resetProperties()
     return;
 }
 
-/*!
-    Widget is about to hide. Closing effect has ended.
- */
-void BtDeviceDialogNotifWidget::hideEvent(QHideEvent *event)
+void BtDeviceDialogNotifWidget::NotifClosed(HbAction *action)
 {
-    HbNotificationDialog::hideEvent(event);
+    Q_UNUSED(action);
     emit deviceDialogClosed();
+    mSendAction = false;
 }
 
-/*!
-    Widget is about to show
- */
-void BtDeviceDialogNotifWidget::showEvent(QShowEvent *event)
-{
-    HbNotificationDialog::showEvent(event);
-    mShowEventReceived = true;
-}

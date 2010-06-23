@@ -18,7 +18,6 @@
 
 // INCLUDE FILES
 #include "vMessageHandler.h"
-#include "obexutilsuilayer.h"
 #include "obexutilsdebug.h"
 #include "etelmm.h"
 #include <BTSapDomainPSKeys.h>
@@ -37,6 +36,9 @@
 // SMUT Unbranch
 #include <app/csmsgetdetdescinterface.h>
 #endif //NO101APPDEPFIXES_NEW
+
+// todo @ QT migration: take official definition from Messaging at app layer (btmsgtypeuid.h)
+const TUid KUidMsgTypeBt = {0x10009ED5};
 
 // ================= MEMBER FUNCTIONS =======================
 TBool CSapVMessageParser::HandleMessageL(CObexBufObject*  aReceivedObject, const TUid aMtmID,

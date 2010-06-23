@@ -67,63 +67,8 @@ public:
         LastUsedTimeRole, // QDateTime
         RssiRole,         // QVariant::Int
         MajorPropertyRole,  // QVariant::Int, bits of DevMajorProperty
-        MinorPropertyRole,  // QVariant::Int, bits according to an item from DevMajorProperty
+        MinorPropertyRole,  // QVariant::Int, bits of DevMinorProperty
         CoDRole,  // QVariant::Int, the value of Class of Device
-    };
-    
-    /*
-     * Major device property values.
-     */
-    enum DevMajorProperty {
-        NullProperty   = 0x00000000, // device without any specific filter.
-        Bonded         = 0x00000001, // device is in registry and bonded with phone
-        Blocked        = 0x00000002, // device is in registry and blocked by user
-        RecentlyUsed   = 0x00000004, // device is in registry and was used in last 30 days.
-        Trusted        = 0x00000008, // device is in registry and authorized by user.
-        InRegistry     = 0x00000010, // device exists in registry.
-        
-        Connected      = 0x00000020, // device is currently connected to one or more 
-                                     // services managed by Bluetooth Engine.
-        Connectable    = 0x00000040, // device is connectable to one or more 
-                                     // services managed by Bluetooth Engine.
-        InRange        = 0x00000100, // device is in range
-
-        // bits re-defined according to Class of Device:
-        Computer         = 0x00010000, // a computer
-        Phone            = 0x00020000, // a phone
-        LANAccessDev     = 0x00040000, // a LAN access point
-        AVDev            = 0x00080000, // an A/V device
-        Peripheral       = 0x00100000, // a peripheral
-        ImagingDev       = 0x00200000, // an imaging device
-        WearableDev      = 0x00400000, // a wearable device
-        Toy              = 0x00800000, // a toy
-        HealthDev        = 0x01000000, // a health device
-        UncategorizedDev = 0x02000000, // a generic device that is uncategorized
-        
-        // all properties derived from BT registry
-        RegistryProperties = Bonded |
-            Blocked | RecentlyUsed | Trusted | InRegistry,
-        
-        // all properties derived from CoD
-        CodProperties = Computer | Phone | LANAccessDev |
-            AVDev | Peripheral | ImagingDev | WearableDev | 
-            Toy | HealthDev  | UncategorizedDev,
-    };
-    
-    /*
-     * Minor device filters for major property \code AVDev \endcode
-     */
-    enum AVDevMinorProperty {
-        Carkit   = 0x00000001,
-        Headset  = 0x00000002,
-    };
-    
-    /*
-     * Minor device filters for major property \code Peripheral \endcode
-     */
-    enum PeripheralMinorProperty {
-        Mouse    = 0x00000001,
-        Keyboard = 0x00000002,
     };
     
 public:

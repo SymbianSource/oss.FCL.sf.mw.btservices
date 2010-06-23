@@ -40,5 +40,5 @@ PRJ_EXPORTS
 ../public/remconmediabrowsetypes.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remconmediabrowsetypes.h)
 ../public/remconmediabrowsepanic.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remconmediabrowsepanic.h)
 
-../public/remconmediabrowsetargetbase.h	SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(remcon/remconmediabrowsetargetbase.h)
+../public/remconmediabrowsetargetbase.h	SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(remcon/remconmediabrowsetargetbase.h)
 

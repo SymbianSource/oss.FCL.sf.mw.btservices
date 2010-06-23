@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -17,18 +17,31 @@
 
 
 // INCLUDE FILES
-#include    "obexutilsdialog.h"
-#include    "obexutilsdialogtimer.h"
-#include    "obexutilsuilayer.h"
-#include    <secondarydisplay/obexutilssecondarydisplayapi.h>
-#include    <aknnotewrappers.h>
-#include    <eikprogi.h>
-#include    <Obexutils.rsg>
-#include    <e32def.h>
-#include    <bautils.h>
-#include    <StringLoader.h>
-#include    <featmgr.h>
-#include    "obexutilsdebug.h"
+#include "obexutilsdialog.h"
+#include "obexutilsdialogtimer.h"
+#include "obexutilsdebug.h"
+#include <hbdevicenotificationdialogsymbian.h>
+#include <btservices/bluetoothdevicedialogs.h>
+#include <hbtextresolversymbian.h>
+
+_LIT(KSendingDialog, "com.nokia.hb.btdevicedialog/1.0");
+_LIT(KCurrentFileIndex,"currentFileIdx" );
+_LIT(KTotalFileCount, "totalFilesCnt");
+_LIT(KDestinationName, "destinationName");
+_LIT(KFileName,"fileName");
+_LIT(KFileSizeTxt,"fileSzTxt");
+_LIT(KFileSize,"fileSz");
+_LIT(KProgressValue,"progressValue");
+
+_LIT(KSendingCancelledText, "txt_bt_dpophead_sending_cancelled");
+_LIT(KDeviceText,"txt_bt_dpopinfo_sent_to_1");
+
+const TInt KMaxDescriptionLength = 256;
+const TInt KMinStringSize = 10;
+const TInt KMinFileSize = 1024;
+
+_LIT(KLocFileName, "btdialogs_");     
+_LIT(KPath, "z:/resource/qt/translations/"); 
 
 // ============================ MEMBER FUNCTIONS ===============================
 
@@ -78,38 +91,29 @@ void CObexUtilsDialog::ConstructL()
         //
         User::Leave(KErrArgument);
         }
-  
-    TFileName fileName;
-    fileName += KObexUtilsFileDrive;
-    fileName += KDC_RESOURCE_FILES_DIR;
-    fileName += KObexUtilsResourceFileName;
-    BaflUtils::NearestLanguageFile( CCoeEnv::Static()->FsSession(), fileName );
-    iResourceFileId = CCoeEnv::Static()->AddResourceFileL( fileName );
-
-    iCoverDisplayEnabled = IsCoverDisplayL();
-
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::ConstructL() completed"));
     } 
 
 // -----------------------------------------------------------------------------
 // Destructor
 // -----------------------------------------------------------------------------
-CObexUtilsDialog::~CObexUtilsDialog()
+EXPORT_C CObexUtilsDialog::~CObexUtilsDialog()
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::~CObexUtilsDialog()"));
-
-    CCoeEnv::Static()->DeleteResourceFile( iResourceFileId );
+    iDeviceName.Close();
+    delete iWaitDialog;
+    delete iProgressDialog;
     delete iObexDialogTimer;
-
+    delete iMessageBox;
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::~CObexUtilsDialog() completed"));
     }
 
 // -----------------------------------------------------------------------------
 // CObexUtilsDialog::LaunchProgressDialogL
 // -----------------------------------------------------------------------------
-EXPORT_C void CObexUtilsDialog::LaunchProgressDialogL( 
-    MObexUtilsProgressObserver* aObserverPtr, TInt aFinalValue, 
-    TInt aResId, TInt aTimeoutValue )
+EXPORT_C void CObexUtilsDialog::LaunchProgressDialogL(
+    MObexUtilsProgressObserver* aObserverPtr, TInt aFileCount, 
+    const TDesC& aDeviceName, TInt aTimeoutValue )
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchProgressDialogL()"));
 
@@ -119,42 +123,90 @@ EXPORT_C void CObexUtilsDialog::LaunchProgressDialogL(
         //
         iProgressObserverPtr = aObserverPtr;
 
-        if ( iObexDialogTimer )
+        if ( !iObexDialogTimer )
             {
-            iObexDialogTimer->Cancel();
-            delete iObexDialogTimer;
-            iObexDialogTimer = NULL;
+            iObexDialogTimer = CObexUtilsDialogTimer::NewL( this );
             }
-
-        iObexDialogTimer = CObexUtilsDialogTimer::NewL( this );
+        iObexDialogTimer->Cancel();
         iObexDialogTimer->SetTimeout( aTimeoutValue );
         }
 
-    iProgressDialogResId = aResId;
-   
-    iProgressDialog = new( ELeave ) CAknProgressDialog( 
-        ( reinterpret_cast<CEikDialog**>( &iProgressDialog ) ), ETrue );
-    PrepareDialogExecuteL( aResId, iProgressDialog );
-    iProgressDialog->ExecuteLD( R_SENDING_PROGRESS_NOTE );
+    iFileCount = aFileCount;
+    iDeviceName.Close();
+    iDeviceName.CreateL(aDeviceName);
+    iProgressDialog = CHbDeviceDialogSymbian::NewL();
     
-    HBufC* buf = StringLoader::LoadLC( aResId );
-    iProgressDialog->SetTextL( buf->Des() );
-    CleanupStack::PopAndDestroy( buf );
+    CHbSymbianVariantMap* map = CHbSymbianVariantMap::NewL();
+    CleanupStack::PushL(map);
+    TBuf<KMinStringSize> key;
+    TInt data = TBluetoothDialogParams::ESend;
+    key.Num(TBluetoothDialogParams::EDialogType);
+    AddDataL( map, key, &data, CHbSymbianVariant::EInt );
+    iProgressDialog->Show(KSendingDialog(),*map,this);
+    CleanupStack::PopAndDestroy(map);    
 
-    iProgressDialog->GetProgressInfoL()->SetFinalValue( aFinalValue );
-    iProgressDialog->SetCallback( this );
     if ( iProgressObserverPtr )
         {
         iObexDialogTimer->Tickle();
         }
 
-    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchProgressDialogL() completed"));
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchProgressDialogL() completed"));    
+    }
+
+
+EXPORT_C void CObexUtilsDialog::UpdateProgressNoteL( TInt aFileSize,TInt aFileIndex, const TDesC& aFileName )
+    {
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::UpdateProgressNoteL()"));  
+    HBufC* key = HBufC::NewL(KMaxDescriptionLength);
+    CleanupStack::PushL(key);
+    
+    CHbSymbianVariantMap* map = CHbSymbianVariantMap::NewL();
+    CleanupStack::PushL(map);
+    
+    iFileIndex = aFileIndex+1;
+    key->Des().Copy(KCurrentFileIndex());
+    AddDataL( map, *key, &iFileIndex, CHbSymbianVariant::EInt );
+    
+    key->Des().Copy(KTotalFileCount());
+    AddDataL( map, *key, &iFileCount, CHbSymbianVariant::EInt );
+
+    key->Des().Copy(KDestinationName());
+    AddDataL( map, *key, &iDeviceName, CHbSymbianVariant::EDes );
+    
+    key->Des().Copy(KFileName());
+    AddDataL( map, *key, &aFileName, CHbSymbianVariant::EDes );
+    
+    // todo: localiation is needed for code below:
+    HBufC* value = HBufC::NewL(KMaxDescriptionLength);
+    CleanupStack::PushL(value);
+    key->Des().Copy(KFileSizeTxt());
+    value->Des().Zero();
+    if(aFileSize < KMinFileSize)
+        {
+        value->Des().AppendNum(aFileSize);
+        value->Des().Append(_L(" Bytes"));
+        }
+    else
+        {
+        TInt filesize =  aFileSize/KMinFileSize;
+        value->Des().AppendNum(filesize);
+        value->Des().Append(_L(" KB"));
+        }
+    AddDataL( map, *key, value, CHbSymbianVariant::EDes );
+    CleanupStack::PopAndDestroy( value );
+    
+    key->Des().Copy(KFileSize());
+    AddDataL( map, *key, &aFileSize, CHbSymbianVariant::EInt );
+    TInt ret = iProgressDialog->Update(*map);
+    CleanupStack::PopAndDestroy(map);
+    CleanupStack::PopAndDestroy(key);
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::UpdateProgressNoteL()Completed"));  
     }
 
 // -----------------------------------------------------------------------------
 // CObexUtilsDialog::LaunchWaitDialogL
 // -----------------------------------------------------------------------------
-EXPORT_C void CObexUtilsDialog::LaunchWaitDialogL( TInt aResId )
+EXPORT_C void CObexUtilsDialog::LaunchWaitDialogL( const TDesC& aDisplayText )
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchWaitDialogL()"));
 
@@ -164,13 +216,9 @@ EXPORT_C void CObexUtilsDialog::LaunchWaitDialogL( TInt aResId )
         //
         User::Leave( KErrInUse );
         }
-
-    iWaitDialog = new( ELeave ) CAknWaitDialog(
-            ( reinterpret_cast<CEikDialog**>( &iWaitDialog ) ), EFalse );
-    
-    iWaitDialog->SetCallback( this );
-    PrepareDialogExecuteL( aResId, iWaitDialog );
-    iWaitDialog->ExecuteLD( aResId );
+    iWaitDialog = CHbDeviceProgressDialogSymbian::NewL(CHbDeviceProgressDialogSymbian::EWaitDialog,this);
+    iWaitDialog->SetTextL(aDisplayText);
+    iWaitDialog->ShowL();
 
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchWaitDialogL() completed"));
     }
@@ -178,14 +226,14 @@ EXPORT_C void CObexUtilsDialog::LaunchWaitDialogL( TInt aResId )
 // -----------------------------------------------------------------------------
 // CObexUtilsDialog::CancelWaitDialogL
 // -----------------------------------------------------------------------------
-EXPORT_C void CObexUtilsDialog::CancelWaitDialogL()
+EXPORT_C void CObexUtilsDialog::CancelWaitDialog()
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::CancelWaitDialogL()"));
 
     if( iWaitDialog )
         {
-        iWaitDialog->SetCallback(NULL);
-        iWaitDialog->ProcessFinishedL();
+        iWaitDialog->Close();
+        delete iWaitDialog;
         iWaitDialog = NULL;
         }
 
@@ -195,22 +243,17 @@ EXPORT_C void CObexUtilsDialog::CancelWaitDialogL()
 // -----------------------------------------------------------------------------
 // CObexUtilsDialog::CancelProgressDialogL
 // -----------------------------------------------------------------------------
-EXPORT_C void CObexUtilsDialog::CancelProgressDialogL()
+EXPORT_C void CObexUtilsDialog::CancelProgressDialog()
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::CancelProgressDialogL()"));
 
     if( iProgressDialog )
         {        
-        iProgressDialog->SetCallback(NULL);
-        iProgressDialog->ProcessFinishedL();
+        iProgressDialog->Cancel();
+        delete iProgressDialog;
         iProgressDialog = NULL;
-
-        if ( iObexDialogTimer )
-            {
-            iObexDialogTimer->Cancel();
-            delete iObexDialogTimer;
-            iObexDialogTimer = NULL;
-            }
+        delete iObexDialogTimer;
+        iObexDialogTimer = NULL;
         }  
         
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::CancelProgressDialogL() completed"));  
@@ -219,48 +262,35 @@ EXPORT_C void CObexUtilsDialog::CancelProgressDialogL()
 // -----------------------------------------------------------------------------
 // CObexUtilsDialog::UpdateProgressDialogL
 // -----------------------------------------------------------------------------
-EXPORT_C void CObexUtilsDialog::UpdateProgressDialogL( TInt aValue, TInt aResId  )
+EXPORT_C void CObexUtilsDialog::UpdateProgressDialogL( TInt aProgressValue  )
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::UpdateProgressDialogL()"));
 
     if ( iProgressDialog )
         {
-        iProgressDialog->GetProgressInfoL()->SetAndDraw( aValue );
+        HBufC* key = HBufC::NewL(KMaxDescriptionLength);
+        CleanupStack::PushL(key);
+
+        CHbSymbianVariantMap* map = CHbSymbianVariantMap::NewL();
+        CleanupStack::PushL(map);
         
-        HBufC* buf = StringLoader::LoadLC( aResId );
-        iProgressDialog->SetTextL( buf->Des() );
-        iProgressDialog->LayoutAndDraw();
-        CleanupStack::PopAndDestroy( buf );
+        key->Des().Copy(KProgressValue());
+        AddDataL( map, *key, &aProgressValue, CHbSymbianVariant::EInt );
+
+        HBufC* value = HBufC::NewL(KMaxDescriptionLength);
+        CleanupStack::PushL(value);
+        key->Des().Copy(KCurrentFileIndex());
+        value->Des().AppendNum(iFileIndex);
+        AddDataL( map, *key, value, CHbSymbianVariant::EDes );
+        CleanupStack::PopAndDestroy(value);
+        
+        TInt ret = iProgressDialog->Update(*map);
+        
+        CleanupStack::PopAndDestroy(map);
+        CleanupStack::PopAndDestroy(key);    
         }
 
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::UpdateProgressDialogL() completed"));
-    }
-
-// -----------------------------------------------------------------------------
-// CObexUtilsDialog::DialogDismissedL
-// -----------------------------------------------------------------------------
-void CObexUtilsDialog::DialogDismissedL( TInt aButtonId )
-    {
-    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::DialogDismissedL()"));
-
-    // The dialog has already been deleted by UI framework.
-    //
-    if( aButtonId == EAknSoftkeyCancel )
-        {
-        if ( iDialogObserverPtr )
-            {
-            iDialogObserverPtr->DialogDismissed( aButtonId );
-            }
-
-        if ( iObexDialogTimer )
-            {
-            iObexDialogTimer->Cancel();
-            delete iObexDialogTimer;
-            iObexDialogTimer = NULL;
-            }
-        }
-
-    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::DialogDismissedL() completed"));
     }
 
 // -----------------------------------------------------------------------------
@@ -271,7 +301,7 @@ void CObexUtilsDialog::UpdateProgressDialog()
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::UpdateProgressDialog()"));
 
     TRAPD( ignoredError, UpdateProgressDialogL( 
-        iProgressObserverPtr->GetProgressStatus(), iProgressDialogResId ) );
+        iProgressObserverPtr->GetProgressStatus()) );
         
     if (ignoredError != KErrNone)
         {
@@ -290,70 +320,150 @@ void CObexUtilsDialog::UpdateProgressDialog()
 // CObexUtilsDialog::LaunchQueryDialogL
 // -----------------------------------------------------------------------------
 //
-EXPORT_C TInt CObexUtilsDialog::LaunchQueryDialogL( const TInt& aResourceID )
+EXPORT_C void CObexUtilsDialog::LaunchQueryDialogL( const TDesC& aConfirmText )
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchQueryDialogL()"));
-    
-    CAknQueryDialog* dlg = CAknQueryDialog::NewL();
-    CleanupStack::PushL( dlg );
-    PrepareDialogExecuteL( aResourceID, dlg );
-    CleanupStack::Pop( dlg );
-    TInt keypress = dlg->ExecuteLD( aResourceID );
-    
-    return keypress;
-    }
-    
-// -----------------------------------------------------------------------------
-// CObexUtilsDialog::ShowNumberOfSendFileL
-// -----------------------------------------------------------------------------
-//  
-    
-EXPORT_C void CObexUtilsDialog::ShowNumberOfSendFileL( TInt aSentNum, TInt aTotalNum )
-    {
-    FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::ShowNumberOfSendFile()"));
-    
-    CAknInformationNote* myNote = new (ELeave) CAknInformationNote();
-
-    CArrayFix<TInt>* nums = new( ELeave ) CArrayFixFlat<TInt>(3);
-    CleanupStack::PushL(nums);
-    nums->AppendL(aSentNum);  
-    nums->AppendL(aTotalNum);
-    CleanupStack::Pop(nums);
-
-    HBufC* stringholder = StringLoader::LoadLC( R_BT_SENT_IMAGE_NUMBER, *nums); 
-    PrepareDialogExecuteL( R_BT_SENT_IMAGE_NUMBER, myNote );
-    myNote->ExecuteLD( *stringholder );
-    CleanupStack::PopAndDestroy( stringholder );
-    }
-
-// -----------------------------------------------------------------------------
-// CObexUtilsDialog::PrepareDialogExecuteL
-// -----------------------------------------------------------------------------
-//
-void CObexUtilsDialog::PrepareDialogExecuteL( const TInt& aResourceID, CEikDialog* aDialog )
-    {
-    if (iCoverDisplayEnabled)
+    if ( iMessageBox )
         {
-        TInt dialogIndex =
-            ((aResourceID & KResourceNumberMask) - KFirstResourceOffset) + KEnumStart;
-        aDialog->PublishDialogL( dialogIndex, KObexUtilsCategory );
+        //todo: Already one dialog is displayed, currently not supported for 
+        //multiple dialogs at the same time.
+        User::Leave( KErrGeneral );
+        }
+    iMessageBox = CreateAndShowMessageBoxL( CHbDeviceMessageBoxSymbian::EQuestion,
+            aConfirmText, this, 0 );
+    }
+    
+
+// -----------------------------------------------------------------------------
+// CObexUtilsUiDialog::ShowErrorNoteL
+// -----------------------------------------------------------------------------
+EXPORT_C void CObexUtilsDialog::ShowErrorNoteL( const TDesC& aTextId )
+    {
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::ShowErrorNoteL"));
+    if ( iMessageBox )
+        {
+        //todo: Already one dialog is displayed, currently not supported for 
+        //multiple dialogs at the same time.
+        User::Leave( KErrGeneral );
+        }
+    iMessageBox = CreateAndShowMessageBoxL( CHbDeviceMessageBoxSymbian::EWarning,
+                aTextId, this, 0 );
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::ShowErrorNoteL completed"));
+    }
+
+// -----------------------------------------------------------------------------
+// CObexUtilsUiDialog::ShowInformationNoteL
+// -----------------------------------------------------------------------------
+EXPORT_C void CObexUtilsDialog::ShowInformationNoteL( const TDesC& aTextId )
+    {
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::ShowInformationNoteL"));
+    if ( iMessageBox )
+        {
+        //todo: Already one dialog is displayed, currently not supported for 
+        //multiple dialogs at the same time.
+        User::Leave( KErrGeneral );
+        }
+    iMessageBox = CreateAndShowMessageBoxL( CHbDeviceMessageBoxSymbian::EInformation,
+                    aTextId, this, 0 );
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::ShowInformationNoteL completed"));
+    }
+
+void CObexUtilsDialog::ProgressDialogCancelled(const CHbDeviceProgressDialogSymbian* aDialog)
+    {
+    FLOG(_L("[BTSU]\t CObexUtilsDialog::ProgressDialogCancelled(), cancelled by user"));
+    (void) aDialog;
+    if ( iDialogObserverPtr )
+        {
+        iDialogObserverPtr->DialogDismissed(ECancelButton);
+        }
+    delete iWaitDialog;
+    iWaitDialog = NULL;
+    }
+
+// -----------------------------------------------------------------------------
+// CObexUtilsDialog::MessageBoxClosed
+// -----------------------------------------------------------------------------
+void  CObexUtilsDialog::MessageBoxClosed(const CHbDeviceMessageBoxSymbian *aMessageBox, 
+        CHbDeviceMessageBoxSymbian::TButtonId aButton)
+    {
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::MessageBoxClosed"));
+    (void)aMessageBox;
+    delete iMessageBox;
+    iMessageBox = NULL;
+    if(iDialogObserverPtr)
+        {
+        //ETrue if user selects Yes, otherwise EFalse.
+         iDialogObserverPtr->DialogDismissed( 
+                 (aButton == CHbDeviceMessageBoxSymbian::EAcceptButton) ? 
+                     EYesButton : ENoButton  );
+        }
+    FLOG(_L("[OBEXUTILS]\t CObexUtilsUiDialog::MessageBoxClosed completed"));
+    }
+
+void CObexUtilsDialog::ProgressDialogClosed(const CHbDeviceProgressDialogSymbian* aDialog)
+    {
+    (void) aDialog;
+    }
+
+void CObexUtilsDialog::DataReceived(CHbSymbianVariantMap& aData)
+    {
+    (void) aData;
+    }
+
+void CObexUtilsDialog::DeviceDialogClosed(TInt aCompletionCode)
+    {
+    FLOG(_L("[BTSU]\t CObexUtilsDialog::DeviceDialogClosed()"));   
+    (void) aCompletionCode;
+
+    delete iObexDialogTimer;
+    iObexDialogTimer = NULL;
+    delete iProgressDialog;
+    iProgressDialog = NULL;  
+    
+    TRAP_IGNORE(
+             TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
+             if (!ok) 
+                 {
+                 User::Leave( KErrNotFound );
+                 }
+             HBufC* deviceName = HbTextResolverSymbian::LoadLC(KDeviceText,iDeviceName);
+			 HBufC* sendText = HbTextResolverSymbian::LoadLC(KSendingCancelledText);
+             CHbDeviceNotificationDialogSymbian::NotificationL(
+                     KNullDesC, deviceName->Des(), sendText->Des());
+ 			 CleanupStack::PopAndDestroy( sendText );		 
+             CleanupStack::PopAndDestroy( deviceName );
+            );
+
+    if ( iDialogObserverPtr )
+        {
+        iDialogObserverPtr->DialogDismissed(ECancelButton);
         }
     }
 
-// -----------------------------------------------------------------------------
-// CObexUtilsDialog::IsCoverDisplayL()
-// -----------------------------------------------------------------------------
-//
-TBool CObexUtilsDialog::IsCoverDisplayL()
+void CObexUtilsDialog::AddDataL(CHbSymbianVariantMap* aMap, const TDesC& aKey, 
+        const TAny* aData, CHbSymbianVariant::TType aDataType)
     {
-    TBool coverDisplay = EFalse;
-	FeatureManager::InitializeLibL();
-	if ( FeatureManager::FeatureSupported( KFeatureIdCoverDisplay ) )
-		{
-		coverDisplay = ETrue;
-		}
-	FeatureManager::UnInitializeLib();
-    return coverDisplay;
+    CHbSymbianVariant* value = CHbSymbianVariant::NewL(aData, aDataType);
+    CleanupStack::PushL( value );
+    User::LeaveIfError( aMap->Add( aKey, value ) ); // aMap takes the ownership of value
+    CleanupStack::Pop( value );
+    }
+
+CHbDeviceMessageBoxSymbian* CObexUtilsDialog::CreateAndShowMessageBoxL(
+        CHbDeviceMessageBoxSymbian::TType aType,
+        const TDesC& aText, MHbDeviceMessageBoxObserver* aObserver,
+        TInt aTimeout )
+    {
+    CHbDeviceMessageBoxSymbian* messageBox =
+            CHbDeviceMessageBoxSymbian::NewL( aType );
+    CleanupStack::PushL(messageBox);
+    //ToDo: Need to use localised strings.
+    messageBox->SetTextL(aText);
+    messageBox->SetObserver(aObserver);
+    messageBox->SetTimeout(aTimeout);
+    messageBox->ShowL();
+    CleanupStack::Pop(messageBox);
+    return messageBox;
     }
 
 //  End of File  

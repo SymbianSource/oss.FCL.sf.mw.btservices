@@ -24,22 +24,33 @@
 #include <e32base.h>
 #include <obex.h>
 #include <obexutilsmessagehandler.h>
-#include <obexutilsuilayer.h>
-#include <obexutilsdialog.h>
 #include "obexutilspropertynotifier.h"
 #include "debug.h"
 #include <SrcsInterface.h>
 #include <obexutilspropertynotifier.h>
-#include <obexutilsglobalprogressdialog.h>
 #include <btengsettings.h>
 #include "btengdevman.h"
 #include <obexutilsdialog.h>
+#include <hbdevicedialogsymbian.h>
+#include <hbsymbianvariant.h>
 
 // FORWARD DECLARATIONS
 
 class CBIPCapabilityHandler;
 class CBIPImageHandler;
 
+/**
+* Backup status.
+* The value is controlled by FileManager
+*/
+enum TFileManagerBkupStatusType
+    {
+    EFileManagerBkupStatusUnset   = 0x00000000,
+    EFileManagerBkupStatusBackup  = 0x00000001,
+    EFileManagerBkupStatusRestore = 0x00000002
+    };
+
+const TUid KUidMsgTypeBt                 = {0x10009ED5};
 
 // CLASS DECLARATION
 
@@ -48,8 +59,9 @@ class CBIPImageHandler;
 */
 NONSHARABLE_CLASS (CBIPController): public CSrcsInterface, public MObexServerNotify,
                                     public MObexUtilsPropertyNotifyHandler, 
-                                    public MGlobalProgressCallback, public MGlobalNoteCallback,
-                                    public MBTEngDevManObserver
+                                    public MObexUtilsDialogObserver,
+                                    public MBTEngDevManObserver,
+                                    public MHbDeviceDialogObserver
     {
 public:
     static CBIPController* NewL();
@@ -78,14 +90,12 @@ private: // from MObexServerNotify
 private: // from MObexUtilsPropertyNotifyHandler
     void HandleNotifyL(TMemoryPropertyCheckType aCheckType);
     
-private: // from MGlobalProgressCallback
-    void HandleGlobalProgressDialogL(TInt aSoftkey); 
-    
-private: // from MGlobalNoteCallback
-    void HandleGlobalNoteDialogL(TInt aSoftkey);
     
 private: // from MBTEngDevManObserver
     void HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray);
+    
+private: //from MObexUtilsDialogObserver
+    void DialogDismissed(TInt aButtonId);
     
 private:
     CBIPController();
@@ -101,10 +111,16 @@ private:
     
     TBool CheckCapacityL();
     void LaunchReceivingIndicatorL();
-    inline TBool ReceivingIndicatorActive() const { return (iProgressDialog || iWaitDialog); }
-    void UpdateReceivingIndicator();
+    inline TBool ReceivingIndicatorActive() const { return (iDialogActive); }
+    void UpdateReceivingIndicatorL();
     void CloseReceivingIndicator(TBool aResetDisplayedState = ETrue);
     TInt GetDriveWithMaximumFreeSpaceL();
+    TBool IsBackupRunning();
+    TBool ProcessExists( const TSecureId& aSecureId );
+    
+private:
+    void DataReceived(CHbSymbianVariantMap& aData);
+    void DeviceDialogClosed(TInt aCompletionCode);
     
 private:
     enum TBipTransferState
@@ -116,6 +132,7 @@ private:
         ETransferPutInitError,
         ETransferPutCancel,
         };
+    
     
 private: // Data
     CBIPCapabilityHandler*      iBIPCapabilityHandler;
@@ -138,14 +155,15 @@ private: // Data
     CBufFlat                    *iBuf;
     TBool                       iLengthHeaderReceived;
     TInt                        iTotalSizeByte;
-    CGlobalProgressDialog*      iProgressDialog;
-    CGlobalDialog*              iWaitDialog;
     TBool                       iNoteDisplayed;
     CBTEngDevMan*               iDevMan;
     CBTDeviceArray*             iResultArray;
     TBTDeviceName               iRemoteDeviceName;
     TFileName                   iReceivingFileName;
     TFileName                   iCenRepFolder;
+    CObexUtilsDialog*           iDialog;
+    CHbDeviceDialogSymbian*     iProgressDialog;
+    TBool                       iDialogActive;
     };
     
 _LIT(KBipPanicCategory, "BIP");

@@ -24,13 +24,20 @@
 #include "btdevicedialoginputwidget.h"
 #include "btdevicedialogquerywidget.h"
 #include "btdevicedialognotifwidget.h"
+#include "btrecvprgrsdialogwidget.h"
 
 #include "btdevicedialogpluginerrors.h"
 #include "btdevicesearchdialogwidget.h"
 #include "btmoredevicesdialogwidget.h"
 #include "btsenddialogwidget.h"
+#include "btdevicedialogrecvquerywidget.h"
+#include <qtranslator.h>
+#include <qcoreapplication.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
+
+const char* BTDIALOG_TRANSLATION = "btdialogs_en_GB";
+const char* BTVIEW_TRANSLATION = "btviews_en_GB";        
 
 // This plugin implements one device dialog type
 static const struct {
@@ -57,7 +64,8 @@ BtDeviceDialogPluginPrivate::BtDeviceDialogPluginPrivate()
 /*! 
     BtDeviceDialogPlugin Constructor
  */
-BtDeviceDialogPlugin::BtDeviceDialogPlugin()
+BtDeviceDialogPlugin::BtDeviceDialogPlugin():
+ mDialogTranslator(0),mViewTranslator(0)
 {
     d = new BtDeviceDialogPluginPrivate;
 }
@@ -68,6 +76,8 @@ BtDeviceDialogPlugin::BtDeviceDialogPlugin()
 BtDeviceDialogPlugin::~BtDeviceDialogPlugin()
 {
     delete d;
+    delete mDialogTranslator;
+    delete mViewTranslator;
 }
 
 /*! 
@@ -95,6 +105,34 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
     d->mError = NoError;
 
     int i;
+    
+    //TODO: Uncomment the lines when actual translation files are available in sdk and remove loading locally.
+ //    QString locale = QLocale::system().name();
+ //    QString path = "z:/resource/qt/translations/";
+ //    QTranslator translator;
+     //QTranslator translator_comm;
+     //translator.load(path + QString("btdialogs_") + locale);
+     //translator_comm.load(path + QString("common_") + locale);
+
+    QString path = ":/";
+    if(!mDialogTranslator)
+        {
+        mDialogTranslator = new QTranslator();
+//        QString lang = QLocale::system().name();
+//        QString appName = "btdialogs_";
+        //todo need to handle failed case of transaltor loading
+        bool ok =  mDialogTranslator->load(BTDIALOG_TRANSLATION, path);
+        QCoreApplication::installTranslator(mDialogTranslator);
+        }
+    if(!mViewTranslator)
+        {
+        mViewTranslator = new QTranslator();
+//        QString lang = QLocale::system().name();
+//        QString appName = "btviews_";
+        //todo need to handle failed case of transaltor loading
+        bool ok =  mViewTranslator->load(BTVIEW_TRANSLATION, path);
+        QCoreApplication::installTranslator(mViewTranslator);
+        }
     // verify that requested dialog type is supported
     const int numTypes = sizeof(noteInfos) / sizeof(noteInfos[0]);
     for(i = 0; i < numTypes; i++) {
@@ -184,7 +222,7 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
     switch ( i.value().toInt() ) {
         case TBluetoothDialogParams::ENote:
             deviceDialog =
-                new BtDeviceDialogQueryWidget(HbMessageBox::MessageTypeInformation, parameters);
+                new BtDeviceDialogNotifWidget(parameters);
             break;
         case TBluetoothDialogParams::EQuery:
             deviceDialog =
@@ -204,6 +242,12 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EGlobalNotif:
             deviceDialog = new BtDeviceDialogNotifWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EUserAuthorization:
+            deviceDialog = new BTRecvQueryDialogWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EReceiveProgress:
+            deviceDialog = new BTRecvPrgrsDialogWidget(parameters);
             break;
         default:
             d->mError = UnknownDeviceDialogError;

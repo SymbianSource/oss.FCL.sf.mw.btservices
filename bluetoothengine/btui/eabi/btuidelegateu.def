@@ -15,4 +15,5 @@ EXPORTS
 	_ZNK18BtAbstractDelegate10metaObjectEv @ 14 NONAME
 	_ZTI18BtAbstractDelegate @ 15 NONAME
 	_ZTV18BtAbstractDelegate @ 16 NONAME
+	_ZN18BtAbstractDelegate11isBtPowerOnEv @ 17 NONAME
 

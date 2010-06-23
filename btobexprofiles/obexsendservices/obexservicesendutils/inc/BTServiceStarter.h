@@ -29,9 +29,6 @@
 #include <btengsettings.h>
 #include <obexutilsdialog.h>
 #include <msvapi.h>
-#include <hbdevicedialogsymbian.h>
-#include <hb/hbwidgets/hbdeviceprogressdialogsymbian.h>
-#include <hbsymbianvariant.h>
 
 // DATA TYPES
 
@@ -54,7 +51,6 @@ enum TBTActiveNotifier
 class CObexUtilsUiLayer;
 class MBTServiceProgressGetter;
 class CBTSController;
-class CBTSProgressTimer;
 
 
 const TUint KBTSdpObjectPush            = 0x1105;
@@ -83,7 +79,8 @@ class MBTServiceObserver
         * @param aGetter A pointer to a progess status getter object.
         * @return None.
         */
-        virtual void LaunchProgressNoteL( MBTServiceProgressGetter* aGetter, TInt aTotalSize, TInt aFileCount ) = 0;
+        //todo reusing the second param aTotalsize to aFileCount as it wass no longer used check it being used in other places
+        virtual void LaunchProgressNoteL( MBTServiceProgressGetter* aGetter, TInt aFileCount) = 0;
         
         
         /**
@@ -93,21 +90,12 @@ class MBTServiceObserver
         */
         virtual void UpdateProgressNoteL(TInt aFileSize,TInt aFileIndex, const TDesC& aFileName ) = 0;
         
-
-        /**
-        * Informs the observer that a progress note should be shown.
-        * @param aGetter A pointer to a progess status getter object.
-        * @return None.
-        */
-        virtual void UpdateProgressInfoL() = 0;
-        
-        
         /**
         *  Informs the observer that a confirmation query for sending
-        *  should be shouwn for BIP sendign
+        *  should be shouwn for BIP sending
         *  @return
         */ 
-        virtual TInt LaunchConfirmationQuery(TInt aResouceId)=0;        
+        virtual void LaunchConfirmationQuery(const TDesC& aConfirmText)=0; 
         
         /**
         *  Informs the observer that a connect is timedout        
@@ -126,9 +114,7 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
                           public MObexUtilsDialogObserver,
                           public MObexUtilsProgressObserver,
                           public MBTEngSdpResultReceiver,
-                          public MBTEngSettingsObserver,
-                          public MHbDeviceProgressDialogObserver,
-						  public MHbDeviceDialogObserver 
+                          public MBTEngSettingsObserver
     {
     public:  // Constructors and destructor
         
@@ -170,9 +156,11 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         * From MBTServiceObserver A progress note should be shown.
         * @param aGetter A pointer to a progess status getter object.
         * @param aTotalSize Max size of the progress bar.
+        * @param aFileCount Total Number of files to be sent
         * @return None.
         */
-        void LaunchProgressNoteL( MBTServiceProgressGetter* aGetter, TInt aTotalSize, TInt aFileCount );
+        //todo reuse the second param as it is no longer used check it being used in other places
+        void LaunchProgressNoteL( MBTServiceProgressGetter* aGetter, TInt aFileCount);
         
         
         /**
@@ -184,31 +172,14 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         */
         void UpdateProgressNoteL(TInt aFileSize,TInt aFileIndex, const TDesC& aFileName );
 		
-      /**
-        * From MBTServiceObserver Updating progress note info about the progress percentage
-        * @return None.
-        */
-         void UpdateProgressInfoL();
 
         /**
         * From MObexUtilsWaitDialogObserver The wait note has been dismissed.
         * @param aButtonId The button id that was used to dismiss the dialog.
         * @return None.
         */
-        void DialogDismissed( TInt aButtonId );
+        void DialogDismissed(TInt aButtonId);
         
-        /**
-		* From MHbDeviceProgressDialogObserver
-		*
-		*/
-        void ProgressDialogCancelled(const CHbDeviceProgressDialogSymbian *  aDialog);
-        
-	  /**
-		* From MHbDeviceProgressDialogObserver
-		*
-		*/
-        void ProgressDialogClosed(const CHbDeviceProgressDialogSymbian *  aDialog )  ; 
-
         /**
         * From MObexUtilsProgressObserver request for number of bytes sent
         * @Param None.
@@ -222,6 +193,13 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         *  @return key
         */ 
         TInt LaunchConfirmationQuery(TInt aResourceId); 
+        
+        
+        /**
+        *  From MBTServiceObserver A confirmation query for BIP
+        *  profile  should be shown.
+        */ 
+        void LaunchConfirmationQuery(const TDesC& aConfirmText);
         
         /**
         *  From MBTServiceObserver a connect request is timedout        
@@ -449,9 +427,6 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
          */
         void TurnBTPowerOnL( const TBTPowerStateValue aState );
         
-        void DataReceived(CHbSymbianVariantMap& aData);
-       
-        void DeviceDialogClosed(TInt aCompletionCode);
     private:    // Data definitions
 
         enum TBTServiceStarterState
@@ -468,7 +443,7 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         CBTDevice*                  iDevice;
         CBTEngDiscovery*            iBTEngDiscovery;
         CBTServiceParameterList*    iList;
- //       CObexUtilsDialog*           iDialog;
+        CObexUtilsDialog*           iDialog;
         CBTSController*       iController;
 
         TBTServiceType              iService;
@@ -493,11 +468,6 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         TBool                       iFeatureManagerInitialized;
         TBool                       iTriedBIP;
         TBool                       iTriedOPP;
-        CHbDeviceDialogSymbian *iDeviceDialog;
-        CHbDeviceProgressDialogSymbian *iProgressDialog;
-        TInt                        iFileCount;
-        TInt                        iFileIndex;
-        CBTSProgressTimer *iProgressTimer;
     };
 
 #endif      // BT_SERVICE_CONTROLLER_H

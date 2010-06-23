@@ -21,16 +21,17 @@
 #include <e32base.h>
 #include <btengconnman.h>
 #include <btengdevman.h>
+#include <btengconnman.h>
 #include "btabstractdelegate.h"
 
 class BtuiModel;
 
 /*!
-    \class BtDelegateDisconnect
-    \brief the base class for Disconnecting Bluetooth Connection.
+    \class BtDelegateDevSecurity
+    \brief the base class for Unpairing Bluetooth Connection.
  */
 class BtDelegateDevSecurity : public BtAbstractDelegate,
-        public MBTEngDevManObserver
+        public MBTEngDevManObserver, public MBTEngConnObserver 
 {
     Q_OBJECT
 
@@ -47,19 +48,25 @@ public:
     virtual void cancel();
     
 public slots:
+    void disconnectDelegateCompleted(int err);
 
 protected:
     //From MBTEngDevManObserver
     virtual void HandleDevManComplete( TInt aErr );
     virtual void HandleGetDevicesComplete( TInt aErr, CBTDeviceArray* aDeviceArray );
-    
+    //From MBTEngConnObserver
+    virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
+                                   RBTDevAddrArray* aConflicts );
+    virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );    
+
     void emitCommandComplete(int error);
     
 private:
 
     CBTEngDevMan *mBtEngDevMan;
-    
     QString mdeviceName;
+    CBTEngConnMan *mBtengConnMan;
+    BtAbstractDelegate* mDisconnectDelegate;
     
     Q_DISABLE_COPY(BtDelegateDevSecurity)
 

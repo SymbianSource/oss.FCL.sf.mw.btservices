@@ -19,16 +19,19 @@ TEMPLATE = subdirs
 
 # Directories
 SUBDIRS += btuimodel \
+btdevsettingframework \
 btuidelegate \
-btcpplugin \
-tsrc
+btcpplugin
 
 CONFIG += ordered
 
 symbian: {
 	SYMBIAN_PLATFORMS = WINSCW \
 	        ARMV5
-    BLD_INF_RULES.prj_exports += \
+    BLD_INF_RULES.PRJ_EXPORTS += \
 				"$${LITERAL_HASH}include<platform_paths.hrh>" \
-				"rom/btui.iby CORE_MW_LAYER_IBY_EXPORT_PATH(btui.iby)"
+				"rom/btui.iby CORE_MW_LAYER_IBY_EXPORT_PATH(btui.iby)" \
+				"rom/btui_resources.iby LANGUAGE_APP_LAYER_IBY_EXPORT_PATH(btui_resources.iby)" \
+				"inc/btuiiconutil.h       MW_LAYER_PLATFORM_EXPORT_PATH(btservices/btuiiconutil.h)" \
+				"inc/btuidevtypemap.h       MW_LAYER_PLATFORM_EXPORT_PATH(btservices/btuidevtypemap.h)"
 } 

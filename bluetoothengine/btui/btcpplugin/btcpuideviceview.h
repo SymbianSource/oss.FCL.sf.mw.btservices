@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -25,13 +25,14 @@
 
 class HbGroupBox;
 class HbLabel;
-class HbTextEdit;
+class HbLineEdit;
 class HbPushButton;
 class HbIcon;
 class HbDocumentLoader;
-class HbListView;
+class HbDataForm;
+
 class HbDataFormModel;
-class HbDataFormModelItem;
+//class HbDataFormModelItem;
 class CpSettingFormItemData;
 class BtAbstractDelegate;
 
@@ -53,6 +54,7 @@ public:
 public slots:
     
     virtual void switchToPreviousView();
+    void changeOrientation( Qt::Orientation orientation );
     void updateDeviceData();
     void changeBtDeviceName();
     void pairUnpair();
@@ -61,6 +63,7 @@ public slots:
     void unpairDelegateCompleted(int status);
     void connectDelegateCompleted(int status);
     void disconnectDelegateCompleted(int status);
+    void changeDevNameDelegateCompleted(int status, QVariant param);
  
 private:
     void clearViewData();
@@ -70,15 +73,20 @@ private:
     void disconnectDevice();
     void setDeviceCategory(int cod, int majorRole, int minorRole);//cod:class of device
     void setDeviceStatus(int majorRole);
+    void setConnectionCombobox();
     void setTextAndVisibilityOfButtons();
+    void updateStatusVariables(int majorRole);
 
 private:
     HbDocumentLoader *mLoader;
-    HbGroupBox *mGroupBox;
+    //HbGroupBox *mGroupBox;
     HbLabel *mDeviceIcon;
-    HbTextEdit *mDeviceName;
+    HbLineEdit *mDeviceName;
     HbLabel *mDeviceCategory;
     HbLabel *mDeviceStatus;
+    
+    HbDataForm *mConnectionCombobox;
+    HbDataFormModel *mConnectionComboboxModel;
     
     HbPushButton *mPair_Unpair;
     HbPushButton *mConnect_Disconnect;
@@ -99,12 +107,14 @@ private:
     QVariant mDeviceBdAddr;
     
     //true -> device is paired; false -> device is unpaired
-    bool mPairStatus;
+    bool mPairedStatus;
     
     //true-> device is connected; false -> device is disconnected
-    bool mConnectStatus;
-    
-	//true -> device is connectable
+    bool mConnectedStatus;
+    bool mTrustedStatus;
+    bool mBlockedStatus;
+
+    //true -> device is connectable
     //e.g. not possible to connect to a phone, but possible to connect to a headset
     bool mConnectable;
     

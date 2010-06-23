@@ -218,7 +218,7 @@ void CBTSOPPController::HandleConnectCompleteIndicationL()
                 }            
             }
         }
-    iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ObjectListSizeL(),iListPtr->ObjectCount() );
+    iObserverPtr->LaunchProgressNoteL( iClient, iListPtr->ObjectCount() );
     iFileIndex = 0;
     UpdateProgressNoteL();    
     Send();
@@ -230,7 +230,7 @@ void CBTSOPPController::UpdateProgressNoteL()
     TInt size;
     RBuf filename;
     iListPtr->ObjectAtL( iFileIndex ).Size(size);
-    filename.CreateL(255);
+    filename.CreateL(KMaxFileName);
     iListPtr->ObjectAtL( iFileIndex ).Name(filename);
     iObserverPtr->UpdateProgressNoteL(size,iFileIndex,filename);
     filename.Close();

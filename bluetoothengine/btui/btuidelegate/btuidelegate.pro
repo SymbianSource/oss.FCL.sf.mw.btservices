@@ -36,7 +36,8 @@ HEADERS += btdelegateconsts.h \
     btdelegateconnect.h \
     btdelegatepair.h \
     btdelegatedisconnect.h \
-    btdelegatedevsecurity.h
+    btdelegatedevsecurity.h \
+    btdelegateremotedevname.h
     
 SOURCES += btdelegatepower.cpp \
     btdelegatefactory.cpp \
@@ -47,7 +48,8 @@ SOURCES += btdelegatepower.cpp \
     btdelegateconnect.cpp \
     btdelegatepair.cpp \
     btdelegatedisconnect.cpp \
-    btdelegatedevsecurity.cpp
+    btdelegatedevsecurity.cpp \
+    btdelegateremotedevname.cpp
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \

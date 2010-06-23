@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -36,6 +36,7 @@ class BtCpUiSearchView : public BtCpUiBaseView
     Q_OBJECT
     
 public:
+
     explicit BtCpUiSearchView(
             BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
@@ -50,16 +51,31 @@ public slots:
     void changeOrientation( Qt::Orientation orientation );
     void stopSearching();
     void retrySearch();
+    void viewByDeviceTypeDialog();
+    void viewByDialogClosed(HbAction* action);
     void searchDelegateCompleted(int error);
     void deviceSearchCompleted(int error);
     void deviceSelected(const QModelIndex& modelIndex);
-
+    
+private:
+    void startSearchDelegate();
+    
+private:
+    enum devTypeSelectionList {
+        BtUiDevAudioDevice = 0,
+        BtUiDevComputer,
+        BtUiDevInputDevice,
+        BtUiDevPhone,
+        BtUiDevOtherDevice
+    };
 private:
     HbDocumentLoader *mLoader;
     HbLabel *mDeviceIcon;
     HbLabel *mLabelFoundDevices;
     HbLabel *mLabelSearching;        
     HbListView *mDeviceList;
+    QStringList mDevTypeList;
+    int mLastSelectionIndex;
     
     // data structures for switching between views
     bool mEventFilterInstalled;

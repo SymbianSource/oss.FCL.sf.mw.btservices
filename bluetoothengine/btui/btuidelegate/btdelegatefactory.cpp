@@ -21,6 +21,7 @@
 #include <btdevicemodel.h>
 #include "btdelegatepower.h"
 #include "btdelegatedevname.h"
+#include "btdelegateremotedevname.h"
 #include "btdelegatevisibility.h"
 #include "btdelegateinquiry.h"
 #include "btdelegateconnect.h"
@@ -54,6 +55,8 @@ BtAbstractDelegate * BtDelegateFactory::newDelegate(
             return new BtDelegateDisconnect( settingModel, deviceModel, parent );
         case BtDelegate::Unpair:
             return new BtDelegateDevSecurity( settingModel, deviceModel, parent );
+        case BtDelegate::RemoteDevName:
+            return new BtDelegateRemoteDevName( settingModel, deviceModel, parent );
     }
     return 0;
 }

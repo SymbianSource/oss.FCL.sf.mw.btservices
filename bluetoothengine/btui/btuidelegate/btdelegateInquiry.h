@@ -42,7 +42,15 @@ public:
     
     virtual void cancel();
     
+public slots:
+    void powerDelegateCompleted(int error);
+    
 private:
+    void exec_inquiry();
+    
+private:
+    BtAbstractDelegate* mAbstractDelegate;
+    
 };
 
 #endif /* BTDELEGATEINQUIRY_H_ */

@@ -21,6 +21,7 @@
 #include <bluetoothdevicedialogs.h>
 #include <hbaction.h>
 #include <hbdialog.h>
+#include <hblabel.h>
 #include "btdevicedialogpluginerrors.h"
 
 /*!
@@ -118,7 +119,8 @@ bool BtDeviceDialogQueryWidget::constructQueryDialog(const QVariantMap &paramete
 void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
-    QString keyStr, prompt;
+    QString keyStr, prompt,title;
+    QVariant name,param,addval;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -127,31 +129,15 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
         mLastError = UnknownDeviceDialogError;
         return;
     }
-
-    QVariant param = parameters.value( keyStr );
+    title = QString(hbTrId("txt_bt_title_pairing_with_1"));
+    param = parameters.value( keyStr );
     int key = param.toInt();
     switch ( key ) {
-        // Query dialogs:
-        case EAuthorization:
-            prompt = QString( tr( "Accept connection request from:\n%1" ) );
-            break;
-        case EIncomingPairing:
-            prompt = QString( tr( "Device '%1' is trying to pair with you. Allow pairing?" ) );
-            break;
         case ENumericComparison:
-            prompt = QString( tr( "Does this code match the one on %1?\n\n%2" ) );
+            prompt = QString( hbTrId( "txt_bt_info_does_this_code_match_the_code_on_1" ) );
             break;
         case EPasskeyDisplay:
-            prompt = QString( tr( "Enter on %1:\n\n%2" ) );
-            break;
-        case ESetTrusted:
-            prompt = QString( tr( "Authorise this device to make connections automatically?" ) );
-            break;
-        case EBlockUnpairedDevice:
-            prompt = QString( tr( "Do you want to block all future connection attempts from device %1?" ) );
-            break;
-        case EBlockPairedDevice:
-            prompt = QString( tr( "Do you want to block all future connection attempts from paired device %1? \nThis will delete your pairing with the device." ) );
+            prompt = QString( hbTrId( "txt_bt_info_enter_the_following_code_to_the_1" ) );
             break;
         // Note dialogs, but not Notification dialogs
         // Input dialogs
@@ -164,18 +150,22 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
             mLastError = ParameterError;
             break;
     }
-    // Could use QChar with ReplacementCharacter?
     int repls = prompt.count( QString( "%" ) );
     if ( repls > 0 ) {
-        QVariant name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
+        name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
         prompt = prompt.arg( name.toString() );
-        if ( repls > 1 ) {
-            QVariant addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
-            prompt = prompt.arg( addval.toString() );
-        }
+        addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
+        // todo: Formating the prompt need to be discussed with UI designer
+        // The passcode could be displayed on a separate row if it the label did support
+        // the use of newline escape character.
+        prompt.append(tr(" "));
+        prompt.append(addval.toString());
     }
+    title = title.arg(name.toString());
     // set property value to this dialog widget
+    mMessageBox->setHeadingWidget(new HbLabel(title));
     mMessageBox->setText( prompt );
+    mMessageBox->setIconVisible(false);
     TRACE_EXIT
 }
 

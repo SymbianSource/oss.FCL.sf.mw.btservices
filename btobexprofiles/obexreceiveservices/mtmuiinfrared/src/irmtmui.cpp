@@ -28,15 +28,12 @@
 
 #include <mtmuidef.hrh>
 #include <mtclreg.h>
-#include <obexutilsuilayer.h>
-#include <Obexutils.rsg>
 #include <msvuids.h>
 #include <msvids.h>
 #include <obexconstants.h>
 #include <btnotif.h>        	// Notifier UID's
-#include <aknnotewrappers.h> 	//For notifier
 #include <featmgr.h>
-#include <secondarydisplay/obexutilssecondarydisplayapi.h>
+#include <SecondaryDisplay/obexutilssecondarydisplayapi.h>
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -72,8 +69,12 @@ void CIrMtmUi::ConstructL()
     {
     // --- Make sure base class correctly constructed ---
     CBaseMtmUi::ConstructL();
-    TObexUtilsUiLayer::ReadResourceL( iConnectingText, R_IR_CONNECTING );
-    TObexUtilsUiLayer::ReadResourceL( iSendingText, R_IR_SENDING_DATA );
+    //todo: Need to use localised string.
+    _LIT(KConnectText, "Connecting via Infrared..");
+    _LIT(KSendText, "Sending message via Infrared...");
+    iConnectingText.Copy(KConnectText);
+    iSendingText.Copy(KSendText);
+    
     iCurrentlySending = EFalse;
     }
 
@@ -82,12 +83,11 @@ void CIrMtmUi::ConstructL()
 // return progress status.
 // ---------------------------------------------------------
 //
-void CIrMtmUi::GetResourceFileName( TFileName& aFileName ) const
+void CIrMtmUi::GetResourceFileName( TFileName& /*aFileName*/ ) const
     { 
     FLOG( _L( "[CIrMtmUi] CIrMtmUi: GetResourceFileName\t" ) );
-    aFileName = KObexUtilsFileDrive;
-    aFileName += KDC_RESOURCE_FILES_DIR;
-    aFileName += KObexUtilsResourceFileName;
+    //todo: This function should be removed it is using avkon resource file.
+
     }
 
 // ---------------------------------------------------------
@@ -601,13 +601,14 @@ TInt CIrMtmUi::GetProgress( const TDesC8& aProgress,
 // recognition(document handler).
 // ---------------------------------------------------------
 //
-CMsvOperation* CIrMtmUi::LaunchEditorApplicationL( TRequestStatus& aStatus,
-                                                  CMsvSession& aSession)
+CMsvOperation* CIrMtmUi::LaunchEditorApplicationL( TRequestStatus& /*aStatus*/,
+                                                  CMsvSession& /*aSession*/)
     {
 	FLOG( _L( "[CIrMtmUi] CIrMtmUi: LaunchEditorApplicationL\t" ) );
-	CMsvEntry* message;
-	message = &iBaseMtm.Entry();    
-	return TObexUtilsUiLayer::LaunchEditorApplicationOperationL( aSession, message, aStatus );
+	//CMsvEntry* message;
+	//message = &iBaseMtm.Entry();
+	//todo: Need to use proper API for launching editor application, now returning NULL.
+	return NULL;
     }
 
 

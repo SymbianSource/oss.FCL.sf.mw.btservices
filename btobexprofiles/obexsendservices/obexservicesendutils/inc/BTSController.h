@@ -54,6 +54,9 @@ public:
      * @return None
      */
      void Abort( );
+     
+     
+     virtual void SendUnSupportedFiles();
 
 protected:
     

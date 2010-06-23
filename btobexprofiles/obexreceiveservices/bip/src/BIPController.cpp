@@ -17,35 +17,33 @@
 
 
 // INCLUDE FILES
-#include    <avkon.hrh>                    // AVKON components
 #include    "BIPController.h"
 #include    "BIPCapabilityHandler.h"
 #include    "BIPImageHandler.h"
 
 
 #include    <e32base.h>
-#include    <StringLoader.h>               // Series 60 localisation stringloader
 #include    <obexutilsmessagehandler.h>
-#include    <obexutilsuilayer.h>
-#include    <obexutilsdialog.h>
-#include    <UiklafInternalCRKeys.h>
-#include    <Obexutils.rsg>
 #include    <sysutil.h>
 #include    <bautils.h>
 #include    <driveinfo.h>                   
-#include    <AknWaitDialog.h>
 #include    <btengdomaincrkeys.h> 
 #include    <e32math.h> 
 #include    <es_sock.h>
 #include    <bt_sock.h>
 #include    <msvids.h>
 #include    "debug.h"
+#include    <bluetoothdevicedialogs.h>
+#include <hbtextresolversymbian.h>
         
 // CONSTANTS
 _LIT8(KBipCapabilityType, "x-bt/img-capabilities\0");
-
-
+const TInt KFileManagerUID3 = 0x101F84EB; /// File Manager application UID3
 const TInt    KBufferSize = 0x10000;  // 64 kB
+_LIT( KBTDevDialogId, "com.nokia.hb.btdevicedialog/1.0" );
+_LIT(KLocFileName, "btdialogs_");
+_LIT(KPath, "z:/resource/qt/translations/");  
+
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -80,6 +78,12 @@ void CBIPController::ConstructL()
     iResultArray = new(ELeave) CBTDeviceArray(1);
     // Get default folder from CenRep 
     TObexUtilsMessageHandler::GetCenRepKeyStringValueL(KCRUidBluetoothEngine, KLCReceiveFolder, iCenRepFolder);
+    iDialog = CObexUtilsDialog::NewL(this);
+    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
+    if (!ok) 
+        {
+        User::Leave( KErrNotFound );
+        }
     TRACE_FUNC_EXIT
     }
 
@@ -96,8 +100,6 @@ CBIPController::~CBIPController()
     delete iLowMemoryActiveCDrive;    
     delete iLowMemoryActiveMMC;    
     delete iBuf;
-    delete iProgressDialog;
-    delete iWaitDialog;
     delete iBTObject;
     delete iDevMan;
     if (iResultArray)
@@ -106,6 +108,8 @@ CBIPController::~CBIPController()
         delete iResultArray;
         }
     iFs.Close();
+    delete iDialog;
+    delete iProgressDialog;
     TRACE_FUNC_EXIT    
     }
 
@@ -143,8 +147,13 @@ void CBIPController::HandleError(TBool aAbort)
             iBTObject->Reset();
             }
         CancelTransfer();
-        TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL( R_BT_FAILED_TO_RECEIVE));
-        }
+
+        TRAP_IGNORE( 
+                HBufC* note = HbTextResolverSymbian::LoadLC(_L("txt_bt_dpophead_receiving_failed"));
+                iDialog->ShowErrorNoteL(note->Des());
+                CleanupStack::PopAndDestroy(note); 
+                );
+        } 
     delete iBuf;
     iBuf = NULL;
     
@@ -197,9 +206,12 @@ void CBIPController::TransportUpIndication()
 // ObexConnectIndication()
 // ---------------------------------------------------------
 //
-TInt CBIPController::ObexConnectIndication( const TObexConnectInfo& /*aRemoteInfo*/, const TDesC8& /*aInfo*/ )
+TInt CBIPController::ObexConnectIndication( const TObexConnectInfo& aRemoteInfo, const TDesC8& aInfo )
     {
     TRACE_FUNC
+    
+    (void) aRemoteInfo;
+    (void) aInfo;
     
     // Get remote device socket address and bluetooth name
     // Remote bluetooth name will be displayed in the new message in inbox.
@@ -223,9 +235,10 @@ TInt CBIPController::ObexConnectIndication( const TObexConnectInfo& /*aRemoteInf
 // ObexDisconnectIndication()
 // ---------------------------------------------------------
 //
-void CBIPController::ObexDisconnectIndication(const TDesC8& /*aInfo*/)
+void CBIPController::ObexDisconnectIndication(const TDesC8& aInfo)
     {
     TRACE_FUNC
+    (void) aInfo;
     }
 
 // ---------------------------------------------------------
@@ -256,7 +269,7 @@ CObexBufObject* CBIPController::PutRequestIndication()
     // Checking if backup is running now - if backup process is active, then we
     // need to cancel transfer - otherwise phone will freeze during receiving
     // data
-    if ( TObexUtilsUiLayer::IsBackupRunning() )
+    if ( IsBackupRunning() )
         {
         TRACE_INFO ( _L ("Backup in progress! Canceling incoming transfer."));
         iBTTransferState = ETransferPutInitError;
@@ -308,7 +321,11 @@ TInt CBIPController::PutPacketIndication()
                 }
             if(!capacity)
                 {
-                TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+                //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+                //todo: Need to use Localized string.
+                _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+                TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+    
                 return KErrDiskFull;
                 }
             }
@@ -326,7 +343,11 @@ TInt CBIPController::PutPacketIndication()
         // Now we need to either create (in the first instance) or update the dialog on the UI.
         if(ReceivingIndicatorActive())
             {
-            UpdateReceivingIndicator();
+            TRAPD(err, UpdateReceivingIndicatorL());
+            if(err < KErrNone)
+                {
+                return err;
+                }
             }
         else if(!iNoteDisplayed)
             {
@@ -420,12 +441,15 @@ TInt CBIPController::GetCompleteIndication()
 // SetPathIndication()
 // ---------------------------------------------------------
 //
-TInt CBIPController::SetPathIndication( const CObex::TSetPathInfo& /*aPathInfo*/, 
-                                        const TDesC8& /*aInfo*/)
+TInt CBIPController::SetPathIndication( const CObex::TSetPathInfo& aPathInfo, 
+                                        const TDesC8& aInfo)
     {
     TRACE_FUNC
     // SetPath is not implemented in BIP - so following IrOBEX guidance, return
     // the Forbidden response code.
+    (void) aPathInfo;
+    (void) aInfo;
+    
     return KErrIrObexRespForbidden;
     }
 
@@ -504,7 +528,11 @@ void CBIPController::HandlePutImageRequestL()
     //
     if (SysUtil::DiskSpaceBelowCriticalLevelL(&iFs, 0, iDrive))
         {
-        TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+        //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
+        //todo: Need to use Localized string.
+        _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+        TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+    
         User::Leave(KErrGeneral);
         }
     
@@ -739,57 +767,83 @@ void CBIPController::LaunchReceivingIndicatorL()
     
     if(iTotalSizeByte > 0)
         {
-        iProgressDialog = CGlobalProgressDialog::NewL(this);  
         if(iReceivingFileName.Length() > 0)
             {
-            iProgressDialog->ShowProgressDialogNameSizeL(iReceivingFileName, iTotalSizeByte);
+            iProgressDialog = CHbDeviceDialogSymbian::NewL();
+            iProgressDialog->SetObserver(this);
+    
+            CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+            CleanupStack::PushL(variantMap);
+            
+            TInt dialogIdx = TBluetoothDialogParams::EReceiveProgress;
+            CHbSymbianVariant* dialogType = CHbSymbianVariant::NewL( (TAny*) &(dialogIdx), 
+                                                                CHbSymbianVariant::EInt );
+            CleanupStack::PushL(dialogType);
+            TBuf16<6> dialogTypeKey;
+            dialogTypeKey.Num(TBluetoothDialogParams::EDialogType);
+            User::LeaveIfError(variantMap->Add(dialogTypeKey, dialogType));
+            CleanupStack::Pop(dialogType);
+            
+            CHbSymbianVariant* deviceName = CHbSymbianVariant::NewL( (TAny*) (&iRemoteDeviceName), 
+                                                                CHbSymbianVariant::EDes );
+            CleanupStack::PushL(deviceName);
+            TBuf16<6> deviceNameKey;
+            deviceNameKey.Num(TBluetoothDeviceDialog::EDeviceName);
+            User::LeaveIfError(variantMap->Add(deviceNameKey, deviceName));
+            CleanupStack::Pop(deviceName);
+            
+            CHbSymbianVariant* fileName = CHbSymbianVariant::NewL( (TAny*) (&iReceivingFileName), 
+                                                                CHbSymbianVariant::EDes );
+            CleanupStack::PushL(fileName);
+            TBuf16<6> fileNameKey;
+            fileNameKey.Num(TBluetoothDeviceDialog::EReceivingFileName);
+            User::LeaveIfError(variantMap->Add(fileNameKey, fileName));
+            CleanupStack::Pop(fileName);
+            
+            CHbSymbianVariant* fileSz = CHbSymbianVariant::NewL( (TAny*) &iTotalSizeByte, 
+                                                                CHbSymbianVariant::EInt );
+            CleanupStack::PushL(fileSz);
+            TBuf16<6> fileSzKey;
+            fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
+            User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
+            CleanupStack::Pop(fileSz);
+                    
+            iDialogActive = ETrue;
+            iProgressDialog->Show( KBTDevDialogId(), *variantMap, this );
+            CleanupStack::PopAndDestroy(variantMap);
             }
         else
             {
-            iProgressDialog->ShowProgressDialogL(R_BT_RECEIVING_DATA);
+            // TODO
+            iDialogActive = ETrue;
             }
         }
     else
         {
-        iWaitDialog = CGlobalDialog::NewL(this);
-        iWaitDialog->ShowNoteDialogL(R_BT_RECEIVING_DATA, ETrue);
+        iDialogActive = ETrue;
+        /*
+         * TODO - The functionality provided by CGlobalDialog will be removed
+         * TODO - and this will be provided by CGlobalProgressDialog.
+         */
+        
         }
     }
 
-void CBIPController::UpdateReceivingIndicator()
+void CBIPController::UpdateReceivingIndicatorL()
     {
     if(iProgressDialog)
         {
-        iProgressDialog->UpdateProgressDialog(iBTObject->BytesReceived(), iTotalSizeByte);
-        }
-    // else we are using a wait note, so no "need" to update
-    }
-
-void CBIPController::HandleGlobalProgressDialogL( TInt aSoftkey )
-    {
-    TRACE_FUNC
-    
-    if(aSoftkey == EAknSoftkeyCancel)
-        {
-        CancelTransfer();
-        }
-    else if(aSoftkey == EAknSoftkeyHide)
-        {
-        CloseReceivingIndicator(EFalse); // Don't reset state as only hiding
-        }
-    }
-
-void CBIPController::HandleGlobalNoteDialogL( TInt aSoftkey )
-    {
-    TRACE_FUNC
-    
-    if( aSoftkey == EAknSoftkeyCancel )
-        {
-        CancelTransfer();
-        }
-    else if( aSoftkey == EAknSoftkeyHide)
-        {
-        CloseReceivingIndicator(EFalse); // Don't reset state as only hiding
+        CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+        CleanupStack::PushL(variantMap);
+        
+        TInt bytesReceived = iBTObject->BytesReceived();
+        CHbSymbianVariant* progress = CHbSymbianVariant::NewL( (TAny*) &bytesReceived, CHbSymbianVariant::EInt );
+        CleanupStack::PushL(progress);
+        User::LeaveIfError(variantMap->Add(_L("progress"), progress));
+        CleanupStack::Pop(progress);
+        
+        iProgressDialog->Update(*variantMap);
+        CleanupStack::PopAndDestroy(variantMap);
         }
     }
 
@@ -802,15 +856,10 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
         }
     if(iProgressDialog)
         {
-        iProgressDialog->ProcessFinished();
+        iProgressDialog->Cancel();
+        iDialogActive = EFalse;
         delete iProgressDialog;
         iProgressDialog = NULL;
-        }
-    if(iWaitDialog)
-        {
-        iWaitDialog->ProcessFinished();
-        delete iWaitDialog;
-        iWaitDialog = NULL;
         }
     }
  
@@ -869,8 +918,10 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
  // ----------------------------------------------------------
  //    
  // 
- void CBIPController::HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* /*aDeviceArray*/)
+ void CBIPController::HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray)
     {
+    (void) aDeviceArray;
+     
     if ( aErr == KErrNone )
         {
         if ( iResultArray->Count())
@@ -889,6 +940,78 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
             }
         }
     }
+ 
+ TBool CBIPController::IsBackupRunning()
+    {
+    const TUint32 KFileManagerBkupStatus = 0x00000001;
+    
+    TInt status = EFileManagerBkupStatusUnset;
+    TBool retValue = EFalse;
+    TInt err = RProperty::Get( TUid::Uid(KFileManagerUID3), KFileManagerBkupStatus,
+                              status );
+    if ( err == KErrNone )
+        {
+        if ( status == EFileManagerBkupStatusBackup || 
+             status == EFileManagerBkupStatusRestore )
+            {
+            TSecureId fileManagerSecureId( KFileManagerUID3 );
+            //only returning ETrue if backup process is still active
+            retValue = ProcessExists( fileManagerSecureId );
+            }
+        }
+   
+    return retValue;
+    }
+ 
+ TBool CBIPController::ProcessExists( const TSecureId& aSecureId )
+     {
+     _LIT( KFindPattern, "*" );
+     TFindProcess finder(KFindPattern);
+     TFullName processName;
+     while( finder.Next( processName ) == KErrNone )
+         {
+         RProcess process;
+         if ( process.Open( processName ) == KErrNone )
+             {
+             TSecureId processId( process.SecureId() );
+             process.Close();
+             if( processId == aSecureId )
+                 {
+                 return ETrue;
+                 }
+             }
+         }
+     return EFalse;
+     }
+ 
+ void CBIPController::DialogDismissed(TInt aButtonId)
+     {
+     (void) aButtonId;
+     }
+
+ void CBIPController::DataReceived(CHbSymbianVariantMap& aData)
+     {
+     if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult")) == 0)
+         {
+         TInt val = *(static_cast<TInt*>(aData.Get(_L("actionResult"))->Data()));
+         if(!val)
+             {
+             //Cancel has been clicked
+             CancelTransfer();
+             }
+         else
+             {
+             //Hide has been clicked
+             CloseReceivingIndicator(EFalse);
+             }
+         }
+     }
+ 
+ void CBIPController::DeviceDialogClosed(TInt aCompletionCode)
+     {
+     (void) aCompletionCode;
+     }
+
  
 //////////////////////////// Global part ////////////////////////////
 
