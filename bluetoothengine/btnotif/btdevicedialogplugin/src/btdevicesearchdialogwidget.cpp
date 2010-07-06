@@ -199,7 +199,7 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         connect(mViewByAction, SIGNAL(triggered()), this, SLOT(viewByClicked()));
         connect(mStopRetryAction, SIGNAL(triggered()), this, SLOT(stopRetryClicked()));
 
-        connect(mSearchDevicesDialog, SIGNAL(finished(HbAction*)), this, SLOT(searchDialogClosed(HbAction*)));
+        connect(mSearchDevicesDialog, SIGNAL(aboutToClose()), this, SLOT(searchDialogClosed()));
         
 //        QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
         //setContentWidget(widget);
@@ -207,6 +207,7 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
     mSearchDevicesDialog->setBackgroundFaded(false);
     mSearchDevicesDialog->setDismissPolicy(HbPopup::TapOutside);
     mSearchDevicesDialog->setTimeout(HbPopup::NoTimeout);
+    mSearchDevicesDialog->setAttribute(Qt::WA_DeleteOnClose);
     
  /*   mViewByDialog = new HbDialog();
     mRbl = new HbRadioButtonList(mViewByDialog);
@@ -345,21 +346,13 @@ void BTDeviceSearchDialogWidget::viewByClicked()
     mViewByDialog->show();*/
     }
 
-void BTDeviceSearchDialogWidget::searchDialogClosed(HbAction* action)
+void BTDeviceSearchDialogWidget::searchDialogClosed() 
     {
-    HbDialog *dlg=static_cast<HbDialog*>(sender());
-     if(dlg->actions().first() == action) {
-     } 
-     else if(dlg->actions().at(1) == action) {
-       }
-     else
-        {
-        QVariantMap val;
-        QVariant index(-1);
-        val.insert("selectedindex",index);
-        emit deviceDialogData(val);    
-        emit deviceDialogClosed();
-        }
+    QVariantMap val;
+    QVariant index(-1);
+    val.insert("selectedindex",index);
+    emit deviceDialogData(val);    
+    emit deviceDialogClosed();
     }
 
 void BTDeviceSearchDialogWidget::selectionDialogClosed(HbAction* action)

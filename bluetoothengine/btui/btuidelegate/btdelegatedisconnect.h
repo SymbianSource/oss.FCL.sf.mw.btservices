@@ -86,7 +86,7 @@ private:
 
     int mMajorRole;
     bool mActiveHandling;
-
+    
     int mAddrArrayIndex;
     DisconnectOption mDisconOpt;
 

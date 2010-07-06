@@ -29,6 +29,7 @@
 #include "btengactive.h"
 
 class CBTEngServer;
+class CHbIndicatorSymbian;
 
 
 /**
@@ -130,12 +131,11 @@ public:
     
     /**
     * ?description
-    *
-    * @since S60 v3.2
-    * @param ?arg1 ?description
+    * 
+    * @param aState Current State of the Bluetooth
     */
-    void SetIndicatorStateL( const TInt aIndicator, const TInt aState );
-
+    void SetIndicatorStateL( const TInt aState );
+    
     /**
      * Update the Bluetooth visibility mode.
      *
@@ -305,6 +305,15 @@ private: // data
      */
     RMessage2 iMessage;
     
+    /**
+     *  Orbit Indicator to display Bluetooth Status
+     */
+    CHbIndicatorSymbian* iBTIndicator;
+    
+    /*
+     *  Indicator State
+     */
+    TInt iIndicatorState;
     };
 
 

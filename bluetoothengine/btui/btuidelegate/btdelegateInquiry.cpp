@@ -76,14 +76,8 @@ void BtDelegateInquiry::powerDelegateCompleted(int error)
 void BtDelegateInquiry::exec_inquiry()
 {
     bool err = getDeviceModel()->searchDevice();
-    if (!err) {
-        // TODO - Verify the error code to be used.
-        // Complete command with error
-        emit commandCompleted(KErrNotSupported);
-        return;
-    }
-    
-    emit commandCompleted(KErrNone);
+
+    emit commandCompleted(err);  // in case of error, passing original error back
 }
 
 void BtDelegateInquiry::cancel()

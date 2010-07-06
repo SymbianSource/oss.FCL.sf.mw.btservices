@@ -36,13 +36,15 @@ class BtCpUiBaseView : public CpBaseSettingView
 public:
     
     virtual ~BtCpUiBaseView();
-    virtual void activateView( const QVariant& value, int cmdId ) = 0;
+    virtual void activateView( const QVariant& value, bool fromBackButton ) = 0;
     virtual void deactivateView() = 0;    
     virtual void switchToPreviousView() = 0;
     
 signals:
 
 protected:
+    explicit BtCpUiBaseView(QGraphicsItem *parent = 0);
+    
     explicit BtCpUiBaseView( 
             BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
@@ -55,10 +57,10 @@ protected:
     
 protected:
     
-    // not owned
+    // owned
     BtSettingModel *mSettingModel;
     
-    // not owned
+    // owned
     BtDeviceModel *mDeviceModel;
     
     QGraphicsItem *mParent;

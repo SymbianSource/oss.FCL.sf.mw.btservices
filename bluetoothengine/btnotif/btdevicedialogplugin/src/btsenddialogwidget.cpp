@@ -157,6 +157,7 @@ bool BTSendDialogWidget::constructDialog(const QVariantMap&/*parameters*/)
     mSendDialog->setBackgroundFaded(false);
     mSendDialog->setDismissPolicy(HbPopup::NoDismiss);
     mSendDialog->setTimeout(HbPopup::NoTimeout);
+    mSendDialog->setAttribute(Qt::WA_DeleteOnClose);
     
     mHideAction = static_cast<HbAction*>( mLoader->findObject( "hideaction" ) );
     mHideAction->disconnect(mSendDialog);

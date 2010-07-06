@@ -61,7 +61,7 @@ symbian: {
     hblib.sources = Hb.dll
     hblib.path = \sys\bin
     hblib.depends = "(0xEEF9EA38), 1, 0, 0, {\"Hb\"}"
-    pluginstub.sources = btdevicedialogplugin.dll
+    pluginstub.sources = $${TARGET}.dll
     pluginstub.path = /resource/plugins/devicedialogs
     DEPLOYMENT += pluginstub
 }
@@ -73,4 +73,4 @@ symbian: {
 BLD_INF_RULES.prj_exports += \
   "$${LITERAL_HASH}include <platform_paths.hrh>" \
   	"rom/btdevicedialogplugin.iby CORE_MW_LAYER_IBY_EXPORT_PATH(btdevicedialogplugin.iby)" \
-    "qmakepluginstubs/btdevicedialogplugin.qtplugin /epoc32/data/z/pluginstub/btdevicedialogplugin.qtplugin"
+    "qmakepluginstubs/$${TARGET}.qtplugin /epoc32/data/z/pluginstub/$${TARGET}.qtplugin"

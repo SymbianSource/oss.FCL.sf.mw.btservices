@@ -16,7 +16,7 @@
 */
 
 
-#include "btlocalsetting.h"
+#include "btsettingmodel_p.h"
 #include <btdevice.h>
 #include <btmanclient.h>
 #include <bt_subscribe.h>
@@ -28,7 +28,7 @@ const int KBtLinkCountWatcher = 11;
 /*!
     Constructor.
  */
-BtLocalSetting::BtLocalSetting( BtSettingModel& model, QObject *parent )
+BtSettingModelPrivate::BtSettingModelPrivate( BtSettingModel& model, QObject *parent )
     : QObject( parent), mModel( model ), mLocalDeviceWatcher(0)
     {
     int err( 0 );
@@ -75,7 +75,7 @@ BtLocalSetting::BtLocalSetting( BtSettingModel& model, QObject *parent )
 /*!
     Destructor.
  */
-BtLocalSetting::~BtLocalSetting()
+BtSettingModelPrivate::~BtSettingModelPrivate()
 {
     // delete main data structure
     delete mBtengSetting;
@@ -95,7 +95,7 @@ BtLocalSetting::~BtLocalSetting()
     
     \return true if the given row and column are valid; false otherwise.
 */
-bool BtLocalSetting::isValid( int row, int column) const
+bool BtSettingModelPrivate::isValid( int row, int column) const
 {
     return row >= 0 && row < mData.count() && column == 0;
 }
@@ -104,7 +104,7 @@ bool BtLocalSetting::isValid( int row, int column) const
     \return the total amount of rows.
     
 */
-int BtLocalSetting::rowCount() const
+int BtSettingModelPrivate::rowCount() const
 {
     return mData.count();
 }
@@ -113,7 +113,7 @@ int BtLocalSetting::rowCount() const
     \return the total amount of columns.
     
 */
-int BtLocalSetting::columnCount() const
+int BtSettingModelPrivate::columnCount() const
 {
     return 1;
 }
@@ -125,7 +125,7 @@ int BtLocalSetting::columnCount() const
     \param col the column number which the value is from
     \param role the role idenfier of the value.
  */
-void BtLocalSetting::data(QVariant& val, int row,  int col, int role ) const
+void BtSettingModelPrivate::data(QVariant& val, int row,  int col, int role ) const
 {
     if ( isValid( row, col ) ) {
         val = mData.at( row ).value( role );
@@ -141,7 +141,7 @@ void BtLocalSetting::data(QVariant& val, int row,  int col, int role ) const
     \param col the column number of the item data to be returned
     \return the item data
  */
-BtuiModelDataItem BtLocalSetting::itemData( int row, int col ) const
+BtuiModelDataItem BtSettingModelPrivate::itemData( int row, int col ) const
 {
     if ( isValid( row, col ) ) {
         return mData.at( row );
@@ -156,10 +156,10 @@ BtuiModelDataItem BtLocalSetting::itemData( int row, int col ) const
     \param state EBTPowerOff if the BT hardware has been turned off,
                  EBTPowerOn if it has been turned on.
  */
-void BtLocalSetting::PowerStateChanged( TBTPowerStateValue state ) 
+void BtSettingModelPrivate::PowerStateChanged( TBTPowerStateValue state ) 
 {
     setPowerSetting( state );
-    mModel.emitDataChanged( BtSettingModel::PowerStateRow, 0, this );
+    emit settingDataChanged( BtSettingModel::PowerStateRow, this );
 }
 
 /*!
@@ -168,13 +168,13 @@ void BtLocalSetting::PowerStateChanged( TBTPowerStateValue state )
     \param state EBTDiscModeHidden if the BT hardware is in hidden mode,
                   EBTDiscModeGeneral if it is in visible mode.
  */
-void BtLocalSetting::VisibilityModeChanged( TBTVisibilityMode state )
+void BtSettingModelPrivate::VisibilityModeChanged( TBTVisibilityMode state )
 {
     setVisibilityMode( state );
-    mModel.emitDataChanged( BtSettingModel::VisibilityRow, 0, this );
+    emit settingDataChanged( BtSettingModel::VisibilityRow, this );
 }
 
-void BtLocalSetting::RequestCompletedL( CBtSimpleActive* active, TInt status ) {
+void BtSettingModelPrivate::RequestCompletedL( CBtSimpleActive* active, TInt status ) {
     Q_UNUSED( active );
     Q_UNUSED( status );
     if ( active->RequestId() == KLocalDeviceNameWatcher ) {
@@ -184,7 +184,7 @@ void BtLocalSetting::RequestCompletedL( CBtSimpleActive* active, TInt status ) {
     }
 }
 
-void BtLocalSetting::CancelRequest( TInt requestId ) {
+void BtSettingModelPrivate::CancelRequest( TInt requestId ) {
     if ( requestId == KLocalDeviceNameWatcher ) {
         mLocalDeviceKey.Cancel();
     }
@@ -193,7 +193,7 @@ void BtLocalSetting::CancelRequest( TInt requestId ) {
     }
 }
 
-void BtLocalSetting::HandleError( CBtSimpleActive* active, TInt error ) {
+void BtSettingModelPrivate::HandleError( CBtSimpleActive* active, TInt error ) {
     Q_UNUSED( active );
     Q_UNUSED( error );
 }
@@ -202,7 +202,7 @@ void BtLocalSetting::HandleError( CBtSimpleActive* active, TInt error ) {
     Update local Bluetooth device name in the data store.
     @param name the latest Bluetooth name.
  */
-void BtLocalSetting::updateDeviceName( const QString &name ) 
+void BtSettingModelPrivate::updateDeviceName( const QString &name ) 
 {
     // To-do: the data structure initialization is not impled yet in the model
     BtuiModelDataItem& item = 
@@ -227,7 +227,7 @@ void BtLocalSetting::updateDeviceName( const QString &name )
 /*!
     Updates all values related to the power setting.
  */
-void BtLocalSetting::setPowerSetting( TBTPowerStateValue state )
+void BtSettingModelPrivate::setPowerSetting( TBTPowerStateValue state )
 {
     BtuiModelDataItem& item = 
             mData[ BtSettingModel::PowerStateRow ];
@@ -235,7 +235,7 @@ void BtLocalSetting::setPowerSetting( TBTPowerStateValue state )
     item[ BtSettingModel::SettingValueRole ] = QVariant( QtPowerMode(state) );
 }
 
-void BtLocalSetting::setVisibilityMode( TBTVisibilityMode state )
+void BtSettingModelPrivate::setVisibilityMode( TBTVisibilityMode state )
 {
     BtuiModelDataItem& item = mData[ BtSettingModel::VisibilityRow ];
 
@@ -245,7 +245,7 @@ void BtLocalSetting::setVisibilityMode( TBTVisibilityMode state )
 /*!
     Get local Bluetooth device name from BTRegistry.
  */
-void BtLocalSetting::getNameFromRegistry( QString &name )
+void BtSettingModelPrivate::getNameFromRegistry( QString &name )
 {
     RBTRegServ btRegServ;   // Session with BTMan
     RBTLocalDevice btReg;   // Subsession with local device table

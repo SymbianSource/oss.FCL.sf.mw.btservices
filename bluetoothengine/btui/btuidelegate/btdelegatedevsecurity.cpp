@@ -128,16 +128,9 @@ void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt aErr, CBTDeviceArray*
 
 void BtDelegateDevSecurity::emitCommandComplete(int error)
 {
-    QString str(hbTrId("Unpaired to %1"));
-    QString err(hbTrId("Unpairing with %1 Failed"));
+    // no dialogs here since stack provides "unpaired to %1" dialog
+    // and failures are not reported
     
-    if(error != KErrNone) {
-        HbNotificationDialog::launchDialog(err.arg(mdeviceName));
-    }
-    else {
-        HbNotificationDialog::launchDialog(str.arg(mdeviceName));
-    }
-
     emit commandCompleted(error);
 }
 

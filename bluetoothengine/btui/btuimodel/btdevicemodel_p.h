@@ -15,8 +15,8 @@
 *
 */
 
-#ifndef BTDEVICEDATA_H
-#define BTDEVICEDATA_H
+#ifndef BTDEVICEMODE_P_H
+#define BTDEVICEMODE_P_H
 
 #include "btuimodeltypes.h"
 #include <btdevicemodel.h>
@@ -24,7 +24,6 @@
 #include <e32base.h>
 #include <btservices/btdevrepository.h>
 #include <btservices/devdiscoveryobserver.h>
-
 
 class CAdvanceDevDiscoverer;
 
@@ -37,16 +36,16 @@ class CAdvanceDevDiscoverer;
 
     \\sa bluetoothuimodel
  */
-class BtDeviceData : public QObject,
+class BtDeviceModelPrivate : public QObject,
                      public MBtDevRepositoryObserver,
                      public MDevDiscoveryObserver
 {
     Q_OBJECT
 
 public:
-    explicit BtDeviceData( BtDeviceModel& model, QObject *parent = 0 );
+    explicit BtDeviceModelPrivate( BtDeviceModel& model, QObject *parent = 0 );
     
-    virtual ~BtDeviceData();
+    virtual ~BtDeviceModelPrivate();
     
     bool isValid( int row, int col ) const;
     
@@ -84,6 +83,20 @@ private:
 
     void HandleDiscoveryCompleted( TInt error );
     
+signals:
+
+    void deviceDataChanged( int row, void *parent );
+    
+    void deviceDataChanged( int first, int last, void *parent );
+    
+    void beginInsertDevices(int first, int last, void *parent);
+    void endInsertDevices();
+
+    void beginRemoveDevices(int first, int last, void *parent);
+    void endRemoveDevices();
+
+    void deviceSearchCompleted( int error );
+    
 public slots:
     //void activeRequestCompleted( int status, int id );
 
@@ -97,6 +110,8 @@ private:
     int indexOf( const TBTDevAddr& addr ) const;
     
     void updateRssi(BtuiModelDataItem& qtdev, int rssi );
+    
+    void updateSeqNum(BtuiModelDataItem& qtdev, int seqNum );
     
     void setMajorProperty( BtuiModelDataItem& qtdev, int prop, bool addto);
     
@@ -116,7 +131,9 @@ private:
     
     bool isSearchingDevice;
     
-    Q_DISABLE_COPY(BtDeviceData)
+    int mSeqNum;         // sequence number based on order the device is found during search
+    
+    Q_DISABLE_COPY(BtDeviceModelPrivate)
 
 };
 

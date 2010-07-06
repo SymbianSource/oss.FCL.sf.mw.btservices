@@ -113,7 +113,7 @@ void BtDelegatePair::exec_pair()
 
 void BtDelegatePair::launchWaitDialog()
 {
-    QString headingText(hbTrId("Pairing with %1"));
+    QString headingText(hbTrId("txt_bt_title_pairing_with_1"));
     HbLabel *heading;
     HbProgressBar* progressBar;
     
@@ -165,15 +165,6 @@ void BtDelegatePair::PairingComplete( TBTDevAddr& aAddr, TInt aErr )
 
 void BtDelegatePair::emitCommandComplete(int error)
 {
-//    QString str(hbTrId("Paired to %1"));
-//    QString err(hbTrId("Pairing with %1 Failed"));
-//    
-//    if(error != KErrNone) {
-//        HbNotificationDialog::launchDialog(err.arg(mdeviceName));
-//    }
-//    else {
-//        HbNotificationDialog::launchDialog(str.arg(mdeviceName));
-//    }
 
     emit commandCompleted(error);
 }

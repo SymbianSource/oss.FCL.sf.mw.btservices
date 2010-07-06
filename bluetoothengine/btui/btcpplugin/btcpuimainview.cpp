@@ -110,8 +110,8 @@ BtCpUiMainView::BtCpUiMainView(
     // if setting 1 min --> "(s)Visible for 1 min", ie p=plural, s=singular, but these should
     // not be shown to the user!
     // ToDo:  change this to use translation once it starts working
-//    QString tempVis(hbTrId("txt_bt_setlabel_visibility_val_visible_for_l1_min", TEMP_VISIBILITY_DEFAULT));  
-    QString tempVis(hbTrId("Visible for 5 min"));  
+    QString tempVis(hbTrId("txt_bt_setlabel_visibility_val_visible_for_l1_min", 5));  
+    //QString tempVis(hbTrId("Visible for 5 min"));  
     mVisibilityMode->addItem(tempVis, Qt::DisplayRole);
         
     mDeviceList=0;
@@ -141,7 +141,7 @@ BtCpUiMainView::BtCpUiMainView(
     // load tool bar actions
     mPairAction = static_cast<HbAction*>( mLoader->findObject( "pairedAction" ) );
     BTUI_ASSERT_X( mPairAction, "bt-main-view", "Pair action missing" ); 
-    ret = connect(mPairAction, SIGNAL(triggered()), this, SLOT(pairActiontriggered()));
+    ret = connect(mPairAction, SIGNAL(triggered()), this, SLOT(pairActionTriggered()));
     BTUI_ASSERT_X( ret, "bt-main-view", "pair action can't connect" ); 
 
     mGroupBox = qobject_cast<HbGroupBox *>( mLoader->findWidget( "groupBox" ) );
@@ -209,10 +209,10 @@ BtCpUiMainView::~BtCpUiMainView()
 /*! 
     from base class, initialize the view
  */
-void BtCpUiMainView::activateView(const QVariant& value, int cmdId )
+void BtCpUiMainView::activateView(const QVariant& value, bool fromBackButton )
 {
     Q_UNUSED(value);
-    Q_UNUSED(cmdId);
+    Q_UNUSED(fromBackButton);
     
 }
 
@@ -226,7 +226,7 @@ void BtCpUiMainView::deactivateView()
 
 void BtCpUiMainView::goToDiscoveryView()
 {
-    changeView( SearchView, false, 0 );
+    changeView( SearchView, false );
 }
 
 void BtCpUiMainView::goToDeviceView(const QModelIndex& modelIndex)
@@ -234,7 +234,7 @@ void BtCpUiMainView::goToDeviceView(const QModelIndex& modelIndex)
     //the QModelIndex of the selected device should be given as parameter here 
     QVariant params;
     params.setValue(modelIndex);
-    changeView( DeviceView, false, 0, params );
+    changeView( DeviceView, false, params );
 }
 
 Qt::Orientation BtCpUiMainView::orientation()
@@ -258,8 +258,8 @@ void BtCpUiMainView::changeBtLocalName()
 
 void BtCpUiMainView::setPrevBtLocalName()
 {
-    //Should we notify user this as Error...?
-    HbNotificationDialog::launchDialog(hbTrId("Error"));  // ToDo:  missing text id
+    //ToDo: Should we notify user this as Error...?
+    //HbNotificationDialog::launchDialog(hbTrId("Error"));
     QModelIndex index = mSettingModel->index( BtSettingModel::LocalBtNameRow,0 );
     
     mDeviceNameEdit->setText( mSettingModel->data(
@@ -324,7 +324,7 @@ void BtCpUiMainView::allActionTriggered()
     updateDeviceListFilter(BtuiAll);
 }
 
-void BtCpUiMainView::pairActiontriggered()
+void BtCpUiMainView::pairActionTriggered()
 {
     updateDeviceListFilter(BtuiPaired);
 }
@@ -543,12 +543,11 @@ void BtCpUiMainView::createViews()
 
 /*!
     Switch between the views.  
-    Parameter cmdId is used for automatically executing command.
     Parameter "value" is optional except for GadgetView, 
-    which needs the BT address (QString)
+    which needs the QModelIndex of device
  */
 void BtCpUiMainView::changeView(int targetViewId, bool fromBackButton, 
-        int cmdId, const QVariant& value )
+        const QVariant& value )
 {
     mCurrentView->deactivateView();
 
@@ -557,14 +556,8 @@ void BtCpUiMainView::changeView(int targetViewId, bool fromBackButton,
     // the previous viewId of target view should not be changed. 
     // Otherwise, loop happens between two views.
     if(!fromBackButton) {
-        if ((targetViewId == DeviceView) && (mCurrentViewId == SearchView)) {
-            // we don't want to return to search view after e.g. pairing a new device
-            mPreviousViewIds[ targetViewId ] = MainView;  
-        } 
-        else {
-            // normal case:  return to previous view
-            mPreviousViewIds[ targetViewId ] = mCurrentViewId;
-        }
+        // normal case:  return to previous view
+        mPreviousViewIds[ targetViewId ] = mCurrentViewId;
     }
 
     // set the new current view 
@@ -573,7 +566,7 @@ void BtCpUiMainView::changeView(int targetViewId, bool fromBackButton,
     mMainWindow->setCurrentView( mCurrentView );
 
     // do preparation or some actions when new view is activated 
-    mCurrentView->activateView( value, cmdId );
+    mCurrentView->activateView( value, fromBackButton );
 }
  
 
@@ -584,7 +577,7 @@ void BtCpUiMainView::deviceSelected(const QModelIndex& modelIndex)
     QVariant params;
     params.setValue(index);
     
-    changeView( DeviceView, false, 0, params );
+    changeView( DeviceView, false, params );
 }
 
 BtCpUiBaseView * BtCpUiMainView::idToView(int targetViewId)
@@ -604,7 +597,7 @@ BtCpUiBaseView * BtCpUiMainView::idToView(int targetViewId)
 
 void BtCpUiMainView::setSoftkeyBack()
 {
-
+    // not needed in main view
 }
 
 /*!
@@ -614,12 +607,8 @@ void BtCpUiMainView::setSoftkeyBack()
  */
 void BtCpUiMainView::switchToPreviousView()
 {
-    // jump to previous view of current view.
-    if( (mCurrentViewId >= 0) && (mCurrentViewId < LastView)) {
-        changeView( mPreviousViewIds[mCurrentViewId], true, 0 );
-    } 
-    else {
-        BTUI_ASSERT_X(false, "BtCpUiMainView::switchToPreviousView", "invalid view id");
-    }      
+    BTUI_ASSERT_X( (mCurrentViewId >= 0) && (mCurrentViewId < LastView), 
+            "BtCpUiMainView::switchToPreviousView", "invalid view id");
+    changeView( mPreviousViewIds[mCurrentViewId], true );
 }
 

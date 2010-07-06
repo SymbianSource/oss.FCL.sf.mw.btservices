@@ -34,9 +34,9 @@ BtCpUiMainListViewItem::BtCpUiMainListViewItem(QGraphicsItem * parent) :
 
 BtCpUiMainListViewItem::~BtCpUiMainListViewItem()
 {
-    delete mDeviceNameLabel;
-    delete mDevTypeIconLabel;
-    delete mDevTypeTextLabel;
+//    delete mDeviceNameLabel;
+//    delete mDevTypeIconLabel;
+//    delete mDevTypeTextLabel;
 }
 
 /*

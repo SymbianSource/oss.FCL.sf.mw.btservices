@@ -15,9 +15,10 @@
 *
 */
 
-#include "btdevicedata.h"
+#include "btdevicemodel_p.h"
 #include <QDateTime>
 #include <btservices/advancedevdiscoverer.h>
+#include <btengconnman.h>
 #include "btuiutil.h"
 #include "btuidevtypemap.h"
 #include "btqtconstants.h"
@@ -25,8 +26,8 @@
 /*!
     Constructor.
  */
-BtDeviceData::BtDeviceData( BtDeviceModel& model, QObject *parent )
-    : QObject( parent ), mModel( model ), mDiscover( 0 )
+BtDeviceModelPrivate::BtDeviceModelPrivate( BtDeviceModel& model, QObject *parent )
+    : QObject( parent ), mModel( model ), mDiscover( 0 ), mSeqNum( 0 )
 {
     mDeviceRepo = 0;
     isSearchingDevice = false;
@@ -44,7 +45,7 @@ BtDeviceData::BtDeviceData( BtDeviceModel& model, QObject *parent )
 /*!
     Destructor.
  */
-BtDeviceData::~BtDeviceData()
+BtDeviceModelPrivate::~BtDeviceModelPrivate()
 {
     delete mDeviceRepo;
     delete mDiscover;
@@ -59,7 +60,7 @@ BtDeviceData::~BtDeviceData()
     
     \return true if the given row and column are valid; false otherwise.
 */
-bool BtDeviceData::isValid( int row, int column) const
+bool BtDeviceModelPrivate::isValid( int row, int column) const
 {
     return row >= 0 && row < mData.count() && column == 0;
 }
@@ -68,7 +69,7 @@ bool BtDeviceData::isValid( int row, int column) const
     \return the total amount of rows.
     
 */
-int BtDeviceData::rowCount() const
+int BtDeviceModelPrivate::rowCount() const
 {
     return mData.count();
 }
@@ -77,7 +78,7 @@ int BtDeviceData::rowCount() const
     \return the total amount of columns.
     
 */
-int BtDeviceData::columnCount() const
+int BtDeviceModelPrivate::columnCount() const
 {
     return 1;
 }
@@ -89,7 +90,7 @@ int BtDeviceData::columnCount() const
     \param col the column number which the value is from
     \param role the role identifier of the value.
  */
-void BtDeviceData::data(QVariant& val, int row,  int col, int role ) const
+void BtDeviceModelPrivate::data(QVariant& val, int row,  int col, int role ) const
 {
     if ( isValid( row, col ) ) {
         val = mData.at( row ).value( role );
@@ -105,7 +106,7 @@ void BtDeviceData::data(QVariant& val, int row,  int col, int role ) const
     \param col the column number of the item data to be returned
     \return the item data
  */
-BtuiModelDataItem BtDeviceData::itemData( int row, int col ) const
+BtuiModelDataItem BtDeviceModelPrivate::itemData( int row, int col ) const
 {
     if ( isValid( row, col ) ) {
         return mData.at( row );
@@ -118,7 +119,7 @@ BtuiModelDataItem BtDeviceData::itemData( int row, int col ) const
     Requests the model to searching Bluetooth devices.
     \return true if the request is accepted; false otherwise
  */
-bool BtDeviceData::searchDevice()
+bool BtDeviceModelPrivate::searchDevice()
 {
     int err ( 0 );
     removeTransientDevices();
@@ -135,7 +136,7 @@ bool BtDeviceData::searchDevice()
 /*!
     Cancels a possible outstanding device search request.
  */
-void BtDeviceData::cancelSearchDevice()
+void BtDeviceModelPrivate::cancelSearchDevice()
 {
     if ( mDiscover ) {
         isSearchingDevice = false;
@@ -147,7 +148,7 @@ void BtDeviceData::cancelSearchDevice()
     Removes transient (not-in-registry) devices 
     (added as the result of device search).
  */
-void BtDeviceData::removeTransientDevices()
+void BtDeviceModelPrivate::removeTransientDevices()
 {
     // clear in-range property for all device items in this model.
     int cnt = mData.count();
@@ -160,14 +161,15 @@ void BtDeviceData::removeTransientDevices()
                 // remove it in-range property.
                 setMajorProperty(mData[i], BtuiDevProperty::InRange, false);
                 updateRssi(mData[i], RssiInvalid);
-                mModel.emitDataChanged( i, 0, this );
+                updateSeqNum(mData[i], -1);
+                emit deviceDataChanged(i, this);
             }
             else {
                 // this device is not in-registry. Delete it from local
                 // store.
-                mModel.beginRemoveRows(QModelIndex(), i, i);
+                emit beginRemoveDevices(i, i, this);
                 mData.removeAt( i );
-                mModel.endRemoveRows();
+                emit endRemoveDevices();
             }
         }
     }
@@ -177,7 +179,7 @@ void BtDeviceData::removeTransientDevices()
     callback from repository.
     re-initialize our store.
  */
-void BtDeviceData::RepositoryInitialized() 
+void BtDeviceModelPrivate::RepositoryInitialized() 
 {
     initializeDataStore();
 }
@@ -186,22 +188,22 @@ void BtDeviceData::RepositoryInitialized()
     callback from repository.
     update our store.
  */
-void BtDeviceData::DeletedFromRegistry( const TBTDevAddr& addr ) 
+void BtDeviceModelPrivate::DeletedFromRegistry( const TBTDevAddr& addr ) 
 {
     int i = indexOf( addr );
     if ( i > -1 ) {
         if ( isSearchingDevice && isDeviceInRange( mData.at(i) ) ) {
             // device searching is ongoing, and it is in-range. we can not 
-            // remore it from model now.
+            // remove it from model now.
             // clear-registry related properties, so that
             // we get a chance to clean it after device searching later.
             setMajorProperty(mData[i], BtuiDevProperty::RegistryProperties, false);
-            mModel.emitDataChanged( i, 0, this );
+            emit deviceDataChanged(i, this);
         }
         else {
-            mModel.beginRemoveRows(QModelIndex(), i, i);
+            emit beginRemoveDevices(i, i, this);
             mData.removeAt( i );
-            mModel.endRemoveRows();
+            emit endRemoveDevices();
         }
     }
 }
@@ -210,7 +212,7 @@ void BtDeviceData::DeletedFromRegistry( const TBTDevAddr& addr )
     callback from repository.
     update our store.
  */
-void BtDeviceData::AddedToRegistry( const CBtDevExtension& dev ) 
+void BtDeviceModelPrivate::AddedToRegistry( const CBtDevExtension& dev ) 
 {
     ChangedInRegistry( dev, 0 );
 }
@@ -219,7 +221,7 @@ void BtDeviceData::AddedToRegistry( const CBtDevExtension& dev )
     callback from repository.
     update our store.
  */
-void BtDeviceData::ChangedInRegistry( 
+void BtDeviceModelPrivate::ChangedInRegistry( 
         const CBtDevExtension& dev, TUint similarity )
 {
     int i = indexOf( dev.Addr() );
@@ -233,14 +235,14 @@ void BtDeviceData::ChangedInRegistry(
         // add device-in-registry property:
         setMajorProperty(devData, BtuiDevProperty::InRegistry, true);
         updateDeviceProperty(devData, dev, 0 );
-        mModel.beginInsertRows( QModelIndex(), mData.count(), mData.count() );
+        emit beginInsertDevices( mData.count(), mData.count(), this );
         mData.append( devData );
-        mModel.endInsertRows();
+        emit endInsertDevices();
     }
     else {
         updateDeviceProperty(mData[i], dev, similarity );
         setMajorProperty(mData[i], BtuiDevProperty::InRegistry, true);
-        mModel.emitDataChanged( i, 0, this );
+        emit deviceDataChanged( i, this );
     }
 }
 
@@ -248,7 +250,7 @@ void BtDeviceData::ChangedInRegistry(
     callback from repository.
     update our store.
  */
-void BtDeviceData::ServiceConnectionChanged(
+void BtDeviceModelPrivate::ServiceConnectionChanged(
         const CBtDevExtension& dev, TBool connected )
 {
     int i = indexOf( dev.Addr() );
@@ -260,7 +262,7 @@ void BtDeviceData::ServiceConnectionChanged(
         if ( ( preconn != 0 && !connected )
             || ( preconn == 0 && connected ) ) {
             setMajorProperty(mData[i], BtuiDevProperty::Connected, connected );
-            mModel.emitDataChanged( i, 0, this );
+            emit deviceDataChanged( i, this );
         }
     }
     // it is impossible that a device has connected but it is not in
@@ -272,7 +274,7 @@ void BtDeviceData::ServiceConnectionChanged(
     callback from device search.
     update our store.
  */
-void BtDeviceData::HandleNextDiscoveryResultL( 
+void BtDeviceModelPrivate::HandleNextDiscoveryResultL( 
         const TInquirySockAddr& inqAddr, const TDesC& name )
 {
     int pos = indexOf( inqAddr.BTAddr() );
@@ -288,20 +290,22 @@ void BtDeviceData::HandleNextDiscoveryResultL(
         BtuiModelDataItem devData;
         setMajorProperty(devData, BtuiDevProperty::InRange, true);
         updateRssi(devData, rssi);
+        updateSeqNum( devData, mSeqNum++ );
         CBtDevExtension* devExt(NULL);
         TRAP_IGNORE( {
             devExt = CBtDevExtension::NewLC( inqAddr, name );
             CleanupStack::Pop(); });
         updateDeviceProperty(devData, *devExt, 0);
         delete devExt;
-        mModel.beginInsertRows( QModelIndex(), mData.count(), mData.count() );
+        emit beginInsertDevices( mData.count(), mData.count(), this );
         mData.append( devData );
-        mModel.endInsertRows();
+        emit endInsertDevices();
     }
     else {
         setMajorProperty(mData[pos], BtuiDevProperty::InRange, true);
         updateRssi(mData[pos], rssi);
-        mModel.emitDataChanged( pos, 0, this );
+        updateSeqNum( mData[pos], mSeqNum++ );
+        emit deviceDataChanged( pos, this );
     }
 }
 
@@ -309,14 +313,19 @@ void BtDeviceData::HandleNextDiscoveryResultL(
     callback from device search.
     inform client.
  */
-void BtDeviceData::HandleDiscoveryCompleted( TInt error )
+void BtDeviceModelPrivate::HandleDiscoveryCompleted( TInt error )
 {
     isSearchingDevice = false;
-    mModel.emitdeviceSearchCompleted( (int) error );
+    // Reset the sequence number for the next search
+    mSeqNum = 0;
+    emit deviceSearchCompleted( (int) error );
 }
 
-void BtDeviceData::initializeDataStore()
+void BtDeviceModelPrivate::initializeDataStore()
     {
+    
+    mSeqNum = 0;  // reset when starting search again
+    
     // it is possible that we are searching devices.
     // We use a simple but not-so-efficient method to update the model.
     
@@ -327,9 +336,7 @@ void BtDeviceData::initializeDataStore()
     }
     if ( mData.count() ) {
         // need to update view because we have changed device properties.
-        QModelIndex top = mModel.createIndex(0, 0, this);
-        QModelIndex bottom = mModel.createIndex(mData.count() - 1, 0, this);
-        mModel.emitDataChanged( top, bottom );
+        emit deviceDataChanged( 0, mData.count() - 1, this );
     }
 
     const RDevExtensionArray& devs = mDeviceRepo->AllDevices();
@@ -339,21 +346,23 @@ void BtDeviceData::initializeDataStore()
             // add device-in-registry property:
             setMajorProperty(mData[pos], BtuiDevProperty::InRegistry, true);            
             updateDeviceProperty(mData[pos], *(devs[i]), 0);
-            mModel.emitDataChanged( pos, 0, this );
+            updateSeqNum(mData[pos], -1);
+            emit deviceDataChanged( pos, this );
         }
         else {
             BtuiModelDataItem devData;
             // add device-in-registry property:
             setMajorProperty(devData, BtuiDevProperty::InRegistry, true);
             updateDeviceProperty(devData, *( devs[i] ), 0 );
-            mModel.beginInsertRows(QModelIndex(), mData.count(), mData.count() );
+            updateSeqNum(devData, -1);
+            emit beginInsertDevices(mData.count(), mData.count(), this );
             mData.append( devData );
-            mModel.endInsertRows();
+            emit endInsertDevices();
         }
     }
 }
 
-void BtDeviceData::updateDeviceProperty(BtuiModelDataItem& qtdev,
+void BtDeviceModelPrivate::updateDeviceProperty(BtuiModelDataItem& qtdev,
         const CBtDevExtension& dev, TUint similarity )
 {
     // similarity is not used currently. 
@@ -387,9 +396,21 @@ void BtDeviceData::updateDeviceProperty(BtuiModelDataItem& qtdev,
     // set trusted status:
     setMajorProperty(qtdev, BtuiDevProperty::Trusted, 
             dev.Device().GlobalSecurity().NoAuthorise() );
+    // set connected status:
+    // EBTEngConnecting is an intermediate state between connected and not-connected, 
+    // we do not treat it as connected:         
+    setMajorProperty(qtdev, BtuiDevProperty::Connected, dev.ServiceConnectionStatus() == EBTEngConnected);
 
-    //CoDRole
-    //MinorPropertyRole
+    // Check whether the device has services that are connectable in bteng scope.
+    CBTEngConnMan* connMan( 0 );
+    TRAP_IGNORE( connMan = CBTEngConnMan::NewL(0));
+    TBool connectable(EFalse);
+    if ( connMan ) {
+        (void) connMan->IsConnectable(dev.Addr(), dev.Device().DeviceClass(), connectable);
+        delete connMan;
+    }
+    setMajorProperty(qtdev, BtuiDevProperty::Connectable, connectable);
+    
     int cod = static_cast<int>( dev.Device().DeviceClass().DeviceClass() );
     qtdev[BtDeviceModel::CoDRole] = QVariant(cod);
 
@@ -398,12 +419,15 @@ void BtDeviceData::updateDeviceProperty(BtuiModelDataItem& qtdev,
     // device type is mapped according to CoD:
     BtuiDevProperty::mapDeiveType(majorDeviceType, minorDeviceType, cod);
 
+
+
+    
     qtdev[BtDeviceModel::MajorPropertyRole] = 
             QVariant( qtdev[BtDeviceModel::MajorPropertyRole].toInt() | majorDeviceType );
     qtdev[BtDeviceModel::MinorPropertyRole] = QVariant( minorDeviceType );
 }
 
-int BtDeviceData::indexOf( const TBTDevAddr& addr ) const
+int BtDeviceModelPrivate::indexOf( const TBTDevAddr& addr ) const
 {
     QString addrStr;
     addrSymbianToReadbleString( addrStr, addr );
@@ -416,16 +440,21 @@ int BtDeviceData::indexOf( const TBTDevAddr& addr ) const
     return -1;
 }
 
-void BtDeviceData::updateRssi(BtuiModelDataItem& qtdev, int rssi )
-    {
+void BtDeviceModelPrivate::updateRssi(BtuiModelDataItem& qtdev, int rssi )
+{
     qtdev[BtDeviceModel::RssiRole] = QVariant( rssi );
-    }
+}
+
+void BtDeviceModelPrivate::updateSeqNum(BtuiModelDataItem& qtdev, int seqNum )
+{
+    qtdev[BtDeviceModel::SeqNumRole] = QVariant( seqNum );
+}
 
 /*!
     Add the specified major property to the device if addto is true.
     Otherwise the property is removed from the device. 
  */
-void BtDeviceData::setMajorProperty(
+void BtDeviceModelPrivate::setMajorProperty(
         BtuiModelDataItem& qtdev, int prop, bool addto)
 {
     if ( addto ) {
@@ -438,12 +467,12 @@ void BtDeviceData::setMajorProperty(
     }
 }
 
-bool BtDeviceData::isDeviceInRange( const BtuiModelDataItem& qtdev )
+bool BtDeviceModelPrivate::isDeviceInRange( const BtuiModelDataItem& qtdev )
 {   
     return BtuiDevProperty::InRange & qtdev[BtDeviceModel::MajorPropertyRole].toInt();
 }
 
-bool BtDeviceData::isDeviceInRegistry( const BtuiModelDataItem& qtdev )
+bool BtDeviceModelPrivate::isDeviceInRegistry( const BtuiModelDataItem& qtdev )
 {
     return BtuiDevProperty::InRegistry & qtdev[BtDeviceModel::MajorPropertyRole].toInt();
 }

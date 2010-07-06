@@ -15,10 +15,10 @@
  *   
  */
 
-#ifndef BTLOCALSETTING_H
-#define BTLOCALSETTING_H
+#ifndef BTSETTINGMODEL_P_H
+#define BTSETTINGMODEL_P_H
 
-#include "btsettingmodel.h"
+#include <btsettingmodel.h>
 
 #include <e32base.h>
 #include <e32property.h>
@@ -34,16 +34,16 @@
 
     \\sa bluetoothuimodel
  */
-class BtLocalSetting : public QObject,
+class BtSettingModelPrivate : public QObject,
                       public MBTEngSettingsObserver,
                       public MBtSimpleActiveObserver
 {
     Q_OBJECT
 
 public:
-    explicit BtLocalSetting( BtSettingModel& model, QObject *parent = 0 );
+    explicit BtSettingModelPrivate( BtSettingModel& model, QObject *parent = 0 );
     
-    virtual ~BtLocalSetting();
+    virtual ~BtSettingModelPrivate();
     
     bool isValid( int row, int col ) const;
     
@@ -54,6 +54,11 @@ public:
     void data(QVariant& val, int row, int col, int role ) const;
     
     BtuiModelDataItem itemData( int row, int col ) const;
+signals:
+
+    void settingDataChanged( int row, void *parent );
+    
+    void settingDataChanged( int first, int last, void *parent );
     
 private:
     // from MBTEngSettingsObserver
@@ -69,10 +74,6 @@ private:
     void CancelRequest( TInt requestId );
 
     void HandleError( CBtSimpleActive* active, TInt error );
-    
-    
-public slots:
-    //void activeRequestCompleted( int status, int id );
 
 private:
 
@@ -100,8 +101,8 @@ private:
     
     //RProperty mBtLinkCountKey;
     //CBTEngActive *mBtLinkCountWatcher;
-    Q_DISABLE_COPY(BtLocalSetting)
+    Q_DISABLE_COPY(BtSettingModelPrivate)
 
 };
 
-#endif // BTLOCALSETTING_H
+#endif // BTSETTINGMODEL_P_H

@@ -31,13 +31,12 @@
 #include "btmoredevicesdialogwidget.h"
 #include "btsenddialogwidget.h"
 #include "btdevicedialogrecvquerywidget.h"
-#include <qtranslator.h>
-#include <qcoreapplication.h>
+#include <hbtranslator.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
 
-const char* BTDIALOG_TRANSLATION = "btdialogs_en_GB";
-const char* BTVIEW_TRANSLATION = "btviews_en_GB";        
+const char* BTDIALOG_TRANSLATION = "btdialogs";
+const char* BTVIEW_TRANSLATION = "btviews";        
 
 // This plugin implements one device dialog type
 static const struct {
@@ -106,32 +105,13 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
 
     int i;
     
-    //TODO: Uncomment the lines when actual translation files are available in sdk and remove loading locally.
- //    QString locale = QLocale::system().name();
- //    QString path = "z:/resource/qt/translations/";
- //    QTranslator translator;
-     //QTranslator translator_comm;
-     //translator.load(path + QString("btdialogs_") + locale);
-     //translator_comm.load(path + QString("common_") + locale);
-
-    QString path = ":/";
     if(!mDialogTranslator)
         {
-        mDialogTranslator = new QTranslator();
-//        QString lang = QLocale::system().name();
-//        QString appName = "btdialogs_";
-        //todo need to handle failed case of transaltor loading
-        bool ok =  mDialogTranslator->load(BTDIALOG_TRANSLATION, path);
-        QCoreApplication::installTranslator(mDialogTranslator);
+        mDialogTranslator = new HbTranslator(BTDIALOG_TRANSLATION);
         }
     if(!mViewTranslator)
         {
-        mViewTranslator = new QTranslator();
-//        QString lang = QLocale::system().name();
-//        QString appName = "btviews_";
-        //todo need to handle failed case of transaltor loading
-        bool ok =  mViewTranslator->load(BTVIEW_TRANSLATION, path);
-        QCoreApplication::installTranslator(mViewTranslator);
+        mViewTranslator = new HbTranslator(BTVIEW_TRANSLATION);
         }
     // verify that requested dialog type is supported
     const int numTypes = sizeof(noteInfos) / sizeof(noteInfos[0]);

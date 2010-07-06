@@ -46,7 +46,8 @@ private: // From MBTNotificationResult
     void MBRNotificationClosed(TInt aError, const TDesC8& aData);
     
 private:
-    void PrepareNotificationL(TBluetoothDialogParams::TBTDialogType aType,
+    void PrepareNotificationL(TBool& aAutoAuthorize,
+            TBluetoothDialogParams::TBTDialogType aType,
         TBTDialogResourceId aResourceId, TBool aPaired);
     TBool IsExistingConnectionToAudioL(const TBTDevAddr& aDevAddr);
     

@@ -88,14 +88,10 @@ void CBTServiceStarter::ConstructL()
     FLOG(_L("[BTSU]\t CBTServiceStarter::ConstructL()"));
     iDevice = CBTDevice::NewL();
     iDialog = CObexUtilsDialog::NewL( this );
-    
+    iDelayedDestroyer = CBTServiceDelayedDestroyer::NewL(CActive::EPriorityStandard);
     FeatureManager::InitializeLibL();
     iFeatureManagerInitialized = ETrue;
-    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
-    if (!ok) 
-        {
-        User::Leave( KErrNotFound );
-        }
+    iLocalisationInit = HbTextResolverSymbian::Init(KLocFileName, KPath);
     FLOG(_L("[BTSU]\t CBTServiceStarter::ConstructL() completed"));
     }
 
@@ -130,7 +126,8 @@ CBTServiceStarter::~CBTServiceStarter()
     delete iController;
     delete iBTEngDiscovery;
     delete iDialog;
-
+    delete iDelayedDestroyer;
+    
     if(iWaiter && iWaiter->IsStarted() )
         {
         iWaiter->AsyncStop();
@@ -518,11 +515,16 @@ void CBTServiceStarter::LaunchProgressNoteL( MBTServiceProgressGetter* aGetter,
     FLOG(_L("[BTSU]\t CBTServiceStarter::LaunchProgressNoteL() completed"));
     }
 
+// -----------------------------------------------------------------------------
+// CBTServiceStarter::UpdateProgressNoteL
+// -----------------------------------------------------------------------------
+//
 void CBTServiceStarter::UpdateProgressNoteL(TInt aFileSize,TInt aFileIndex, const TDesC& aFileName )
     {
     
     iDialog->UpdateProgressNoteL(aFileSize,aFileIndex,aFileName);
     }
+
 // -----------------------------------------------------------------------------
 // CBTServiceStarter::CancelProgressNote
 // -----------------------------------------------------------------------------
@@ -573,12 +575,12 @@ void CBTServiceStarter::DialogDismissed(TInt aButtonId )
     }
 
 // -----------------------------------------------------------------------------
-// CBTServiceStarter::ShowNote
+// CBTServiceStarter::ShowErrorNote
 // -----------------------------------------------------------------------------
 //
-void CBTServiceStarter::ShowNote( TInt aReason ) const
+void CBTServiceStarter::ShowErrorNote( TInt aReason ) const
     {
-    FLOG(_L("[BTSU]\t CBTServiceStarter::ShowNote()"));
+    FLOG(_L("[BTSU]\t CBTServiceStarter::ShowErrorNote()"));
      
     TBuf<KMaxDesCLength> buf;
     TPtrC sendTextMapId;
@@ -604,6 +606,8 @@ void CBTServiceStarter::ShowNote( TInt aReason ) const
         case EBTSGettingFailed:
         case EBTSPuttingFailed:
         case EBTSNoSuitableProfiles:
+      //todo below three enums are not valid and it is not being used at anywhere do we need to have it 
+            
 //        case EBTSBIPSomeSend:
 //        case EBTSBIPOneNotSend:
 //        case EBTSBIPNoneSend:
@@ -612,19 +616,24 @@ void CBTServiceStarter::ShowNote( TInt aReason ) const
             sendTextMapId.Set(KSendingFailedText());
             break;
             }
-            //todo below three enums are not valid and it is not being used at anywhere do we need to have it 
-
         }        
     
-      TRAP_IGNORE(
-              HBufC* sendText = HbTextResolverSymbian::LoadLC(sendTextMapId);
-              HBufC* deviceName =  HbTextResolverSymbian::LoadLC(KDeviceText,buf);
-              CHbDeviceNotificationDialogSymbian::NotificationL(KNullDesC, deviceName->Des(), sendText->Des());
-              CleanupStack::PopAndDestroy( deviceName );
-              CleanupStack::PopAndDestroy( sendText );
-              );
-
-    FLOG(_L("[BTSU]\t CBTServiceStarter::ShowNote() completed"));
+    
+    if(iLocalisationInit)
+        {
+        TRAP_IGNORE(
+               HBufC* sendText = HbTextResolverSymbian::LoadLC(sendTextMapId);
+               HBufC* deviceName =  HbTextResolverSymbian::LoadLC(KDeviceText,buf);
+               CHbDeviceNotificationDialogSymbian::NotificationL(KNullDesC, deviceName->Des(), sendText->Des());
+               CleanupStack::PopAndDestroy( deviceName );
+               CleanupStack::PopAndDestroy( sendText );
+               );
+        }
+    else
+        {
+        TRAP_IGNORE(CHbDeviceNotificationDialogSymbian::NotificationL(KNullDesC, KDeviceText(), sendTextMapId));
+        }
+    FLOG(_L("[BTSU]\t CBTServiceStarter::ShowErrorNote() completed"));
     }
 
 
@@ -654,7 +663,7 @@ void CBTServiceStarter::StopTransfer(TInt aError)
 	
         if ( aError != KErrCancel )
             {
-            ShowNote( aError );
+            ShowErrorNote( aError );
             }     
         }
     if ( iMessageServerIndex != 0 )
@@ -805,7 +814,12 @@ void CBTServiceStarter::ServiceAttributeSearchComplete( TSdpServRecordHandle /*a
         }
     else
         {
-        delete iBTEngDiscovery;
+        // Set destroyer AO active (destroys CBTEngDiscovery/CBTEngSdpQuery classes). This is done
+        // to ensure that CBTEngDiscovery/CBTEngSdpQuery classes have finished all their activities,
+        // callbacks etc.. Destructing it self is handled in CBTServiceDelayedDestroyer's RunL.
+        iDelayedDestroyer->SetDestructPointer(iBTEngDiscovery);
+        iDelayedDestroyer->GoActive();
+        // Set iBTEngDiscovery pointer to zero. Pointer doesn't exist CBTServiceStarter point of view anymore.
         iBTEngDiscovery = NULL;    
         StopTransfer(EBTSConnectingFailed);    
         }    

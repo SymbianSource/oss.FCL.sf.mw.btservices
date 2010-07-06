@@ -65,7 +65,7 @@
                 <linearitem itemname="container"/>
             </layout>
         </widget>
-        <string locid="Control Panel" name="title" value="Control Panel"/>
+        <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
     </widget>
     <section name="landscape">
         <widget name="visibilityContainer" type="HbWidget">

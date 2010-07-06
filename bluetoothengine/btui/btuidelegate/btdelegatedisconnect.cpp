@@ -45,6 +45,10 @@ void BtDelegateDisconnect::exec( const QVariant &params )
     if ( ! mBtengConnMan ){
         TRAP( err, mBtengConnMan = CBTEngConnMan::NewL(this) );
     }
+    if(err) {
+        emit commandCompleted(err);
+        return;
+    }
     if (params.canConvert<int>()){
         mDisconOpt = (DisconnectOption)params.toInt();
         mActiveHandling = true;
@@ -130,13 +134,18 @@ void BtDelegateDisconnect::disconnectAllConnections_physical(){
 }
 void BtDelegateDisconnect::disconnectSeviceLevel(){
     int err;
-    TBTEngConnectionStatus connStatus;
+    TBTEngConnectionStatus connStatus = EBTEngNotConnected;
     err = mBtengConnMan->IsConnected(mBtEngAddr, connStatus);
     if (connStatus == EBTEngConnected){
         err = mBtengConnMan->Disconnect(mBtEngAddr, EBTDiscGraceful);
     }
     if(err) {
-        emit commandCompleted(err);
+        if (mDisconOpt == AllOngoingConnections){
+            disconnectServiceLevelCompleted(err);
+        }
+        else{ 
+            emit commandCompleted(err);
+        }
     }
 }
         
@@ -152,33 +161,42 @@ void BtDelegateDisconnect::disconnectPhysicalLink(){
     }
     err = mPhyLinks->Disconnect( mBtEngAddr );
     if(err) {
-        emit commandCompleted(err);
+        if (mDisconOpt == AllOngoingConnections){
+            disconnectPhysicalLinkCompleted(err);
+        }
+        else{ 
+            emit commandCompleted(err);
+        }
     }
     
 }
 
 void BtDelegateDisconnect::disconnectServiceLevelCompleted(int err){
     if (mDisconOpt == ServiceLevel){
-        //emitCommandComplete(err); 
         mActiveHandling = false;
         emit commandCompleted(err);
     }
     else if (mDisconOpt == AllOngoingConnections){
-        
-        mAddrArrayIndex++;
-        if ( mAddrArrayIndex < mDevAddrArray.Count()){
-            disconnectAllConnections_service();
+        if (err){
+            mActiveHandling = false;
+            emit commandCompleted(err);
         }
         else{
-            mDevAddrArray.Reset();
-            err = mBtengConnMan->GetConnectedAddresses(mDevAddrArray);
-            mAddrArrayIndex = 0;
-            //connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectPhysicalLinkCompleted(int)) );         
-            disconnectAllConnections_physical();
-            if(err) {
-                emit commandCompleted(err);
+            mAddrArrayIndex++;
+            if ( mAddrArrayIndex < mDevAddrArray.Count()){
+                disconnectAllConnections_service();
             }
-        
+            else{
+                mDevAddrArray.Reset();
+                err = mBtengConnMan->GetConnectedAddresses(mDevAddrArray);
+                if(err) {
+                    emit commandCompleted(err);
+                    return;
+                }
+                mAddrArrayIndex = 0;
+                //connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectPhysicalLinkCompleted(int)) );         
+                disconnectAllConnections_physical();
+            }
         }
     }
 }
@@ -190,14 +208,20 @@ void BtDelegateDisconnect::disconnectPhysicalLinkCompleted(int err){
         emit commandCompleted(err);
     }
     else if (mDisconOpt == AllOngoingConnections){
-        mAddrArrayIndex++;
-        if ( mAddrArrayIndex < mDevAddrArray.Count()){
-            disconnectAllConnections_physical();
-        }
-        else{
-            //TODO: check if there is still ongoing connection from BTEngVonnMan. and close them again if there is any new 
+        if (err){
             mActiveHandling = false;
             emit commandCompleted(err);
+        }
+        else{
+            mAddrArrayIndex++;
+            if ( mAddrArrayIndex < mDevAddrArray.Count()){
+                disconnectAllConnections_physical();
+            }
+            else{
+                //TODO: check if there is still ongoing connection from BTEngVonnMan. and close them again if there is any new 
+                mActiveHandling = false;
+                emit commandCompleted(err);
+            }
         }
         
     }
@@ -217,12 +241,7 @@ void BtDelegateDisconnect::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
         return;
     }
     DisplayCommandCompleteNotif(aErr);
-    if(aErr) {
-        emit commandCompleted(aErr);
-    }
-    else{
-        disconnectServiceLevelCompleted(aErr);    
-    }
+    disconnectServiceLevelCompleted(aErr);    
 }
 
 
@@ -238,13 +257,8 @@ void BtDelegateDisconnect::HandleCreateConnectionCompleteL( TInt err ){
 void BtDelegateDisconnect::HandleDisconnectCompleteL( TInt err ){
     if ( !mActiveHandling ) {  
         return;
-    }
-    if(err) {
-        emit commandCompleted(err);
-    }
-    else{
-        disconnectPhysicalLinkCompleted(err);
-    }
+    } 
+    disconnectPhysicalLinkCompleted(err);
           
 }
 
@@ -254,13 +268,8 @@ void BtDelegateDisconnect::HandleDisconnectAllCompleteL( TInt err ){
 
 void BtDelegateDisconnect::DisplayCommandCompleteNotif(int error)
 {
-    QString str(hbTrId("Disconnected to %1"));
-    QString err(hbTrId("Disconnecting with %1 Failed"));
     
-    if(error != KErrNone) {
-        HbNotificationDialog::launchDialog(err.arg(mDeviceName));
-    }
-    else {
+    if(error == KErrNone) {
         // success, show indicator with connection status
         HbIcon icon = getBadgedDeviceTypeIcon( mCod, mMajorRole, 0 );  // no badging required, only icon
         QString str( hbTrId("txt_bt_dpopinfo_disconnected_from_1") );

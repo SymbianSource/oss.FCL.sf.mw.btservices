@@ -50,33 +50,30 @@ public:
 
     // from base class BtCpUiBaseView
     virtual void setSoftkeyBack();
-    virtual void activateView( const QVariant& value, int cmdId );
+    virtual void activateView( const QVariant& value, bool fromBackButton );
     virtual void deactivateView();
 
 public slots: 
     void changeOrientation( Qt::Orientation orientation );
     void changePowerState();
+    void visibilityChanged (int index);
+    void changeBtLocalName();
     
     void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     void deviceSelected(const QModelIndex& modelIndex);
     void goToDiscoveryView();
     void goToDeviceView(const QModelIndex& modelIndex);
-    
-    // from view manager
-    void changeView(int targetViewId, bool fromBackButton, int cmdId, const QVariant& value = 0 );
     virtual void switchToPreviousView();
-    
-    void visibilityChanged (int index);
-    void changeBtLocalName();
-    
+
     //from delegate classes
     void powerDelegateCompleted(int status);
     void visibilityDelegateCompleted(int status);
     void btNameDelegateCompleted(int status, QVariant param);
     void allActionTriggered();
-    void pairActiontriggered();
+    void pairActionTriggered();
     
-protected:
+private slots:
+    void changeView(int targetViewId, bool fromBackButton, const QVariant& value = 0 );    
 
 private:
     enum filterType {

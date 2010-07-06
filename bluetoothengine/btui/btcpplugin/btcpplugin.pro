@@ -26,11 +26,13 @@ MOC_DIR = moc
 OBJECTS_DIR = obj
 
 TRANSLATIONS += btviews.ts \
-                btdialogs.ts
+                btdialogs.ts \
+                btindimenu.ts
 RESOURCES += btcpplugin.qrc
 
 # Input
-HEADERS += btcpuimainlistviewitem.h \
+HEADERS += btcpuidevicedetailsview.h\
+	btcpuimainlistviewitem.h \
 	btcpuisearchlistviewitem.h \
     btcpplugin.h \
     btcpuibaseview.h \
@@ -38,15 +40,18 @@ HEADERS += btcpuimainlistviewitem.h \
     btcpuisearchview.h \
     btcpuideviceview.h \
     btcpuisettingitem.h \
-    btuiviewutil.h
-SOURCES += btcpuimainlistviewitem.cpp \
+    btuiviewutil.h \
+    btcpuidevicedetail.h
+SOURCES += btcpuidevicedetailsview.cpp \
+	btcpuimainlistviewitem.cpp \
 	btcpuisearchlistviewitem.cpp \
     btcpplugin.cpp \
     btcpuibaseview.cpp \
     btcpuimainview.cpp \
     btcpuisearchview.cpp \
     btcpuideviceview.cpp \
-    btcpuisettingitem.cpp
+    btcpuisettingitem.cpp \
+    btcpuidevicedetail.cpp
 symbian: { 
     DEFINES += PLUGINUID3=0x2002434E
     TARGET.UID3 = 0x2002434E
@@ -55,7 +60,8 @@ symbian: {
     TARGET.EPOCALLOWDLLDATA = 1  
 	INCLUDEPATH += $$MW_LAYER_SYSTEMINCLUDE
 	
-    LIBS += -lbtdevice
+    LIBS += -lbtdevice \
+    		-lbtdevsettingframework
     
 	PLUGIN_STUB_PATH = /resource/qt/plugins/controlpanel
 	

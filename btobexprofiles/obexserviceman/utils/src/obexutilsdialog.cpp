@@ -116,7 +116,8 @@ EXPORT_C void CObexUtilsDialog::LaunchProgressDialogL(
     const TDesC& aDeviceName, TInt aTimeoutValue )
     {
     FLOG(_L("[OBEXUTILS]\t CObexUtilsDialog::LaunchProgressDialogL()"));
-
+    
+    TBuf<KMinStringSize> key;
     if ( aObserverPtr )
         {
         // The observerPtr was given, so store it and start a timer
@@ -138,11 +139,10 @@ EXPORT_C void CObexUtilsDialog::LaunchProgressDialogL(
     
     CHbSymbianVariantMap* map = CHbSymbianVariantMap::NewL();
     CleanupStack::PushL(map);
-    TBuf<KMinStringSize> key;
     TInt data = TBluetoothDialogParams::ESend;
     key.Num(TBluetoothDialogParams::EDialogType);
     AddDataL( map, key, &data, CHbSymbianVariant::EInt );
-    iProgressDialog->Show(KSendingDialog(),*map,this);
+    User::LeaveIfError(iProgressDialog->Show(KSendingDialog(),*map,this));
     CleanupStack::PopAndDestroy(map);    
 
     if ( iProgressObserverPtr )
@@ -420,20 +420,23 @@ void CObexUtilsDialog::DeviceDialogClosed(TInt aCompletionCode)
     delete iProgressDialog;
     iProgressDialog = NULL;  
     
-    TRAP_IGNORE(
-             TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
-             if (!ok) 
-                 {
-                 User::Leave( KErrNotFound );
-                 }
-             HBufC* deviceName = HbTextResolverSymbian::LoadLC(KDeviceText,iDeviceName);
-			 HBufC* sendText = HbTextResolverSymbian::LoadLC(KSendingCancelledText);
-             CHbDeviceNotificationDialogSymbian::NotificationL(
-                     KNullDesC, deviceName->Des(), sendText->Des());
- 			 CleanupStack::PopAndDestroy( sendText );		 
-             CleanupStack::PopAndDestroy( deviceName );
-            );
-
+    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
+    if(ok)
+        {
+        TRAP_IGNORE(
+                 HBufC* deviceName = HbTextResolverSymbian::LoadLC(KDeviceText,iDeviceName);
+                 HBufC* sendText = HbTextResolverSymbian::LoadLC(KSendingCancelledText);
+                 CHbDeviceNotificationDialogSymbian::NotificationL(
+                         KNullDesC, deviceName->Des(), sendText->Des());
+                 CleanupStack::PopAndDestroy( sendText );		 
+                 CleanupStack::PopAndDestroy( deviceName );
+                );
+        }
+    else
+        {
+        CHbDeviceNotificationDialogSymbian::NotificationL(
+                KNullDesC, KDeviceText(), KSendingCancelledText());
+        }
     if ( iDialogObserverPtr )
         {
         iDialogObserverPtr->DialogDismissed(ECancelButton);

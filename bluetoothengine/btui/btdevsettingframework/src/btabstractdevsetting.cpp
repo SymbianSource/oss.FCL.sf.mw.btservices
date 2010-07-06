@@ -58,19 +58,19 @@ bool BtAbstractDevSetting::isSettingAvailable()
 }
 
 /*!
- Gets a \code HbWidget \endcode instance which consists of the
+ Gets a \code HbDataForm \endcode instance which consists of the
  setting UI from this specific plugin. The loader of this plugin will
- add this widget into its setting view if its setting is available at
- a time.
+ add this dataform into its setting view if its setting is available at
+ the time.
  
  The ownership of this widget is not transferred. That is, the plugin 
  is responsible to free it at plugin destruction.
  
  The default implementation returns 0. 
 
- \return an \code HbWidget \endcode instance.
+ \return an \code HbDataForm \endcode instance.
  */
-HbWidget *BtAbstractDevSetting::getSettingWidget()
+HbDataForm *BtAbstractDevSetting::getSettingWidget()
 {
     return 0;
 }

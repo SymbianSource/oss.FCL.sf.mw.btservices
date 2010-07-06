@@ -1005,7 +1005,7 @@ EXPORT_C void TObexUtilsMessageHandler::AddEntryToInboxL(
         FLOG(_L("[OBEXUTILS]\t TObexUtilsMessageHandler::AddEntryToInboxL() BIO"));
     
         RFile file;
-        User::LeaveIfError(file.Open(fsSess,aFullName,EFileRead));
+        User::LeaveIfError(file.Open(fsSess,aFullName,EFileShareReadersOnly));
         TReceivedData receivedData;
         receivedData.bytesReceived = fileEntry.iSize;
         receivedData.recTime = fileEntry.iModified;

@@ -62,8 +62,8 @@ public slots:
     void viewByClicked();
     void deviceSelected(const QModelIndex& modelIndex);
 //    void viewByItemSelected(int index);
-    void selectionDialogClosed(HbAction*);
-    void searchDialogClosed(HbAction* action);
+    void selectionDialogClosed(HbAction *action);
+    void searchDialogClosed(); 
     
 private:
     bool constructDialog(const QVariantMap &parameters);

@@ -22,13 +22,14 @@
 #include <btengdomainpskeys.h>
 #include <centralrepository.h>
 #include <featmgr.h>
-#include <AknSmallIndicator.h>
-//#include <avkon.hrh>
 #include "btengserver.h"
 #include "btengsrvpluginmgr.h"
 #include "btengsrvbbconnectionmgr.h"
 #include "btengsrvstate.h"
 #include "debug.h"
+#include <btindicatorconstants.h>
+#include <hbindicatorsymbian.h>
+#include <hbsymbianvariant.h>
 
 /** ID of active object helper */
 const TInt KBTEngSettingsActive = 30;
@@ -48,7 +49,7 @@ const TInt KBTEngBtAutoOffTimeout = 10500000;
 // ---------------------------------------------------------------------------
 //
 CBTEngSrvSettingsMgr::CBTEngSrvSettingsMgr( CBTEngServer* aServer )
-:   iServer( aServer )
+:   iServer( aServer ),iIndicatorState(-1)
     {
     }
 
@@ -61,6 +62,7 @@ void CBTEngSrvSettingsMgr::ConstructL()
     {
     TRACE_FUNC_ENTRY
     iActive = CBTEngActive::NewL( *this, KBTEngSettingsActive );
+    iBTIndicator = CHbIndicatorSymbian::NewL(); 
     LoadBTPowerManagerL();
     iEnterpriseEnablementMode = BluetoothFeatures::EnterpriseEnablementL();
     TRACE_INFO( ( _L( "iEnterpriseEnablementMode = %d" ), iEnterpriseEnablementMode) )
@@ -93,6 +95,7 @@ CBTEngSrvSettingsMgr* CBTEngSrvSettingsMgr::NewL( CBTEngServer* aServer )
 CBTEngSrvSettingsMgr::~CBTEngSrvSettingsMgr()
     {
     delete iActive;  
+    delete iBTIndicator;
     iPowerMgr.Close();
     }
 
@@ -726,7 +729,7 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
     TBTVisibilityMode visibilityMode = EBTVisibilityModeHidden;
     CRepository* cenrep = NULL;
     TInt phys = 0;
-    TInt connecting = 0;
+ //   TInt connecting = 0;
 
     cenrep = CRepository::NewLC( KCRUidBluetoothPowerState );
     User::LeaveIfError( cenrep->Get( KBTPowerState, (TInt&) powerState ) );
@@ -734,17 +737,13 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
     
     if( powerState == EBTPowerOff )
         {
-        // To be migrated
-        //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-        //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
-        //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-        //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
+        SetIndicatorStateL(EBTIndicatorOff);
         }
     else
         {
         // Power is on.
         RProperty::Get( KPropertyUidBluetoothCategory, KPropertyKeyBluetoothPHYCount, phys );
-        RProperty::Get( KPropertyUidBluetoothCategory, KPropertyKeyBluetoothConnecting, connecting );
+ //       RProperty::Get( KPropertyUidBluetoothCategory, KPropertyKeyBluetoothConnecting, connecting );
         
         cenrep = CRepository::NewLC( KCRUidBTEngPrivateSettings );
         User::LeaveIfError( cenrep->Get( KBTDiscoverable, (TInt&) visibilityMode ) );
@@ -752,61 +751,44 @@ void CBTEngSrvSettingsMgr::SetUiIndicatorsL()
         
         if( visibilityMode == EBTVisibilityModeHidden )
             {
-             if ( connecting ) // BT connecting and hidden
+            if ( phys > 0 ) // BT connection active and hidden     
                 {
-                // To be migrated to QT
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateAnimate );
-                }
-            else if ( phys > 0 ) // BT connection active and hidden     
-                {
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOn );
+                SetIndicatorStateL(EBTIndicatorHiddenConnected);
                 }
             else  // BT connection not active and hidden
                 {
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOn );
-                //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
+                SetIndicatorStateL(EBTIndicatorOnHidden);
                 }
-            //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-            //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
             }           
         else if( visibilityMode == EBTVisibilityModeGeneral || visibilityMode == EBTVisibilityModeTemporary )
             {     
-            if ( connecting ) // BT connecting and visible
+            if ( phys > 0 ) // BT connection active and visible 
                 {
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateAnimate );
-                }
-            else if ( phys > 0 ) // BT connection active and visible 
-                {
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOff );
-                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOn );
+                SetIndicatorStateL(EBTIndicatorVisibleConnected);
                 }
             else  // BT connection not active and visible
                 {
-                //SetIndicatorStateL( EAknIndicatorBluetoothModuleOnVisible, EAknIndicatorStateOn );
-                //SetIndicatorStateL( EAknIndicatorBluetoothVisible, EAknIndicatorStateOff );
+                SetIndicatorStateL(EBTIndicatorOnVisible);
                 }
-            //SetIndicatorStateL( EAknIndicatorBluetoothModuleOn, EAknIndicatorStateOff );
-            //SetIndicatorStateL( EAknIndicatorBluetooth, EAknIndicatorStateOff );
             }
         }
     TRACE_FUNC_EXIT
     }
 
-// ---------------------------------------------------------------------------
-// ?implementation_description
-// ---------------------------------------------------------------------------
-//
-void CBTEngSrvSettingsMgr::SetIndicatorStateL( const TInt aIndicator, const TInt aState )
+void CBTEngSrvSettingsMgr::SetIndicatorStateL( const TInt aState )
     {
-    // To be migrated to QT
-    (void) aIndicator;
-    (void) aState;
-    //CAknSmallIndicator* indicator = CAknSmallIndicator::NewLC( TUid::Uid( aIndicator ) );
-    //indicator->SetIndicatorStateL( aState );
-    //CleanupStack::PopAndDestroy( indicator ); //indicator
+    TBool success = EFalse;
+    if(iIndicatorState != aState)
+        {
+        CHbSymbianVariant* parameters = CHbSymbianVariant::NewL(&aState,CHbSymbianVariant::EInt );
+        success = iBTIndicator->Activate(KIndicatorType(),parameters); 
+        delete parameters;
+        if(!success)
+            {
+            User::Leave(iBTIndicator->Error());
+            }
+        iIndicatorState = aState;
+        }
     }
 
 

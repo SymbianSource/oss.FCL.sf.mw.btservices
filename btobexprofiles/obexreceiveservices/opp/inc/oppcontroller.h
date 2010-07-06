@@ -156,6 +156,7 @@ private:
     CObexUtilsDialog*           iDialog;
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
+    TInt                        iFileCount;
     };
 
 #endif      // OPPCONTROLLER_H

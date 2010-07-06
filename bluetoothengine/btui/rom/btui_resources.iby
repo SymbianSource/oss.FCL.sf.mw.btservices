@@ -25,6 +25,7 @@
 //For localization resource
 data=DATAZ_/QT_TRANSLATIONS_DIR/btviews.qm QT_TRANSLATIONS_DIR/btviews.qm
 data=DATAZ_/QT_TRANSLATIONS_DIR/btdialogs.qm QT_TRANSLATIONS_DIR/btdialogs.qm
+data=DATAZ_/QT_TRANSLATIONS_DIR/btindimenu.qm QT_TRANSLATIONS_DIR/btindimenu.qm
 
 #endif //__BT
 #endif // __BTCPPLUGIN_RESOURCES_IBY__

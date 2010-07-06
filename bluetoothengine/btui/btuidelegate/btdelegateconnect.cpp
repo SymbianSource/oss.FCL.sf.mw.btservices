@@ -44,6 +44,10 @@ BtDelegateConnect::~BtDelegateConnect()
     delete mBtengConnMan;
 }
 
+/*!
+ * execute connect operation
+ *    first check if power is on
+ */
 void BtDelegateConnect::exec( const QVariant &params )
 {
     if ( mActiveHandling ) {
@@ -61,9 +65,7 @@ void BtDelegateConnect::exec( const QVariant &params )
     mMajorProperty = (mIndex.data(BtDeviceModel::MajorPropertyRole)).toInt();
     
     // first turn on power if needed
-    QModelIndex powerIndex = getSettingModel()->index(BtSettingModel::PowerStateRow, 0);
-    PowerStateQtValue powerState = (PowerStateQtValue)getSettingModel()->data(powerIndex, Qt::EditRole).toInt();
-    if (powerState == BtPowerOff) {
+    if (!isBtPowerOn()) {
         if (!mAbstractDelegate) //if there is no other delegate running
         { 
             mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::ManagePower, 
@@ -78,9 +80,11 @@ void BtDelegateConnect::exec( const QVariant &params )
     }
 }
 
+/*!
+ * power delegate has completed, continue processing
+ */
 void BtDelegateConnect::powerDelegateCompleted(int status)
 {
-    //ToDo: Error handling here 
     if (mAbstractDelegate)
     {
         disconnect(mAbstractDelegate);
@@ -97,6 +101,9 @@ void BtDelegateConnect::powerDelegateCompleted(int status)
     }
 }
 
+/*!
+ * execute connect operation
+ */
 void BtDelegateConnect::exec_connect()
 {
     int error = KErrNone;
@@ -115,6 +122,9 @@ void BtDelegateConnect::exec_connect()
     }
 }
 
+/*!
+ * connect callback from CBTengConnMan
+ */
 void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
                                    RBTDevAddrArray* aConflicts )
 {
@@ -122,14 +132,6 @@ void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
     // connecting to this audio device. Or a device is connected while this command
     // is idle. No handling for these cases.
     if ( mAddr != aAddr || !mActiveHandling ) {  
-        return;
-    }
-    
-    // bteng calls ConnectComplete even if cancelConnect is called,
-    // we won't signal the interested party in this case.
-    // ToDo: is this needed?
-    if ( aErr == KErrCancel ) {
-        mActiveHandling = false;
         return;
     }
     
@@ -170,6 +172,9 @@ void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
     }
 }
 
+/*!
+ * handle user response to query about disconnecting conflict device
+ */
 void BtDelegateConnect::handleUserAnswer( HbAction* answer )
 {
     HbMessageBox* dlg = static_cast<HbMessageBox*>( sender() );
@@ -191,15 +196,17 @@ void BtDelegateConnect::handleUserAnswer( HbAction* answer )
         }
     }
     else {
-        // Cancel
+        // Cancel connect operation
         emitCommandComplete(KErrCancel);
     }
 }
+
 /*!
- * returns true if call is ongoing
+ * returns true if phone call is ongoing
  */
 bool BtDelegateConnect::callOngoing()
 {
+    // ToDo:  check if there exists Qt PS key for ongoing call
     int callState;
     int err = RProperty::Get(KPSUidCtsyCallInformation, KCTsyCallState, callState);
     if (!err && (callState == EPSCTsyCallStateNone || callState == EPSCTsyCallStateUninitialized)) {
@@ -209,8 +216,18 @@ bool BtDelegateConnect::callOngoing()
         return true;
     }
 }
+
+/*!
+ * disconnecting conflict device has completed, continue connecting
+ */
 void BtDelegateConnect::disconnectDelegateCompleted(int status)
 {
+    if (mAbstractDelegate)
+    {
+        disconnect(mAbstractDelegate);
+        delete mAbstractDelegate;
+        mAbstractDelegate = 0;
+    }
     // finished disconnecting conflict device, now reconnect to original device
     if ( status == KErrNone ) {
         exec_connect();
@@ -221,13 +238,19 @@ void BtDelegateConnect::disconnectDelegateCompleted(int status)
     }
 }
 
+/*!
+ * not used here
+ */
 void BtDelegateConnect::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
 {
     Q_UNUSED(aAddr);
     Q_UNUSED(aErr);    
 }
 
-
+/*!
+ * cancel connect operation
+ *   ConnectComplete() callback will be called upon completion of cancel with KErrCancel
+ */
 void BtDelegateConnect::cancel()
 {
     if ( mBtengConnMan ) {
@@ -235,18 +258,22 @@ void BtDelegateConnect::cancel()
     }
 }
 
+/*!
+ * shows user notes with connection success/failure information
+ *    cancel operation is handled without a user note
+ */
 void BtDelegateConnect::emitCommandComplete(int error)
 {
     if ( error == KErrNone ) {
         // success, show indicator with connection status
         
-        HbIcon icon = getBadgedDeviceTypeIcon( mCod, mMajorProperty, 0);  // no badging required, only icon
+        HbIcon icon = getBadgedDeviceTypeIcon( mCod, mMajorProperty, BtuiNoCorners); 
         QString str(hbTrId("txt_bt_dpopinfo_connected_to_1"));
         HbNotificationDialog::launchDialog( icon, hbTrId("txt_bt_dpophead_connected"), 
             str.arg(mDeviceName) );  
     }
     else if ( error == KErrCancel ) {
-        // no user note, return success
+        // no user note, return success since cancel operation completed successfully
         error = KErrNone;
     }
     else {

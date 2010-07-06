@@ -148,7 +148,7 @@ TInt CBluetoothNotification::Close()
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     iDialog->Cancel();
     iManager->ReleaseNotification( this );
-	BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+	BOstraceFunctionExit0( DUMMY_DEVLIST );
     return KErrNone;
     }
 
@@ -390,6 +390,6 @@ void CBluetoothNotification::DeviceDialogClosed( TInt aCompletionCode )
     resultBuf.Close();
     iManager->ReleaseNotification( this );
     // Note that we might get deleted after releasing ourselves.
-    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 

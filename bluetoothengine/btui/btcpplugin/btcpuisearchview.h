@@ -30,6 +30,7 @@ class HbIcon;
 class HbDocumentLoader;
 class HbListView;
 class BtAbstractDelegate;
+class HbSelectionDialog;
 
 class BtCpUiSearchView : public BtCpUiBaseView
 {
@@ -42,7 +43,7 @@ public:
             BtDeviceModel &deviceModel, 
             QGraphicsItem *parent = 0);
     virtual ~BtCpUiSearchView();
-    virtual void activateView( const QVariant& value, int cmdId );
+    virtual void activateView( const QVariant& value, bool fromBackButton );
     virtual void deactivateView();
     virtual void setSoftkeyBack();
     
@@ -75,18 +76,13 @@ private:
     HbLabel *mLabelSearching;        
     HbListView *mDeviceList;
     QStringList mDevTypeList;
-    int mLastSelectionIndex;
+    HbSelectionDialog *mQuery;
     
-    // data structures for switching between views
-    bool mEventFilterInstalled;
-    int mAutoCmdId;
     Qt::Orientation mOrientation;
     
     HbMainWindow*           mMainWindow;
     BtCpUiBaseView*         mMainView;
-    BtCpUiBaseView*         mDeviceView;
     HbAction *              mSoftKeyBackAction;
-    HbToolBar*              mToolBar;
     HbAction*               mViewBy;
     HbAction*               mStop;
     HbAction*               mRetry;
@@ -95,8 +91,6 @@ private:
 
     //pointer to abstract delegate, and it is instantiated at runtime
     BtAbstractDelegate*     mAbstractDelegate;
-    QModelIndex*            mParentIndex;
-    int                     mNumOfRows;
     BtuiModelSortFilter*    mBtuiModelSortFilter;
 };
 

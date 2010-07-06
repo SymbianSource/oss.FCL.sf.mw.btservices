@@ -164,6 +164,7 @@ private: // Data
     CObexUtilsDialog*           iDialog;
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
+    TInt                        iFileCount;
     };
     
 _LIT(KBipPanicCategory, "BIP");

@@ -19,16 +19,27 @@
 #include <hbaction.h>
 
 /*!
-    Constructor.
+    This constructor constructs new setting and device models.
+ */
+BtCpUiBaseView::BtCpUiBaseView(QGraphicsItem *parent )
+    :CpBaseSettingView( 0 , parent )
+{
+    mSettingModel = new BtSettingModel(this);
+    mDeviceModel = new BtDeviceModel(this);
+}
+
+/*!
+    This constructor constructs models from the given setting and device models.
+    This implies the model impl and data structure is shared.
  */
 BtCpUiBaseView::BtCpUiBaseView(
         BtSettingModel &settingModel, 
         BtDeviceModel &deviceModel, 
         QGraphicsItem *parent )
-    :CpBaseSettingView( 0 , parent ), 
-     mSettingModel( &settingModel ),
-     mDeviceModel( &deviceModel )
+    :CpBaseSettingView( 0 , parent )
 {
+    mSettingModel = new BtSettingModel(settingModel, this);
+    mDeviceModel = new BtDeviceModel(deviceModel, this);    
 }
 
 /*!

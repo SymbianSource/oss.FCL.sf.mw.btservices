@@ -270,10 +270,12 @@ void CBTNotifIncomingPairingHandler::CancelRequest( TInt aRequestId )
         case EPhysicalLinkNotify:
             {
             iPla.CancelNextBasebandChangeEventNotifier();
+            break;
             }
         case EWaitingForPairingOk:
             {
             iPairingOkTimer.Cancel();
+            break;
             }
         }
     BOstraceFunctionExit0( DUMMY_DEVLIST );

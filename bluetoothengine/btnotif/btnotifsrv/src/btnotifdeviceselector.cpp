@@ -274,6 +274,7 @@ void CBTNotifDeviceSelector::HandleDiscoveryCompleted( TInt aErr )
     
 
     //TODO compile fail here we need to send the discovery completed text to the dialog 
+    //TODO change the hardcoded string
     keyStr.Copy(_L("Search Completed"));
     CHbSymbianVariant* devEntry( NULL );
     TRAP_IGNORE( devEntry = CHbSymbianVariant::NewL( (TAny*) &(keyStr), 

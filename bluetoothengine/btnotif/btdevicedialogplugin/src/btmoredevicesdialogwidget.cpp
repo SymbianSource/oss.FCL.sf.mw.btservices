@@ -163,6 +163,7 @@ bool BTMoreDevicesDialogWidget::constructDialog(const QVariantMap &/*parameters*
     mMoreDeviceDialog->setBackgroundFaded(false);
     mMoreDeviceDialog->setDismissPolicy(HbPopup::NoDismiss);
     mMoreDeviceDialog->setTimeout(HbPopup::NoTimeout);
+    mMoreDeviceDialog->setAttribute(Qt::WA_DeleteOnClose);
     return true;
     }
 

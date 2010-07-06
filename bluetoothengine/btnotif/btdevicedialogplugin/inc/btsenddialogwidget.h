@@ -16,8 +16,8 @@
  */
 
 
-#ifndef BTSENDDIALOGWIDGET_H_
-#define BTSENDDIALOGWIDGET_H_
+#ifndef BTSENDDIALOGWIDGET_H
+#define BTSENDDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -79,4 +79,4 @@ private:
     Q_DISABLE_COPY(BTSendDialogWidget)
     };
 
-#endif /* BTSENDDIALOGWIDGET_H_ */
+#endif /* BTSENDDIALOGWIDGET_H */

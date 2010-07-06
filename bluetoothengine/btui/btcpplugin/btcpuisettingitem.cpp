@@ -27,8 +27,8 @@ BtCpUiSettingItem::BtCpUiSettingItem(CpItemDataHelper &itemDataHelper) :
 {
     bool ret(false);
     loadTranslators();
-    mSettingModel = new BtSettingModel();
-    mDeviceModel = new BtDeviceModel();
+    mSettingModel = new BtSettingModel(this);
+    mDeviceModel = new BtDeviceModel(this);
     
     ret = connect(mSettingModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)), 
             this, SLOT(handleDataChanged(QModelIndex,QModelIndex)));
@@ -40,9 +40,6 @@ BtCpUiSettingItem::BtCpUiSettingItem(CpItemDataHelper &itemDataHelper) :
 
 BtCpUiSettingItem::~BtCpUiSettingItem()
 {
-    delete mSettingModel;     
-    delete mDeviceModel;
-    
     delete mViewTranslator;
     delete mDialogTranslator;
 }

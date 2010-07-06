@@ -25,6 +25,7 @@
 #include <locodbearerpluginparams.h>      
 #include <centralrepository.h>      
 #include <locodbearer.h>
+#include <hbindicatorsymbian.h>
 
 
 /**
@@ -149,6 +150,8 @@ private: // data
      * Own.
      */
     CRepository* iSession;
+    
+    CHbIndicatorSymbian* iBTIndicator;
 
     };
 

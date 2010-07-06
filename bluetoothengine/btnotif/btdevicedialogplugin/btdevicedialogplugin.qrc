@@ -7,7 +7,5 @@
         <file>icons/qtg_large_bluetooth.svg</file>
         <file>docml/bt-receive-auth-dialog.docml</file>
         <file>docml/bt-recv-progress-dialog.docml</file>
-        <file>btdialogs_en_GB.qm</file>
-	<file>btviews_en_GB.qm</file>
     </qresource>
 </RCC>

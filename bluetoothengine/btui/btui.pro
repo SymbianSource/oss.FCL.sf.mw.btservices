@@ -21,7 +21,8 @@ TEMPLATE = subdirs
 SUBDIRS += btuimodel \
 btdevsettingframework \
 btuidelegate \
-btcpplugin
+btcpplugin \
+tsrc
 
 CONFIG += ordered
 

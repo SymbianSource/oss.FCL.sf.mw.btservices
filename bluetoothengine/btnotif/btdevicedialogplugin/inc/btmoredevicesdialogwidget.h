@@ -16,8 +16,8 @@
  */
 
 
-#ifndef BTMOREDEVICESDIALOGWIDGET_H_
-#define BTMOREDEVICESDIALOGWIDGET_H_
+#ifndef BTMOREDEVICESDIALOGWIDGET_H
+#define BTMOREDEVICESDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -76,4 +76,4 @@ private:
     Q_DISABLE_COPY(BTMoreDevicesDialogWidget)
     };
 
-#endif /* BTMOREDEVICESDIALOGWIDGET_H_ */
+#endif /* BTMOREDEVICESDIALOGWIDGET_H */

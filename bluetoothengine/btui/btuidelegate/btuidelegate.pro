@@ -50,6 +50,8 @@ SOURCES += btdelegatepower.cpp \
     btdelegatedisconnect.cpp \
     btdelegatedevsecurity.cpp \
     btdelegateremotedevname.cpp
+
+defFilePath = .
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \

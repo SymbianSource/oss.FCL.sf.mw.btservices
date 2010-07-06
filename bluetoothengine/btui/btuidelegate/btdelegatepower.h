@@ -57,8 +57,6 @@ public slots:
     
     void btOnWarningClose();
     
-    void btOffDialogClose(HbAction *action);
-    
     void disconnectDelegateCompleted(int err);
     
     

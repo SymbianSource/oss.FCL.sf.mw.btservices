@@ -79,8 +79,9 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
         
         mFileName = qobject_cast<HbLabel*>(mLoader->findWidget("fileName"));
         mFileSize = qobject_cast<HbLabel*>(mLoader->findWidget("fileSize"));
-        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount"));
-                
+        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount_label"));
+        mFileCount->setVisible(false);
+        
         //TODO - set icon based on the file icon.
         
         mHide = qobject_cast<HbAction*>(mLoader->findObject("hideaction"));
@@ -93,7 +94,6 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
         {
             case TBluetoothDialogParams::EReceive:
             {
-                //TODO - Localization
                 QString headingStr(hbTrId("txt_bt_title_receiving_files_from_1"));
                 QString senderName(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
                 mHeading->setPlainText(headingStr.arg(senderName));
@@ -140,13 +140,15 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             mFileSize->setPlainText(fileSzB);
             }
 
-        //TODO - Set the received file count
-/*
-        int count = parameters.value(QString::number(TBluetoothDeviceDialog::EReceivedFileCount)).toInt();
-        QString fileCntStr;
-        fileCntStr.setNum(count);
-        mFileCount->setPlainText(fileCntStr);
-*/        
+        //Set the received file count
+        int fCnt = parameters.value(QString::number(TBluetoothDeviceDialog::EReceivedFileCount)).toInt();
+        if(fCnt > 0)
+            {
+            mFileCount->setVisible(true);  
+            
+            QString fCntStr(hbTrId("txt_bt_info_ln_files_already_received"));
+            mFileCount->setPlainText(fCntStr.arg(fCnt));
+            }
     }
 
     mDialog->setBackgroundFaded(false);

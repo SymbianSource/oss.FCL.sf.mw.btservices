@@ -67,6 +67,7 @@ void BtDelegatePower::exec( const QVariant &powerState )
     if ( mReqPowerState == curPowerState ) {
         // no need to do anything
         emit commandCompleted( KErrNone );
+        return;
     }
     
     // perform power on/off operation
@@ -150,27 +151,30 @@ void BtDelegatePower::switchBTOff()
     Q_CHECK_PTR( btengConnMan );
     RBTDevAddrArray devAddrArray;
     err = btengConnMan->GetConnectedAddresses(devAddrArray);
+    if ( err != KErrNone) {
+       //TODO: handle the error here
+       emit commandCompleted(err);
+       return;
+    }
     int count = devAddrArray.Count();
-    //int count =3;
     devAddrArray.Close();
     delete btengConnMan;
-    if( !err &&  count> 0 ){
-            HbMessageBox::question( hbTrId("Turn Bluetooth off? There is an active connection." ),this, 
-                        SLOT(btOffDialogClose(HbAction*)));
-            
-        }
-        else{
-            mActiveHandling = true;
-            err = mBtengSettings->SetPowerState(EBTPowerOff);
-            
-            if ( err ) {
-               //TODO: handle the error here
-               emit commandCompleted(KErrGeneral);
-            }
+    if( count> 0 ){
+        mActiveHandling = true;
+        disconnectOngoingConnections(); 
+    }
+    else{
+        mActiveHandling = true;
+        err = mBtengSettings->SetPowerState(EBTPowerOff);
         
-        }    
+        if ( err ) {
+           //TODO: handle the error here
+           emit commandCompleted(KErrGeneral);
+        }
+        
+    }    
 }
-
+/*
 void BtDelegatePower::btOffDialogClose(HbAction *action)
 {
     HbMessageBox *dlg = static_cast<HbMessageBox*>(sender());
@@ -188,7 +192,7 @@ void BtDelegatePower::btOffDialogClose(HbAction *action)
     }     
     
 }
-
+*/
 void BtDelegatePower::disconnectOngoingConnections(){
     if (! mDisconnectDelegate){
         mDisconnectDelegate = BtDelegateFactory::newDelegate(

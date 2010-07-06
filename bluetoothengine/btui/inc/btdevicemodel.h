@@ -23,7 +23,7 @@
 #include <QSharedPointer>
 #include <btuimodeltypes.h>
 
-class BtDeviceData;
+class BtDeviceModelPrivate;
 
 /*!
     \class BtDeviceModel
@@ -69,6 +69,7 @@ public:
         MajorPropertyRole,  // QVariant::Int, bits of DevMajorProperty
         MinorPropertyRole,  // QVariant::Int, bits of DevMinorProperty
         CoDRole,  // QVariant::Int, the value of Class of Device
+        SeqNumRole    // sequence number indicating order in which device was found
     };
     
 public:
@@ -101,19 +102,27 @@ public:
 signals:
 
     void deviceSearchCompleted(int error);
-    
-private:
-    
-    void emitDataChanged(int row, int column, void *parent );
-    
-    void emitDataChanged(const QModelIndex &top, const QModelIndex &bottom );
-    
-    void emitdeviceSearchCompleted(int error);
-    
-private:
-    QSharedPointer<BtDeviceData> mDeviceData;
 
-    friend class BtDeviceData;
+private slots:
+
+    void deviceDataChanged( int row, void *parent );
+    
+    void deviceDataChanged( int first, int last, void *parent );
+    
+    void beginInsertDevices(int first, int last, void *parent);
+    void endInsertDevices();
+    
+    void beginRemoveDevices(int first, int last, void *parent);
+    void endRemoveDevices();
+
+    void emitDeviceSearchCompleted( int error );
+
+private:
+    
+    void connectModelSignals();
+    
+private:
+    QSharedPointer<BtDeviceModelPrivate> d;
 };
 
 #endif // BTUIMODEL_H

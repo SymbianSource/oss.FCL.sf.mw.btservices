@@ -65,6 +65,10 @@ CBTNotifServiceAuthorizer::~CBTNotifServiceAuthorizer()
         iNotification->Close(); // Also dequeues the notification from the queue.
         iNotification = NULL;
         }
+    if ( !iNotifierMessage.IsNull() )
+        {
+        iNotifierMessage.Complete( KErrServerTerminated );
+        }
     }
 
 CBTNotifServiceAuthorizer::CBTNotifServiceAuthorizer(
@@ -92,7 +96,7 @@ void CBTNotifServiceAuthorizer::StartNotifierL(const RMessage2& aMessage)
         User::Leave(KErrServerBusy );
         }
 
-    iParams.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
+    iParams.ReAllocL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
     aMessage.ReadL( EBTNotifSrvParamSlot, iParams );
     
     TBTAuthorisationParams params;
@@ -130,11 +134,24 @@ void CBTNotifServiceAuthorizer::StartNotifierL(const RMessage2& aMessage)
     TBTNotifUtil::GetDeviceUiNameL(iCurrentDeviceName, 
             dev, paramsPckg().iName, paramsPckg().iBDAddr );
 
-    PrepareNotificationL(TBluetoothDialogParams::EUserAuthorization, EAuthorization, iPairedDevice);
-    iNotification->ShowL();
-    // we do not save the message until all leavable functions have executed successfully.
-    // This makes sure the iNotifierMessage has a valid handle.
-    iNotifierMessage = aMessage;
+    TBool autoAuthorize;
+    PrepareNotificationL(autoAuthorize,
+            TBluetoothDialogParams::EUserAuthorization, 
+            EAuthorization, iPairedDevice);
+    if ( autoAuthorize ) 
+        {
+        TPckgBuf<TBool> answer; 
+        answer() = ETrue;
+        aMessage.Write(EBTNotifSrvReplySlot, answer);
+        aMessage.Complete(KErrNone);
+        }
+    else 
+        {
+        iNotification->ShowL();
+        // we do not save the message until all leavable functions have executed successfully.
+        // This makes sure the iNotifierMessage has a valid handle.
+        iNotifierMessage = aMessage;
+        }
     }
 
 void CBTNotifServiceAuthorizer::MBRDataReceived( CHbSymbianVariantMap& aData )
@@ -173,8 +190,11 @@ void CBTNotifServiceAuthorizer::MBRDataReceived( CHbSymbianVariantMap& aData )
                 iParent.BlockDevice(paramsPckg().iBDAddr,ETrue);
                 }
             }
-        iNotifierMessage.Write(EBTNotifSrvReplySlot, answer);
-        iNotifierMessage.Complete(KErrNone);
+        if ( !iNotifierMessage.IsNull() )
+            {
+            iNotifierMessage.Write(EBTNotifSrvReplySlot, answer);
+            iNotifierMessage.Complete(KErrNone);
+            }
         }
     else if(aData.Keys().MdcaPoint(0).Compare(_L("checkBoxState")) == 0)
         {
@@ -182,11 +202,16 @@ void CBTNotifServiceAuthorizer::MBRDataReceived( CHbSymbianVariantMap& aData )
         }
     }
 
-void CBTNotifServiceAuthorizer::MBRNotificationClosed( TInt /*aError*/, const TDesC8& /*aData*/ )
+void CBTNotifServiceAuthorizer::MBRNotificationClosed( TInt aError, const TDesC8& aData )
     {
+    (void) aError;
+    (void) aData;
+    iNotification->RemoveObserver();
+    iNotification = NULL;
     }
 
-void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBTDialogType aType,
+void CBTNotifServiceAuthorizer::PrepareNotificationL(TBool& aAutoAuthorize,
+        TBluetoothDialogParams::TBTDialogType aType,
     TBTDialogResourceId aResourceId, TBool aPaired)
     {
     iNotification = iParent.ConnectionTracker().NotificationManager()->GetNotification();
@@ -194,6 +219,7 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
     iNotification->SetObserver( this );
     iNotification->SetNotificationType( aType, aResourceId );
     TInt err = KErrNone;
+    aAutoAuthorize = EFalse;
     
     //Set the dialog title based on the service IDs
     switch(iServiceId)
@@ -214,7 +240,8 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
                 iCheckBoxState = EFalse;
                 User::LeaveIfError(err);
                 }
-            }break;
+            }
+            break;
             
         case KBTSdpFax:
         case KBTSdpDun:
@@ -227,7 +254,8 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
             // In case of an incoming connection, the checkbox is checked by default.
             iCheckBoxState = ETrue;
             User::LeaveIfError(err);
-            }break;
+            }
+            break;
             
         default:
             {
@@ -240,10 +268,7 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
             // If there is no existing connection, then we pop up a query message.
             if(IsExistingConnectionToAudioL(paramsPckg().iBDAddr))
                 {
-                TPckgBuf<TBool> answer;
-                answer() = ETrue;
-                iNotifierMessage.Write(EBTNotifSrvReplySlot, answer);
-                iNotifierMessage.Complete(KErrNone);
+                aAutoAuthorize = ETrue;
                 return;
                 }
             else
@@ -253,7 +278,8 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
                 iCheckBoxState = ETrue;
                 User::LeaveIfError(err);
                 }
-            }break;
+            }
+            break;
         }
     
     //Add the device name 
@@ -262,6 +288,7 @@ void CBTNotifServiceAuthorizer::PrepareNotificationL(TBluetoothDialogParams::TBT
     //Add the device class
     err = iNotification->SetData( TBluetoothDeviceDialog::EDeviceClass, iDeviceClass );
     User::LeaveIfError(err);
+    
     }
 
 TBool CBTNotifServiceAuthorizer::IsExistingConnectionToAudioL(const TBTDevAddr& aDevAddr)

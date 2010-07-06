@@ -82,7 +82,7 @@
             <ref object="exitAction" role="HbWidget:addAction"/>
             <ref object="connectAction" role="HbWidget:addAction"/>
         </widget>
-        <string name="title" value="Control Panel"/>
+        <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
         <real name="z" value="1"/>
     </widget>
     <section name="landscape">

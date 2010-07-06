@@ -254,6 +254,7 @@ void CBIPController::TransportDownIndication()
     iBTObject = NULL;
     TRAP_IGNORE(TObexUtilsMessageHandler::RemoveTemporaryRFileL (iFullPathFilename));  
     iFs.Close();
+    iFileCount = 0;
     }
 
 // ---------------------------------------------------------
@@ -379,6 +380,7 @@ TInt CBIPController::PutCompleteIndication()  // Once receive has completed.
         retVal = HandlePutCompleteIndication();
         iBTTransferState = ETransferIdle;
         CloseReceivingIndicator();
+        iFileCount++;
         }
     TRACE_FUNC_EXIT
     return retVal;
@@ -807,7 +809,15 @@ void CBIPController::LaunchReceivingIndicatorL()
             fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
             User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
             CleanupStack::Pop(fileSz);
-                    
+            
+            CHbSymbianVariant* fileCnt = CHbSymbianVariant::NewL( (TAny*) &iFileCount, 
+                                                                CHbSymbianVariant::EInt );
+            CleanupStack::PushL(fileCnt);
+            TBuf16<6> fileCntKey;
+            fileCntKey.Num(TBluetoothDeviceDialog::EReceivedFileCount);
+            User::LeaveIfError(variantMap->Add(fileCntKey, fileCnt));
+            CleanupStack::Pop(fileCnt);
+        
             iDialogActive = ETrue;
             iProgressDialog->Show( KBTDevDialogId(), *variantMap, this );
             CleanupStack::PopAndDestroy(variantMap);

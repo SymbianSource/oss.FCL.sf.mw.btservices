@@ -35,7 +35,7 @@ class HbDataFormModel;
 //class HbDataFormModelItem;
 class CpSettingFormItemData;
 class BtAbstractDelegate;
-
+class BtCpUiDeviceDetail;
 
 class BtCpUiDeviceView : public BtCpUiBaseView
 {
@@ -47,10 +47,10 @@ public:
             BtDeviceModel &deviceModel,            
             QGraphicsItem *parent = 0);
     virtual ~BtCpUiDeviceView();
-    virtual void activateView( const QVariant& value, int cmdId );
+    virtual void activateView( const QVariant& value, bool fromBackButton );
     virtual void deactivateView();
     virtual void setSoftkeyBack();
-    
+        
 public slots:
     
     virtual void switchToPreviousView();
@@ -64,14 +64,16 @@ public slots:
     void connectDelegateCompleted(int status);
     void disconnectDelegateCompleted(int status);
     void changeDevNameDelegateCompleted(int status, QVariant param);
- 
+    void handleDeviceSetting();
+    void handleDeviceSettingsChange(bool status);
+    
 private:
     void clearViewData();
     void pairDevice();
     void unpairDevice();
     void connectDevice();
     void disconnectDevice();
-    void setDeviceCategory(int cod, int majorRole, int minorRole);//cod:class of device
+    void setDeviceCategory(int cod, int majorRole);//cod:class of device
     void setDeviceStatus(int majorRole);
     void setConnectionCombobox();
     void setTextAndVisibilityOfButtons();
@@ -120,6 +122,7 @@ private:
     
     BtAbstractDelegate* mAbstractDelegate;
 
+    BtCpUiDeviceDetail* mDeviceDetail;
     
 };
 

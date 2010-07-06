@@ -34,9 +34,9 @@ BtCpUiSearchListViewItem::BtCpUiSearchListViewItem(QGraphicsItem * parent) :
 
 BtCpUiSearchListViewItem::~BtCpUiSearchListViewItem()
 {
-    delete mDeviceNameLabel;
-    delete mDevTypeIconLabel;
-    delete mDevTypeTextLabel;
+//    delete mDeviceNameLabel;
+//    delete mDevTypeIconLabel;
+//    delete mDevTypeTextLabel;
 }
 
 /*

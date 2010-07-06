@@ -41,6 +41,8 @@
 #include "btuiiconutil.h"
 #include "btuidevtypemap.h"
 
+#include "btcpuidevicedetail.h"
+
 // docml to load
 const char* BTUI_DEVICEVIEW_DOCML = ":/docml/bt-device-view.docml";
 
@@ -51,7 +53,7 @@ BtCpUiDeviceView::BtCpUiDeviceView(
         QGraphicsItem *parent) :
     BtCpUiBaseView(settingModel,deviceModel,parent),
     mPairedStatus(false), mConnectedStatus(false), mTrustedStatus(false), mBlockedStatus(false), 
-    mConnectable(false), mAbstractDelegate(0)   
+    mConnectable(false), mAbstractDelegate(0), mDeviceDetail(0)   
 {
     mDeviceIndex = QModelIndex();//is it needed to initialize mIndex???
     
@@ -146,10 +148,14 @@ BtCpUiDeviceView::BtCpUiDeviceView(
     mDeviceSetting = 0;
     mDeviceSetting = qobject_cast<HbPushButton *>( mLoader->findWidget( "pushButton_2" ) );
     BTUI_ASSERT_X( mDeviceSetting != 0, "bt-device-view", "settings button not found" );
-        
-    setConnectionCombobox();
     
- 
+    
+    ret = connect(mDeviceSetting, SIGNAL(clicked()), this,
+            SLOT(handleDeviceSetting()));
+    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::BtCpUiDeviceView", "clicked() connect failed");
+
+    setConnectionCombobox();
+     
 }
 
 BtCpUiDeviceView::~BtCpUiDeviceView()
@@ -165,6 +171,7 @@ BtCpUiDeviceView::~BtCpUiDeviceView()
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }
+
 }
 
 
@@ -180,11 +187,13 @@ void BtCpUiDeviceView::switchToPreviousView()
 {
     BTUI_ASSERT_X(mMainView, "BtCpUiSearchView::switchToPreviousView", "invalid mMainView");
     mMainView->switchToPreviousView();
+    delete mDeviceDetail;
+    mDeviceDetail = 0;
 }
 
-void BtCpUiDeviceView::activateView( const QVariant& value, int cmdId )
+void BtCpUiDeviceView::activateView( const QVariant& value, bool fromBackButton )
 {
-    Q_UNUSED(cmdId);  
+    Q_UNUSED( fromBackButton );  
     
     setSoftkeyBack();
     
@@ -195,10 +204,32 @@ void BtCpUiDeviceView::activateView( const QVariant& value, int cmdId )
     //clearViewData();
     updateDeviceData();
     
+    mDeviceSetting->setVisible(false);
+    
+    mDeviceDetail = new BtCpUiDeviceDetail();
+    
     bool ret(false);
     ret=connect(mDeviceModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
            this, SLOT(updateDeviceData()));
     BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::activateView", "dataChanged() connect failed");
+
+    ret=connect(mDeviceDetail, SIGNAL(deviceSettingsChanged(bool)),
+           this, SLOT(handleDeviceSettingsChange(bool)));
+    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::activateView", "deviceSettingsChanged() connect failed");
+
+    
+    mDeviceDetail->loadDeviceDetailPlugins(mDeviceBdAddr.toString(), mDeviceName->text());
+    
+}
+
+void BtCpUiDeviceView::handleDeviceSettingsChange(bool status)
+{
+    mDeviceSetting->setVisible(status);        
+}
+
+void BtCpUiDeviceView::handleDeviceSetting()
+{
+    mDeviceDetail->loadDeviceDetailsView();
 }
 
 void BtCpUiDeviceView::deactivateView()
@@ -238,13 +269,6 @@ void BtCpUiDeviceView::clearViewData()
 void BtCpUiDeviceView::updateDeviceData()
 {
     clearViewData();
-    // ToDo:  the groupbox header should only say "Bluetooth", ie. without device name;
-    // check new TextMap file for the right TextId
-    /*QModelIndex localIndex = mSettingModel->index( BtSettingModel::LocalBtNameRow, 0);
-    QString localName = (mSettingModel->data(localIndex,BtSettingModel::settingDisplayRole)).toString();
-    QString groupBoxTitle (hbTrId("txt_bt_subhead_bluetooth_1").arg(localName));
-    mGroupBox->setHeading(groupBoxTitle);
-    */
     //Get the QModelIndex of the device using the device BDAddres
     QModelIndex start = mDeviceModel->index(0,0);
     QModelIndexList indexList = mDeviceModel->match(start,BtDeviceModel::ReadableBdaddrRole, mDeviceBdAddr);
@@ -258,14 +282,13 @@ void BtCpUiDeviceView::updateDeviceData()
     int cod = (mDeviceModel->data(mDeviceIndex,BtDeviceModel::CoDRole)).toInt();
      
     int majorRole = (mDeviceModel->data(mDeviceIndex,BtDeviceModel::MajorPropertyRole)).toInt();
-    int minorRole = (mDeviceModel->data(mDeviceIndex,BtDeviceModel::MinorPropertyRole)).toInt();
     
-	setDeviceCategory(cod, majorRole, minorRole);
+	setDeviceCategory(cod, majorRole);
     setDeviceStatus(majorRole);
     setTextAndVisibilityOfButtons();
 }
 
-void BtCpUiDeviceView::setDeviceCategory(int cod,int majorRole, int minorRole)
+void BtCpUiDeviceView::setDeviceCategory(int cod,int majorRole)
 {
     mDeviceCategory->setPlainText( getDeviceTypeString( cod ));
     HbIcon icon =
@@ -273,12 +296,9 @@ void BtCpUiDeviceView::setDeviceCategory(int cod,int majorRole, int minorRole)
                             BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight );
     mDeviceIcon->setIcon(icon);
 
-    if (majorRole & BtuiDevProperty::AVDev) {  
-        if ( minorRole & BtuiDevProperty::Headset){
-            // this is a Headset, it is possible to connect
-            mConnectable = true;
-        }
-    }
+    if (majorRole & BtuiDevProperty::Connectable ) {
+        mConnectable = true;
+    } 
 }
 
 void BtCpUiDeviceView::setDeviceStatus(int majorRole)
@@ -405,8 +425,6 @@ void BtCpUiDeviceView::setTextAndVisibilityOfButtons()
         mConnect_Disconnect->setVisible(false);
     }
     
-    mDeviceSetting->setVisible(false);
-
 }
 
 

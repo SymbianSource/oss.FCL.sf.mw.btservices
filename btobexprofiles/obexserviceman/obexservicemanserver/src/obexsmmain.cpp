@@ -99,7 +99,8 @@ EXPORT_C void RunServerL()
 
 TInt E32Main() //used in all case( WINS and TARGET)
     {
-    __UHEAP_MARK;
+    //TODO uncomment UHEAP macros after orbit memory leaks are resolved till then it should be commented.
+//    __UHEAP_MARK;
 
     CTrapCleanup* cleanup=CTrapCleanup::New();
     TInt retVal = KErrNoMemory;
@@ -109,7 +110,7 @@ TInt E32Main() //used in all case( WINS and TARGET)
         delete cleanup;
         }
 
-    __UHEAP_MARKEND;
+ //   __UHEAP_MARKEND;
     return retVal;
     }
 

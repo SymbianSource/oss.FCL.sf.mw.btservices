@@ -12,13 +12,13 @@ EXPORTS
 	?aboutToBackground@BtAbstractDevSetting@@UAEXXZ @ 11 NONAME ; void BtAbstractDevSetting::aboutToBackground(void)
 	??_EBtAbstractDevSetting@@UAE@I@Z @ 12 NONAME ; BtAbstractDevSetting::~BtAbstractDevSetting(unsigned int)
 	?aboutToForeground@BtAbstractDevSetting@@UAEXXZ @ 13 NONAME ; void BtAbstractDevSetting::aboutToForeground(void)
-	?metaObject@BtAbstractDevSetting@@UBEPBUQMetaObject@@XZ @ 14 NONAME ; struct QMetaObject const * BtAbstractDevSetting::metaObject(void) const
-	?qt_metacast@BtAbstractDevSetting@@UAEPAXPBD@Z @ 15 NONAME ; void * BtAbstractDevSetting::qt_metacast(char const *)
-	??1BtAbstractDevSetting@@UAE@XZ @ 16 NONAME ; BtAbstractDevSetting::~BtAbstractDevSetting(void)
-	?qt_metacall@BtAbstractDevSetting@@UAEHW4Call@QMetaObject@@HPAPAX@Z @ 17 NONAME ; int BtAbstractDevSetting::qt_metacall(enum QMetaObject::Call, int, void * *)
-	?getRemote@BtAbstractDevSetting@@QBEABVQString@@XZ @ 18 NONAME ; class QString const & BtAbstractDevSetting::getRemote(void) const
-	?loadDevSettingInterfaces@BtDevSettingPluginLoader@@SA?AV?$QList@PAVBtDevSettingInterface@@@@XZ @ 19 NONAME ; class QList<class BtDevSettingInterface *> BtDevSettingPluginLoader::loadDevSettingInterfaces(void)
-	?settingAvailabilityChanged@BtAbstractDevSetting@@IAEXPAV1@_N@Z @ 20 NONAME ; void BtAbstractDevSetting::settingAvailabilityChanged(class BtAbstractDevSetting *, bool)
-	?getSettingWidget@BtAbstractDevSetting@@UAEPAVHbWidget@@XZ @ 21 NONAME ; class HbWidget * BtAbstractDevSetting::getSettingWidget(void)
+	?getSettingWidget@BtAbstractDevSetting@@UAEPAVHbDataForm@@XZ @ 14 NONAME ; class HbDataForm * BtAbstractDevSetting::getSettingWidget(void)
+	?metaObject@BtAbstractDevSetting@@UBEPBUQMetaObject@@XZ @ 15 NONAME ; struct QMetaObject const * BtAbstractDevSetting::metaObject(void) const
+	?qt_metacast@BtAbstractDevSetting@@UAEPAXPBD@Z @ 16 NONAME ; void * BtAbstractDevSetting::qt_metacast(char const *)
+	??1BtAbstractDevSetting@@UAE@XZ @ 17 NONAME ; BtAbstractDevSetting::~BtAbstractDevSetting(void)
+	?qt_metacall@BtAbstractDevSetting@@UAEHW4Call@QMetaObject@@HPAPAX@Z @ 18 NONAME ; int BtAbstractDevSetting::qt_metacall(enum QMetaObject::Call, int, void * *)
+	?getRemote@BtAbstractDevSetting@@QBEABVQString@@XZ @ 19 NONAME ; class QString const & BtAbstractDevSetting::getRemote(void) const
+	?loadDevSettingInterfaces@BtDevSettingPluginLoader@@SA?AV?$QList@PAVBtDevSettingInterface@@@@XZ @ 20 NONAME ; class QList<class BtDevSettingInterface *> BtDevSettingPluginLoader::loadDevSettingInterfaces(void)
+	?settingAvailabilityChanged@BtAbstractDevSetting@@IAEXPAV1@_N@Z @ 21 NONAME ; void BtAbstractDevSetting::settingAvailabilityChanged(class BtAbstractDevSetting *, bool)
 	??1BtDevSettingInterface@@UAE@XZ @ 22 NONAME ; BtDevSettingInterface::~BtDevSettingInterface(void)
 

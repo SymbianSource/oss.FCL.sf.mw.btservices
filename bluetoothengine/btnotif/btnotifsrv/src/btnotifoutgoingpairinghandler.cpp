@@ -314,16 +314,19 @@ void CBTNotifOutgoingPairingHandler::CancelRequest( TInt aRequestId )
         case EDedicatedBonding:
             {
             iBondingSession.Close();
+            break;
             }
         case EGeneralBonding:
         case EGeneralBondingRetry:
             {
             iSocket.CancelConnect();
             iSocket.Close();
+            break;
             }
         case EGeneralBondingRetryTimer:
             {
             iTimer.Cancel();
+            break;
             }     
         }
     }

@@ -130,7 +130,7 @@
             <ref object="removePairedDevices" role="HbWidget:addAction"/>
             <ref object="exit" role="HbWidget:addAction"/>
         </widget>
-        <string locid="txt_tsw_caption" name="title" value="Control Panel"/>
+        <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
     </widget>
     <section name="portrait">
         <widget name="container" type="HbWidget">

@@ -24,6 +24,7 @@
 #include "BTServiceAPI.h"
 #include "BTServiceUtils.h"
 #include "BTServiceParameterList.h"
+#include "BTServiceDelayedDestroyer.h"
 
 #include <btengdiscovery.h>
 #include <btengsettings.h>
@@ -392,7 +393,7 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         * @param aReason Error value
         * @return None.
         */
-        void ShowNote( TInt aReason ) const;
+        void ShowErrorNote( TInt aReason ) const;
 
         /**
         * Cancel progress note
@@ -449,6 +450,8 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         TBTServiceType              iService;
         TInt                        iClientChannel;
         TBTServiceStarterState      iState;
+        //todo verify the usage of below variable when file sending to mulitple devices or
+        //when files from different applications are sent simultaneously
         TBool                       iServiceStarted;
         TMsvId                      iMessageServerIndex;
         
@@ -456,6 +459,8 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         CActiveSchedulerWait*       iWaiter;
         TBool                       iAllSend;                     
         TInt						iBytesSendWithBIP;        
+        //todo verify the usage of below variable as this part of legacy code
+        //and false condition will never be hit.
         TBool						iProgressDialogActive;        
         TBool                       iUserCancel;
         CBTEngSettings*             iBTEngSettings;
@@ -468,6 +473,8 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         TBool                       iFeatureManagerInitialized;
         TBool                       iTriedBIP;
         TBool                       iTriedOPP;
+        CBTServiceDelayedDestroyer* iDelayedDestroyer;
+        TBool                       iLocalisationInit;
     };
 
 #endif      // BT_SERVICE_CONTROLLER_H

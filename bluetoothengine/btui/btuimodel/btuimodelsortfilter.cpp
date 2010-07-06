@@ -150,11 +150,10 @@ bool BtuiModelSortFilter::filterAcceptsRow(
 bool BtuiModelSortFilter::lessThan(
         const QModelIndex &left, const QModelIndex &right) const
 {
-    Q_UNUSED( left );
-    Q_UNUSED( right );
     if (sortRole() == BtDeviceModel::NameAliasRole ||
         sortRole() == BtDeviceModel::LastUsedTimeRole ||
-        sortRole() == BtDeviceModel::RssiRole) {
+        sortRole() == BtDeviceModel::RssiRole ||
+        sortRole() == BtDeviceModel::SeqNumRole) {
         // base class provides sorting for these types already:
         return QSortFilterProxyModel::lessThan(left, right);
     }

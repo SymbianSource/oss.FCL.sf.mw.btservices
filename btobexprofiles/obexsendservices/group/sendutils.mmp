@@ -30,6 +30,7 @@ SOURCE          BTServiceClient.cpp
 SOURCE          BTServiceUtils.cpp
 SOURCE          BTServiceStarter.cpp
 SOURCE          BTServiceParameterList.cpp
+SOURCE          BTServiceDelayedDestroyer.cpp
 
 SOURCE          BTSOPPController.cpp
 SOURCE          BTSBIPController.cpp

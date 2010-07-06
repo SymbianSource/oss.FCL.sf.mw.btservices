@@ -24,6 +24,8 @@
 #include "debug.h"
 #include <btfeaturescfg.h>
 #include <btnotifclient.h>
+#include "btindicatorconstants.h"
+#include <hbsymbianvariant.h>
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -60,6 +62,7 @@ void CBTPluginNotifier::ConstructL()
 	delete repository;
 	
 	CBTEngSettings* settings = CBTEngSettings::NewL();
+	iBTIndicator = CHbIndicatorSymbian::NewL(); 
 	
 	BluetoothFeatures::TEnterpriseEnablementMode mode = BluetoothFeatures::EnterpriseEnablementL();
 	TRACE_INFO( ( _L( "mode = %d" ), mode) )
@@ -78,6 +81,14 @@ void CBTPluginNotifier::ConstructL()
         {
         TRACE_INFO( ( _L( "Turning BT off" ) ) )
         (void) settings->SetPowerState( EBTPowerOff );	// Result is not important here
+        TInt state =  EBTIndicatorOff;
+        CHbSymbianVariant* parameters = CHbSymbianVariant::NewL(&state,CHbSymbianVariant::EInt );
+        TBool success = iBTIndicator->Activate(KIndicatorType(),parameters); 
+        delete parameters;
+        if(!success)
+            {
+            User::Leave(iBTIndicator->Error());
+            }
         }
     delete settings;
 	if ( mode != BluetoothFeatures::EDisabled ) // only subscribe if there's any point (NB changing Enterprise Disabling mode requires a reboot)
@@ -112,6 +123,7 @@ CBTPluginNotifier::~CBTPluginNotifier()
     TRACE_FUNC_ENTRY
     Cancel();
     delete iSession;
+    delete iBTIndicator;
     }
 
 

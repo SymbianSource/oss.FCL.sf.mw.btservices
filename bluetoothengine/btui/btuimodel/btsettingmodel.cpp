@@ -16,7 +16,7 @@
 */
 
 #include <btsettingmodel.h>
-#include "btlocalsetting.h"
+#include "btsettingmodel_p.h"
 #include "bluetoothuitrace.h"
 
 /*!
@@ -25,17 +25,18 @@
 BtSettingModel::BtSettingModel( QObject *parent )
     : QAbstractItemModel( parent )
 {
-   mLocalSetting = QSharedPointer<BtLocalSetting>( new BtLocalSetting( *this ) );
+   d = QSharedPointer<BtSettingModelPrivate>( new BtSettingModelPrivate( *this ) );
+   connectModelSignals();
 }
 
 /*!
-    This Constructor shares the instances of model data structure with the
-    given model.
+    This Constructor shares the private implementation of the setting model.
  */
 BtSettingModel::BtSettingModel( const BtSettingModel &model, QObject *parent )
     : QAbstractItemModel( parent )
 {
-    mLocalSetting = model.mLocalSetting;
+    d = model.d;
+    connectModelSignals();
 }
 
 /*!
@@ -51,8 +52,8 @@ BtSettingModel::~BtSettingModel()
 QModelIndex BtSettingModel::index( int row, int column, const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    if ( mLocalSetting->isValid( row, column ) ) {
-        return createIndex( row, column, mLocalSetting.data() );
+    if ( d->isValid( row, column ) ) {
+        return createIndex( row, column, d.data() );
     }
     // invalid row and column:
     return QModelIndex();
@@ -74,7 +75,7 @@ QModelIndex BtSettingModel::parent( const QModelIndex &child ) const
 int BtSettingModel::rowCount( const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    return mLocalSetting->rowCount();
+    return d->rowCount();
 }
 
 /*!
@@ -83,7 +84,7 @@ int BtSettingModel::rowCount( const QModelIndex &parent ) const
 int BtSettingModel::columnCount( const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    return mLocalSetting->columnCount();
+    return d->columnCount();
 }
 
 /*!
@@ -92,25 +93,41 @@ int BtSettingModel::columnCount( const QModelIndex &parent ) const
 QVariant BtSettingModel::data( const QModelIndex &index, int role ) const
 {
     QVariant val( QVariant::Invalid );
-    mLocalSetting.data()->data( val, index.row(), index.column(), role );
+    d.data()->data( val, index.row(), index.column(), role );
     return val;
 }
 
 QMap<int, QVariant> BtSettingModel::itemData( const QModelIndex & index ) const
 {
-    return mLocalSetting.data()->itemData( index.row(), index.column() );
+    return d.data()->itemData( index.row(), index.column() );
 }
 
 /*!
     emits dataChanged signal.
  */
-void BtSettingModel::emitDataChanged( int row, int column, void *parent )
+void BtSettingModel::settingDataChanged( int row, void *parent )
 {
-    QModelIndex idx = createIndex( row, column, parent );
+    QModelIndex idx = createIndex( row, 0, parent );
     emit dataChanged( idx, idx );
 }
 
-void BtSettingModel::emitDataChanged(const QModelIndex &top, const QModelIndex &bottom )
+/*!
+    emits dataChanged signal.
+ */
+void BtSettingModel::settingDataChanged(int first, int last, void *parent )
     {
+    QModelIndex top = createIndex( first, 0, parent );
+    QModelIndex bottom = createIndex( last, 0, parent );
     emit dataChanged( top, bottom );
     }
+
+/*!
+ connects all signals of private impl to slots of this
+ */
+void BtSettingModel::connectModelSignals()
+{
+    bool ok = connect(d.data(), SIGNAL(settingDataChanged(int,void*)), SLOT(settingDataChanged(int,void*)));
+    BTUI_ASSERT_X( ok, "BtSettingModel", "settingDataChanged can't connect" );
+    ok = connect(d.data(), SIGNAL(settingDataChanged(int,int,void*)), SLOT(settingDataChanged(int,int,void*)));
+    BTUI_ASSERT_X( ok, "BtSettingModel", "settingDataChanged can't connect 2" );
+}

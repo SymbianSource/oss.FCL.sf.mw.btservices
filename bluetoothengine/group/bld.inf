@@ -11,7 +11,7 @@
 *
 * Contributors:
 *
-* Description:  Build information file for project ?myapp
+* Description:  Build information file for project bluetoothengine
 *
 */
 
@@ -44,3 +44,8 @@ PRJ_MMPFILES
 PRJ_TESTMMPFILES
 
 PRJ_TESTEXPORTS
+../conf/testframework.ini    /epoc32/WINSCW/C/TestFramework/testframework.ini
+../btserviceutil/tsrc/btserviceutiltest/conf/btserviceutiltest.cfg  /epoc32/winscw/c/TestFramework/btserviceutiltest.cfg
+../btnotif/btnotifclient/tsrc/btnotifclienttest/conf/btnotifclienttest.cfg   /epoc32/WINSCW/C/TestFramework/btnotifclienttest.cfg
+../btnotif/btnotifwrapper/tsrc/btnotifwrappertest/conf/btnotifwrappertest.cfg    /epoc32/WINSCW/C/TestFramework/btnotifwrappertest.cfg
+../btnotif/btnotifsrv/tsrc/btnotifsrvtest/conf/btnotifsrvtest.cfg   /epoc32/WINSCW/C/TestFramework/btnotifsrvtest.cfg
