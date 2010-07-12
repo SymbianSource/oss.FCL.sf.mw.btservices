@@ -29,7 +29,9 @@ LIBS += -lhbcore \
     -lxqserviceutil \
     -lbluetooth \
     -lmsgs \
-    -lapmime
+    -lapmime \
+    -lefsrv
+	
 SERVICE.FILE = service_conf.xml
 libFiles.sources = xqservice.dll
 SERVICE.OPTIONS = embeddable \
