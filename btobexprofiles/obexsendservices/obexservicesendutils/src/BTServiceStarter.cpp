@@ -743,7 +743,7 @@ void CBTServiceStarter::ServiceAttributeSearchComplete( TSdpServRecordHandle /*a
     {
     FLOG(_L("[BTSU]\t CBTServiceStarter::ServiceAttributeSearchComplete()"));               
     TInt err = KErrNone;
-    if (aErr==KErrEof && aAttr.Count()>0 )
+    if ((aErr==KErrEof || aErr==KErrNone) && aAttr.Count()>0 )
         {            
         RSdpResultArray results=aAttr;    
         iBTEngDiscovery->ParseRfcommChannel(results,iClientChannel);          
@@ -811,6 +811,10 @@ void CBTServiceStarter::ServiceAttributeSearchComplete( TSdpServRecordHandle /*a
         iBTEngDiscovery->RemoteProtocolChannelQuery(iDevice->BDAddr(),TUUID(KBTServiceImagingResponder));
         iState = EBTSStarterFindingBIP;  
         iTriedOPP = ETrue;
+        }
+    else if (aErr==KErrNone && aAttr.Count()==0)
+        {
+        // This isn't KErrEof so we aren't done yet, wait for further matches
         }
     else
         {

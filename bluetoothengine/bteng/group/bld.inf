@@ -37,9 +37,6 @@ PRJ_EXPORTS
 ../conf/bteng_10204DAB.crml 	            MW_LAYER_CRML(bteng_10204DAB.crml)
 ../conf/bteng_10204DAC.crml 	            MW_LAYER_CRML(bteng_10204DAC.crml)
 
-/*remove the following exportation, when SCB CR is approved*/
-../conf/CI_bteng.confml                     MW_LAYER_CONFML(CI_bteng.confml)
-
 
 ../data/btrfs.txt                           z:/resource/btrfs.txt
 

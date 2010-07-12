@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2007 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -25,12 +25,12 @@
 #include "BTConnectionTimer.h"
 #include "BTSUDebug.h"
 
-const TUint16 KMtuSizeReceiv    = 0xFFFF;  // 64kB
-const TUint16 KMtuSizeTrans     = 0x3000;  // 12kB 
-const TInt    KBufferSize       = 0x4000;  // 16kB
+const TUint16 KMtuSizeReceiv    = 0xFFFF;	// 64kB - 1 (65535)
+const TUint16 KMtuSizeTrans     = 0x8000;	// 32kB
+const TInt    KBufferSize       = 0x8000;	// 32kB
 
-const TInt KBTConnectionTimeout = 20000000; // 20 seconds
-const TInt KBTAbortTimeout      = 2000000;  // 20 seconds
+const TInt KBTConnectionTimeout = 20 * 1000 * 1000;	// 20 seconds
+const TInt KBTAbortTimeout      = 2 * 1000 * 1000;	// 2 seconds
 
 // CONSTANTS
 

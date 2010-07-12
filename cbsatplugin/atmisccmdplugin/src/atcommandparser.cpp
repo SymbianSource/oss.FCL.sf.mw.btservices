@@ -58,7 +58,16 @@ void TAtCommandParser::ParseAtCommand(const TDesC8& aCmd)
     _LIT8(KAtCpin, "AT+CPIN");
     _LIT8(KAtCusd, "AT+CUSD");
     _LIT8(KAtCnum, "AT+CNUM");
-    _LIT8(KAtCmee, "AT+CMEE");
+	_LIT8(KAtCmee, "AT+CMEE");
+#ifdef PROTOCOL_TDSCDMA
+    _LIT8(KAtHver, "AT^HVER");
+    _LIT8(KAtCgsn, "AT+CGSN");
+    _LIT8(KAtCgmr, "AT+CGMR");
+    _LIT8(KAtCgmi, "AT+CGMI");
+    _LIT8(KAtCmgw, "AT+CMGW");
+	_LIT8(KAtCmgd, "AT+CMGD");
+	_LIT8(KAtCmgf, "AT+CMGF");
+#endif
     
     Trace(KDebugPrintS, "token: ", &token);
     // Determine the AT command type
@@ -93,7 +102,37 @@ void TAtCommandParser::ParseAtCommand(const TDesC8& aCmd)
     else if(!token.Compare(KAtCmee))
         {
         iCmdType = ECmdAtCmee;
+		}
+#ifdef PROTOCOL_TDSCDMA
+    else if(!token.CompareF(KAtHver))
+        {
+        iCmdType = ECmdAtHver;
         }
+    else if(!token.CompareF(KAtCgsn))
+        {
+        iCmdType = ECmdAtCgsn;
+        }
+    else if(!token.CompareF(KAtCgmr))
+        {
+        iCmdType = ECmdAtCgmr;
+        }
+    else if(!token.CompareF(KAtCgmi))
+        {
+        iCmdType = ECmdAtCgmi;
+        }       
+    else if(!token.CompareF(KAtCmgw))
+        {
+        iCmdType = ECmdAtCmgw;
+        }
+    else if(!token.CompareF(KAtCmgd))
+        {
+        iCmdType = ECmdAtCmgd;
+        }
+    else if(!token.CompareF(KAtCmgf))
+        {
+        iCmdType = ECmdAtCmgf;
+        }
+#endif    
     else
         {
         iCmdType = EUnknown;

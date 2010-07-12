@@ -53,7 +53,14 @@ public:
         ECmdAtCpin,
         ECmdAtCusd,
         ECmdAtCnum,
-        ECmdAtCmee
+		ECmdAtCmee,
+        ECmdAtHver,
+        ECmdAtCgsn,
+        ECmdAtCgmr,
+        ECmdAtCgmi,
+        ECmdAtCmgw,
+		ECmdAtCmgd,
+		ECmdAtCmgf
         };
 public:
     TAtCommandParser();
