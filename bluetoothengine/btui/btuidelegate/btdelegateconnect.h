@@ -15,12 +15,13 @@
 *
 */
 
-#ifndef BTDELEGATECONNECT_H_
-#define BTDELEGATECONNECT_H_
+#ifndef BTDELEGATECONNECT_H
+#define BTDELEGATECONNECT_H
 
 #include <e32base.h>
 #include <btengconnman.h>
 #include "btabstractdelegate.h"
+#include <hbaction.h>
 
 class BtuiModel;
 
@@ -40,33 +41,42 @@ public:
             QObject *parent = 0 );
     
     virtual ~BtDelegateConnect();
-
     virtual void exec( const QVariant &params );
-    
     virtual void cancel();
     
 public slots:
+
 
 protected:
     //From MBTEngConnObserver
     virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
                                    RBTDevAddrArray* aConflicts );
     virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );
-    virtual void PairingComplete( TBTDevAddr& aAddr, TInt aErr );
-
-    void emitCommandComplete(int error);
+  
+private slots:
+    void handleUserAnswer( HbAction* answer );
+    void powerDelegateCompleted(int status);
+    void disconnectDelegateCompleted(int status);
     
 private:
-
-    CBTEngConnMan *mBtengConnMan;
-
-    TBTDevAddr mBtEngddr;
+    void exec_connect();
+    void emitCommandComplete(int error);
+    bool callOngoing();
     
-    QString mdeviceName;
+private:
+    QModelIndex mIndex;
+    QModelIndex mConflictDevIndex;
+    CBTEngConnMan *mBtengConnMan;
+    QString mDeviceName;
+    int mMajorProperty;
+    int mCod;
+    BtAbstractDelegate* mAbstractDelegate;
+    bool mActiveHandling;
+    TBTDevAddr mAddr;
     
     Q_DISABLE_COPY(BtDelegateConnect)
 
 };
 
 
-#endif /* BTDELEGATECONNECT_H_ */
+#endif /* BTDELEGATECONNECT_H */

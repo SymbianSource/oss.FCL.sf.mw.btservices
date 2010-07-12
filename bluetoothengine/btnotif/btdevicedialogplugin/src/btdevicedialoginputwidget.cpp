@@ -21,7 +21,11 @@
 #include <bluetoothdevicedialogs.h>
 #include <hbaction.h>
 #include <hbdialog.h>
+#include <hblabel.h>
+#include <hbvalidator.h>
 #include "btdevicedialogpluginerrors.h"
+
+const int PASSCODE_MAX_LEN = 16; // from BT specs
 
 /*!
     class Constructor
@@ -118,7 +122,8 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
 
-    QString keyStr, prompt;
+    QString keyStr, prompt,title,regExp;
+    QVariant name;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -130,7 +135,11 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
 
     QVariant param = parameters.value( keyStr );
     if ( param.toInt() == EPinInput ) {
-        prompt = QString( tr( "Passcode for device %1:" ) );
+        // Numeric value only
+        mInputDialog->setInputMode(HbInputDialog::RealInput);
+        title = QString(hbTrId("txt_bt_title_pairing_with_1"));
+        // todo: Fixe the multiline problem
+        prompt = QString( hbTrId( "txt_bt_dialog_please_enter_the_passcode_for_1" ) );
     }
     else {
         mLastError = ParameterError;
@@ -141,23 +150,46 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
     keyStr.setNum( TBluetoothDeviceDialog::EAdditionalDesc );
     i = parameters.constFind( keyStr );
     // Mini Length required, update prompt
-    // ToDo: use Validator to check input length. 
+    // ToDo: The validator doesn't seem to work properly 
     if ( i != parameters.constEnd() ) {
-        prompt = QString( tr( "Enter %1 digit passcode for device %2:" ) );
+        // Todo : The string ID for the localization is not available yet
+        // for string : "Enter %1 digit passcode for device %2:"
+        // I'm using the "Enter the passcode for device %1" instead
+        prompt = QString( hbTrId( "txt_bt_dialog_please_enter_the_passcode_for_1" ) );
         param = parameters.value( keyStr );
+        regExp = tr("^\\d{%1,}$");
+        regExp.arg(param.toString());
+        HbValidator* validator = new HbValidator(mInputDialog->lineEdit());
+        validator->addField(
+                new QRegExpValidator(
+                        QRegExp(regExp, Qt::CaseInsensitive), validator ),"");
+        mInputDialog->setValidator(validator);
+    }else{
+    // Minimum requirement is to have at least 1 digit
+        regExp = tr("^\\d{1,}$");
+        HbValidator* validator = new HbValidator(mInputDialog->lineEdit());
+        validator->addField(
+                new QRegExpValidator(
+                        QRegExp(regExp, Qt::CaseInsensitive), validator ),"");
+        mInputDialog->setValidator(validator);    
     }
-    
     // replace % with the miniLength and device name
     int repls = prompt.count( QString( "%" ) );
     if ( repls > 1 ) {
         prompt = prompt.arg( param.toString() );
     }
     if ( repls > 0 ) {
-        QVariant name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
+        name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
         prompt = prompt.arg( name.toString() );
     }
-    // set property value to this dialog widget
-    mInputDialog->setPromptText( prompt );
+    repls = title.count(QString("%"));
+    if(repls > 0){
+        title = title.arg( name.toString() );
+    }
+    mInputDialog->setHeadingWidget(new HbLabel(title));
+    mInputDialog->lineEdit(0)->setMaxLength(PASSCODE_MAX_LEN);
+    mInputDialog->lineEdit(0)->setText(tr("")); // clear the input field
+    mInputDialog->setPromptText(prompt);
     TRACE_EXIT
 }
 

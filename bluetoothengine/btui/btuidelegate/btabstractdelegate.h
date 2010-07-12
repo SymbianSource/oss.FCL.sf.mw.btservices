@@ -61,6 +61,8 @@ protected:
     BtSettingModel *getSettingModel();
     BtDeviceModel *getDeviceModel();
     
+    bool isBtPowerOn();
+    
 public slots:
 
 private:

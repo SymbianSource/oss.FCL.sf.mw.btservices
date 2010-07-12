@@ -17,6 +17,9 @@
 
 
 #include "btdelegatepower.h"
+#include "btqtconstants.h"
+#include <btabstractdelegate.h>
+#include <btdelegatefactory.h>
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
 #include <hbmessagebox.h>
@@ -29,11 +32,12 @@
 BtDelegatePower::BtDelegatePower(            
         BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel, QObject *parent )
-    : BtAbstractDelegate( settingModel, deviceModel, parent )
+    : BtAbstractDelegate( settingModel, deviceModel, parent ),
+      mDisconnectDelegate(0)
 {
     TRAP_IGNORE( mBtengSettings = CBTEngSettings::NewL(this) );
     Q_CHECK_PTR( mBtengSettings );
-    
+    mActiveHandling = false;
 }
 
 /*!
@@ -41,18 +45,36 @@ BtDelegatePower::BtDelegatePower(
  */
 BtDelegatePower::~BtDelegatePower()
 {
+    delete mDisconnectDelegate;
     delete mBtengSettings;
-    
 }
 
-void BtDelegatePower::exec( const QVariant &params )
+/*!
+    Turns BT power on/off
+    param powerState is the desired power state and is of type PowerStateQtValue
+ */
+void BtDelegatePower::exec( const QVariant &powerState )
 {   
-    if (params.toInt()){//turn power OFF
-        
+    mReqPowerState = BtEngPowerState((PowerStateQtValue)powerState.toInt());
+    BTUI_ASSERT_X( (mReqPowerState == EBTPowerOff) || (mReqPowerState == EBTPowerOn), 
+            "BtDelegatePower::exec()", "wrong power state value" );
+    
+    // get current power status
+    TBTPowerStateValue curPowerState(EBTPowerOff);
+    mBtengSettings->GetPowerState( curPowerState );
+    
+    // verify requested power is not the same as current status
+    if ( mReqPowerState == curPowerState ) {
+        // no need to do anything
+        emit commandCompleted( KErrNone );
+        return;
+    }
+    
+    // perform power on/off operation
+    if ( mReqPowerState == EBTPowerOff ){ 
         switchBTOff();     
     }
-    else{//turn power ON  
-    
+    else if ( mReqPowerState == EBTPowerOn ) {
         switchBTOn();
     }
 }
@@ -64,30 +86,28 @@ void BtDelegatePower::switchBTOn()
     int err = 0;
     
     //check if device is in OFFLINE mode first
-    TBTEnabledInOfflineMode enabledInOffline = EBTDisabledInOfflineMode;
-    if (checkOfflineMode(enabledInOffline)){
-    //if (1){
-        if (enabledInOffline){
-        //if (1){
+    bool btEnabledInOffline = false;
+    if (checkOfflineMode(btEnabledInOffline)){  // offline mode is active
+        if (btEnabledInOffline){
             // BT is allowed to be enabled in offline mode, show query.
-            HbMessageBox::question( tr("Turn Bluetooth on in offline mode?"),this, 
+            HbMessageBox::question( hbTrId("txt_bt_info_trun_bluetooth_on_ini_offline_mode" ),this, 
 				SLOT(btOnQuestionClose(HbAction*)));
 
         }
         else{
             //if BT is not allowed to be enabled in offline mode, show message and complete
-            HbMessageBox::warning(tr("Bluetooth not allowed to be turned on in offline mode"),this, 
+            HbMessageBox::warning( hbTrId("txt_bt_info_bluetooth_not_allowed_to_be_turned_on" ),this, 
 				SLOT(btOnWarningClose()));
         }
         
     }
-    else{
-        //set BT on if the not in offline mode
-        err = mBtengSettings->SetPowerState((TBTPowerStateValue)(1));
+    else { // offline mode is not active
+        mActiveHandling = true;
+        err = mBtengSettings->SetPowerState(EBTPowerOn);
     }
     
     if ( err ) {
-        QString info = "Unable to switch BT power ON" ;
+        //TODO: handle the error here
         emit commandCompleted(KErrGeneral);
     }
     
@@ -100,7 +120,8 @@ void BtDelegatePower::btOnQuestionClose(HbAction *action)
     if(action == dlg->actions().at(0)) 
     {
         //user chooses "yes" for using BT in offline 
-        err = mBtengSettings->SetPowerState((TBTPowerStateValue)(1));
+        mActiveHandling = true;
+        err = mBtengSettings->SetPowerState(EBTPowerOn);
     }
     else
     {
@@ -109,7 +130,7 @@ void BtDelegatePower::btOnQuestionClose(HbAction *action)
            
     }     
     if ( err ) {
-        QString info = "Unable to switch BT power ON" ;
+        //TODO: handle the error here
         emit commandCompleted(KErrGeneral);
     }
 }
@@ -124,25 +145,101 @@ void BtDelegatePower::btOnWarningClose()
 void BtDelegatePower::switchBTOff()
 {
     int err = 0;
-    err = mBtengSettings->SetPowerState((TBTPowerStateValue)(0));
     
-    if ( err ) {
-        QString info = "Unable to switch BT power OFF" ;
-        emit commandCompleted(KErrGeneral);
+    CBTEngConnMan *btengConnMan = 0;
+    TRAP(err, btengConnMan = CBTEngConnMan::NewL(this));
+    Q_CHECK_PTR( btengConnMan );
+    RBTDevAddrArray devAddrArray;
+    err = btengConnMan->GetConnectedAddresses(devAddrArray);
+    if ( err != KErrNone) {
+       //TODO: handle the error here
+       emit commandCompleted(err);
+       return;
     }
+    int count = devAddrArray.Count();
+    devAddrArray.Close();
+    delete btengConnMan;
+    if( count> 0 ){
+        mActiveHandling = true;
+        disconnectOngoingConnections(); 
+    }
+    else{
+        mActiveHandling = true;
+        err = mBtengSettings->SetPowerState(EBTPowerOff);
         
+        if ( err ) {
+           //TODO: handle the error here
+           emit commandCompleted(KErrGeneral);
+        }
+        
+    }    
 }
-
+/*
 void BtDelegatePower::btOffDialogClose(HbAction *action)
 {
-    Q_UNUSED( action );
+    HbMessageBox *dlg = static_cast<HbMessageBox*>(sender());
+    if(action == dlg->actions().at(0)) 
+    {
+        //user chooses "yes" for closing active connection before power off
+        mActiveHandling = true;
+        disconnectOngoingConnections();
+    }
+    else
+    {
+        //if user chooses "NO", emits the signal
+        emit commandCompleted(KErrNone);
+           
+    }     
+    
+}
+*/
+void BtDelegatePower::disconnectOngoingConnections(){
+    if (! mDisconnectDelegate){
+        mDisconnectDelegate = BtDelegateFactory::newDelegate(
+                                                BtDelegate::Disconnect, getSettingModel(), getDeviceModel()); 
+        connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectDelegateCompleted(int)) );
+            
+    
+    DisconnectOption discoOpt = AllOngoingConnections;
+    QVariant param;
+    param.setValue((int)discoOpt);
+    mDisconnectDelegate->exec(param);
+    }
+}
+
+void BtDelegatePower::disconnectDelegateCompleted(int err)
+{
+    Q_UNUSED( err );
+    //TODO: handle the return error here
+    
+    int error = mBtengSettings->SetPowerState(EBTPowerOff);
+    if ( error ) {
+        //TODO: handle the error here
+        emit commandCompleted(KErrGeneral);
+    }
+    
     
 }
 
-void BtDelegatePower::PowerStateChanged( TBTPowerStateValue aState )
+
+void BtDelegatePower::PowerStateChanged( TBTPowerStateValue aPowerState )
 {
-    Q_UNUSED( aState );
-    emit commandCompleted(KErrNone);
+    // It is possible that others change power: no handling for these cases.
+    if ( !mActiveHandling ) {
+        return;
+    } 
+    mActiveHandling = false;
+    
+    if ( mReqPowerState == aPowerState ) {
+        // power state changed successfully
+        emit commandCompleted( KErrNone );
+    }
+    else {
+        // the actual power state is not the same as we requested,
+        // command failed:
+        // ToDo:  show error note?
+        emit commandCompleted( KErrGeneral );
+    }
 }
 
 //Method derived from MBTEngSettingsObserver, no need to be implemented here
@@ -151,78 +248,38 @@ void BtDelegatePower::VisibilityModeChanged( TBTVisibilityMode aState )
     Q_UNUSED( aState );
 }
 
-bool BtDelegatePower::checkOfflineMode(TBTEnabledInOfflineMode& aEnabledInOffline)
+void BtDelegatePower::ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
+                                   RBTDevAddrArray* aConflicts )
 {
-    TCoreAppUIsNetworkConnectionAllowed offline = ECoreAppUIsNetworkConnectionAllowed;  
-   
-    mBtengSettings->GetOfflineModeSettings(offline, aEnabledInOffline);
-    return (!offline);
-    
+    Q_UNUSED(aAddr);
+    Q_UNUSED(aErr);
+    Q_UNUSED(aConflicts);  
+    /*
+    if ( mBtEngAddr != aAddr ) {  // callback coming for some other device
+        return;
+    }
+    emitCommandComplete(aErr);
+    */
 }
 
-/*if (params.toBool()) {  // turning power on
+void BtDelegatePower::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
+{
+    Q_UNUSED(aAddr);
+    Q_UNUSED(aErr);    
+}
 
-        // find out if local device is in offline mode
-        QModelIndex idx = mModel->index( Btuim::OfflineMode, 0);
-        QVariant var = mModel->data( idx, Qt::EditRole );
-        bool offlineMode = var.toBool();
+/*!
+   Returns true if offline mode is on, parameter returns true if BT is allowed 
+   in offline mode
+ */
+bool BtDelegatePower::checkOfflineMode(bool& btEnabledInOffline)
+{
+    TCoreAppUIsNetworkConnectionAllowed offLineMode; 
+    TBTEnabledInOfflineMode btEnabled;
+   
+    mBtengSettings->GetOfflineModeSettings(offLineMode, btEnabled);
+    
+    btEnabledInOffline = (btEnabled == EBTEnabledInOfflineMode);
+    return (offLineMode == ECoreAppUIsNetworkConnectionNotAllowed);
+}
 
-        // find out whether BT is allowed in offline mode
-        var = mModel->data( idx, Btuim::SettingAdditionalParam );
-        bool activationAllowed = var.toBool();
-        
-        if (offlineMode) {
-            // in offline mode
-            if (activationAllowed) {
-                HbMessageBox *messageBox = new HbMessageBox(); 
-                // BT is allowed to be enabled in offline mode, show query.
-                if (messageBox->question( tr("Activate Bluetooth in offline mode?") )) {
-                    ret = mModel->setData(index, value, role);
-                }
-                delete messageBox;
-            }
-            else {
-                // BT is not allowed to be activated in offline mode, show note.
-
-                HbDialog *mShowOnlyPopup = new HbDialog();
-                mShowOnlyPopup->setAttribute(Qt::WA_DeleteOnClose);
-                mShowOnlyPopup->setModal(false);
-                mShowOnlyPopup->setBackgroundFaded(false);
-                mShowOnlyPopup->setDismissPolicy( HbPopup::NoDismiss  );
-                mShowOnlyPopup->setTimeout( 5000 );  // 5 sec
-                HbLabel *label = new HbLabel( tr("Bluetooth is not allowed in offline mode") );
-                label->setAlignment(Qt::AlignCenter);
-                QSizeF popupSize(350,100);
-                mShowOnlyPopup->setMinimumSize(popupSize);
-                mShowOnlyPopup->setContentWidget(label);                
-                mShowOnlyPopup->show();
-            }
-        } 
-        else {
-            // not in offline mode, forward the request to model. 
-            ret =  mModel->setData(index, value, role);    
-        }
-    }
-    else {   // turning power off
-        // first check if existing connections
-        QModelIndex idx = mModel->index(Btuim::BtConnections, 0);
-        QVariant var = mModel->data(idx, Qt::EditRole);
-        bool ok;
-        TInt connNum = var.toInt( &ok );
-        BTUI_ASSERT_X( ok, "BtUiSettingsDelegate::setData", "wrong qvariant type");
-        if (connNum) {
-            // there is at least 1 active connection, show query.
-            HbMessageBox *messageBox = new HbMessageBox(); 
-            if (messageBox->question( tr("Turn Bluetooth off even though connections exist?") )) {
-                ret = mModel->setData(index, value, role);
-            }
-            delete messageBox;
-        } 
-        else {  
-            // no active connections exist, forward the request to model.
-            ret =  mModel->setData(index, value, role);
-        }
-    }*/
-    //emit commandCompleted(err);
-        //return ret;
-    //return false;

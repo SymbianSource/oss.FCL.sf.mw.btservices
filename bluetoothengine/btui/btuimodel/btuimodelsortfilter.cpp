@@ -17,7 +17,7 @@
 
 #include <btuimodelsortfilter.h>
 #include <btdevicemodel.h>
-
+#include "btuidevtypemap.h"
 /*!
     Constructor.
  */
@@ -36,8 +36,7 @@ BtuiModelSortFilter::~BtuiModelSortFilter()
 
 /*!
     Replace current filter values for filtering on major device class with
-    the specified. This Model will not reset itself for performance reason, 
-    the caller shall call reset after all filters have been set.
+    the specified.
  */
 void BtuiModelSortFilter::setDeviceMajorFilter( int filter, FilterMode mode )
 {
@@ -48,21 +47,18 @@ void BtuiModelSortFilter::setDeviceMajorFilter( int filter, FilterMode mode )
 /*!
     Add the specified filter value for filtering on major device class 
     if the specified filter doesn't exist when this function is called.
-    This Model will not reset itself for performance reason, 
-    the caller shall call reset after all filters have been set.
  */
 void BtuiModelSortFilter::addDeviceMajorFilter( int filter, FilterMode mode )
 {
     FilterItem f(filter, mode);
     if ( mFilters.indexOf(f) == -1 ) {
         mFilters.append( f );
+        invalidateFilter();
     }
 }
 
 /*!
     Clear the specified filter value for filtering on major device class from this model.
-    This Model will not reset itself for performance reason, 
-    the caller shall call reset after all filters have been set.
  */
 void BtuiModelSortFilter::clearDeviceMajorFilter( int filter, FilterMode mode )
 {
@@ -70,23 +66,21 @@ void BtuiModelSortFilter::clearDeviceMajorFilter( int filter, FilterMode mode )
     int i = mFilters.indexOf(f);
     if ( i > -1 ) {
         mFilters.removeAt( i );
+        invalidateFilter();
     }
 }
 
 /*!
     clear all filters for filtering on major device class.
-    This Model will not reset itself for performance reason, 
-    the caller shall call reset after all filters have been set.
+    This Model will reset itself.
  */
 void BtuiModelSortFilter::clearDeviceMajorFilters()
 {
     // model reset is needed if there are filters :
-    bool shReset = ( mFilters.size() > 0 );
-
-    if ( shReset ) {
-        reset();
+    if ( mFilters.size() > 0 ) {
+        mFilters.clear();
+        invalidateFilter();
     }
-    mFilters.clear();
 }
 
 /*!
@@ -110,7 +104,7 @@ bool BtuiModelSortFilter::filterAcceptsRow(
 
     // the row shall pass all filters:
     for (int i = 0; i < mFilters.size(); i++ ) {
-        if ( mFilters.at(i).mFilter == BtDeviceModel::NullProperty ) {
+        if ( mFilters.at(i).mFilter == BtuiDevProperty::NullProperty ) {
             accepted = true;    // There is no filter, we accept all
         }
         else {
@@ -122,12 +116,12 @@ bool BtuiModelSortFilter::filterAcceptsRow(
                     accepted = majorProperty == mFilters.at(i).mFilter ;
                     break;
                 case AtLeastMatch:
-                    // accept if it matches all specified filters:
+                    // accept if it matches all specified properties:
                     accepted = ( mFilters.at(i).mFilter == 
                         ( majorProperty & mFilters.at(i).mFilter ) );
                     break;
                 case RoughMatch:
-                    // Accept if it matches one of specified filters:
+                    // Accept if it matches one of specified properties:
                     accepted = (majorProperty & mFilters.at(i).mFilter) != 0;
                     break;
                 case Exclusive:
@@ -138,6 +132,9 @@ bool BtuiModelSortFilter::filterAcceptsRow(
                     accepted = false;
             }
         }
+        // Break out of the loop at first non-accepted condition
+        if (!accepted)
+            break;
     }
     if (accepted) {
         // emit signal to inform a row has been accepted by fitler,
@@ -153,11 +150,10 @@ bool BtuiModelSortFilter::filterAcceptsRow(
 bool BtuiModelSortFilter::lessThan(
         const QModelIndex &left, const QModelIndex &right) const
 {
-    Q_UNUSED( left );
-    Q_UNUSED( right );
     if (sortRole() == BtDeviceModel::NameAliasRole ||
         sortRole() == BtDeviceModel::LastUsedTimeRole ||
-        sortRole() == BtDeviceModel::RssiRole) {
+        sortRole() == BtDeviceModel::RssiRole ||
+        sortRole() == BtDeviceModel::SeqNumRole) {
         // base class provides sorting for these types already:
         return QSortFilterProxyModel::lessThan(left, right);
     }

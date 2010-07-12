@@ -26,28 +26,41 @@
 
 #include <e32base.h>
 #include <obexutilsmessagehandler.h>
-#include <obexutilsuilayer.h>
 #include "obexutilspropertynotifier.h"
 #include <SrcsInterface.h>
 #include "btengdevman.h"
 
 #include <obexutilspropertynotifier.h>
-#include <obexutilsglobalprogressdialog.h>
 
-#include <AiwServiceHandler.h> // The AIW service handler
+#include <obexutilsdialog.h>
+#include <hbdevicedialogsymbian.h>
+#include <hbsymbianvariant.h>
 
-_LIT( KUniqueTransportName, "RFCOMM" );
+
 const TInt KBtStartReserveChannel   = 9;
 const TInt KBtEndReserveChannel     = 30;
 
+// todo @ QT migration: take official definition from Messaging at app layer (btmsgtypeuid.h)
+const TUid KUidMsgTypeBt                 = {0x10009ED5};
+/**
+* Backup status.
+* The value is controlled by FileManager
+*/
+enum TFileManagerBkupStatusType
+    {
+    EFileManagerBkupStatusUnset   = 0x00000000,
+    EFileManagerBkupStatusBackup  = 0x00000001,
+    EFileManagerBkupStatusRestore = 0x00000002
+    };
 /**
 *  CBtListenActive
 *  Class to implement IrObex permanent listen
 */
 class COPPController : public CSrcsInterface, public MObexServerNotify, 
                        public MObexUtilsPropertyNotifyHandler,
-                       public MGlobalProgressCallback, public MGlobalNoteCallback, 
-                       public MBTEngDevManObserver     
+                       public MObexUtilsDialogObserver,
+                       public MBTEngDevManObserver,
+                       public MHbDeviceDialogObserver     
     {
 public:
     static COPPController* NewL();
@@ -76,14 +89,12 @@ private: // from MObexServerNotify
 private: // from MObexUtilsPropertyNotifyHandler
     void HandleNotifyL(TMemoryPropertyCheckType aCheckType);
     
-private: // from MGlobalProgressCallback
-    void HandleGlobalProgressDialogL(TInt aSoftkey); 
-    
-private: // from MGlobalNoteCallback
-    void HandleGlobalNoteDialogL(TInt aSoftkey);
     
 private: // from MBTEngDevManObserver
     void HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray);
+    
+private: //from MObexUtilsDialogObserver
+    void DialogDismissed(TInt aButtonId);
     
 private:
     COPPController();
@@ -96,10 +107,16 @@ private:
     
     TBool CheckCapacityL();
     void LaunchReceivingIndicatorL();
-    inline TBool ReceivingIndicatorActive() const { return (iProgressDialog || iWaitDialog); }
-    void UpdateReceivingIndicator();
+    inline TBool ReceivingIndicatorActive() const { return (iDialogActive); }
+    void UpdateReceivingIndicatorL();
     void CloseReceivingIndicator(TBool aResetDisplayedState = ETrue);
-    TInt GetDriveWithMaximumFreeSpaceL();    
+    TInt GetDriveWithMaximumFreeSpaceL();  
+    TBool IsBackupRunning();
+    TBool ProcessExists( const TSecureId& aSecureId );
+    
+private:
+    void DataReceived(CHbSymbianVariantMap& aData);
+    void DeviceDialogClosed(TInt aCompletionCode);
 
 private:
     enum TObexTransferState
@@ -132,12 +149,14 @@ private:
     TSrcsMediaType              iMediaType;
     TInt                        iTotalSizeByte;
     TFileName                   iReceivingFileName;
-    CGlobalProgressDialog*      iProgressDialog;
-    CGlobalDialog*              iWaitDialog;
     TBool                       iNoteDisplayed;
     CBTEngDevMan*               iDevMan;
     CBTDeviceArray*             iResultArray;
     TBTDeviceName               iRemoteDeviceName;
+    CObexUtilsDialog*           iDialog;
+    CHbDeviceDialogSymbian*     iProgressDialog;
+    TBool                       iDialogActive;
+    TInt                        iFileCount;
     };
 
 #endif      // OPPCONTROLLER_H

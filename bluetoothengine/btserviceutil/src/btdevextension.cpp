@@ -77,6 +77,27 @@ EXPORT_C CBtDevExtension* CBtDevExtension::NewLC(
     }
 
 // ---------------------------------------------------------------------------
+// NewLC
+// ---------------------------------------------------------------------------
+//
+EXPORT_C CBtDevExtension* CBtDevExtension::NewLC( 
+        const TBTDevAddr& aAddr,
+        const TDesC& aName,
+        TDefaultDevNameOption aNameOption )
+    {
+    CBtDevExtension* self = new (ELeave) CBtDevExtension( aNameOption );
+    CleanupStack::PushL( self );
+    CBTDevice* dev = CBTDevice::NewLC( aAddr );
+    if ( aName.Length() )
+        {
+        dev->SetDeviceNameL(  BTDeviceNameConverter::ToUTF8L( aName ) );
+        }
+    self->ConstructL( dev );
+    CleanupStack::Pop( dev );
+    return self;
+    }
+
+// ---------------------------------------------------------------------------
 // Destructor
 // ---------------------------------------------------------------------------
 //
@@ -248,12 +269,15 @@ void CBtDevExtension::UpdateNameL()
     iAlias.Zero();
     if ( iDev->IsValidFriendlyName() && iDev->FriendlyName().Length() != 0 )
         {
-        iAlias.CreateL( iDev->FriendlyName() );
+        iAlias.ReAllocL(iDev->FriendlyName().Length());
+        iAlias.Append(iDev->FriendlyName());
         }
     // otherwise, device name, if it is available, will be displayed
     else if ( iDev->IsValidDeviceName() && iDev->DeviceName().Length() != 0 )
         {
-        iAlias.CreateL( BTDeviceNameConverter::ToUnicodeL(iDev->DeviceName() ) );
+        TBTDeviceName name = BTDeviceNameConverter::ToUnicodeL(iDev->DeviceName());
+        iAlias.ReAllocL(name.Length());
+        iAlias.Append(name);
         }
     if ( iAlias.Length() == 0 && 
         ( iNameOption == EColonSeperatedBDAddr || iNameOption == EPlainBDAddr ) )

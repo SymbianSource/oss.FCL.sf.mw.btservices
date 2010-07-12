@@ -16,9 +16,10 @@
 */
 
 #include "btnotifincomingpairinghandler.h"
-#include "btnotifpairingmanager.h"
+#include "btnotifsecuritymanager.h"
 #include "btnotifoutgoingpairinghandler.h"
 #include <btengconstants.h>
+#include "bluetoothtrace.h"
 
 const TInt KBTNotifWaitingForPairingOkDelay = 500000; // 0.5s
 
@@ -37,7 +38,7 @@ enum TPairingStageId
 // C++ default constructor
 // ---------------------------------------------------------------------------
 //
-CBTNotifIncomingPairingHandler::CBTNotifIncomingPairingHandler( CBTNotifPairingManager& aParent, 
+CBTNotifIncomingPairingHandler::CBTNotifIncomingPairingHandler( CBTNotifSecurityManager& aParent, 
     const TBTDevAddr& aAddr) : CBTNotifBasePairingHandler( aParent, aAddr )
     {
     }
@@ -48,22 +49,26 @@ CBTNotifIncomingPairingHandler::CBTNotifIncomingPairingHandler( CBTNotifPairingM
 //
 void CBTNotifIncomingPairingHandler::ConstructL()
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     BaseConstructL();
     iActivePairingOk = CBtSimpleActive::NewL(*this, EWaitingForPairingOk );
     User::LeaveIfError( iPairingOkTimer.CreateLocal() );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
 // NewL
 // ---------------------------------------------------------------------------
 //
-CBTNotifBasePairingHandler* CBTNotifIncomingPairingHandler::NewL( CBTNotifPairingManager& aParent, 
+CBTNotifBasePairingHandler* CBTNotifIncomingPairingHandler::NewL( CBTNotifSecurityManager& aParent, 
     const TBTDevAddr& aAddr)
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     CBTNotifIncomingPairingHandler* self = new (ELeave) CBTNotifIncomingPairingHandler(aParent, aAddr);
     CleanupStack::PushL( self );
     self->ConstructL();
     CleanupStack::Pop( self );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     return self;
     }
 
@@ -73,13 +78,13 @@ CBTNotifBasePairingHandler* CBTNotifIncomingPairingHandler::NewL( CBTNotifPairin
 //
 CBTNotifIncomingPairingHandler::~CBTNotifIncomingPairingHandler()
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     // Cancel all outstanding requests
     CancelPlaNotification();
     iPla.Close();
     delete iActivePairingOk;
     iPairingOkTimer.Close();
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -89,13 +94,15 @@ CBTNotifIncomingPairingHandler::~CBTNotifIncomingPairingHandler()
 //
 TInt CBTNotifIncomingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAddr )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     TInt err( KErrServerBusy );
     if ( iAddr == aAddr )
         {
         err = KErrNone;
-        iUserAwarePairing = ETrue; // This function is called by a notifier, which means the UI has been involved
+        // This function is called by a notifier, which means the UI has been involved
         // Therefore we can display it in the paired devices list
-        if ( !iActive->IsActive() && !OpenPhysicalLinkAdaptor() )
+        iUserAwarePairing = ETrue; 
+         if ( !iActive->IsActive() && !OpenPhysicalLinkAdaptor() )
             {
             // If we are observing physical link, or showing user a note,
             // we won't interrupt it.
@@ -103,6 +110,7 @@ TInt CBTNotifIncomingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAdd
             MonitorPhysicalLink();
             }
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     return err;
     }
 
@@ -112,12 +120,12 @@ TInt CBTNotifIncomingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAdd
 //
 void CBTNotifIncomingPairingHandler::HandleOutgoingPairL( const TBTDevAddr& aAddr, TUint aCod )
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     // Outgoing pairing always takes highest priority:
     CBTNotifBasePairingHandler* pairinghandler = CBTNotifOutgoingPairingHandler::NewL( iParent, aAddr );
     pairinghandler->HandleOutgoingPairL( aAddr, aCod );
     iParent.RenewPairingHandler( pairinghandler );
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -127,12 +135,12 @@ void CBTNotifIncomingPairingHandler::HandleOutgoingPairL( const TBTDevAddr& aAdd
 //
 void CBTNotifIncomingPairingHandler::StopPairHandling( const TBTDevAddr& aAddr )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     if ( aAddr == iAddr )
         {
-        // TRACE_FUNC_ENTRY
         iParent.RenewPairingHandler( NULL );
-        // TRACE_FUNC_EXIT
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -141,14 +149,15 @@ void CBTNotifIncomingPairingHandler::StopPairHandling( const TBTDevAddr& aAddr )
 //
 void CBTNotifIncomingPairingHandler::DoHandlePairServerResult( TInt aResult )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     CancelPlaNotification();
     // For a successful pairing, we need wait for registry table change.
     if( aResult != KErrNone && aResult != KHCIErrorBase )
         {
         // Pair failure situation.
         SetPairResult( aResult );
-        // todo: show pairing failure note.
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +167,7 @@ void CBTNotifIncomingPairingHandler::DoHandlePairServerResult( TInt aResult )
 //
 void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNamelessDevice& aDev )
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     
     // First of all cancel the iPairingOkTimer timer, if active
     if (iActivePairingOk->IsActive())
@@ -176,7 +185,7 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 		// a service connection with phone. We won't take any action (e.g. remove 
 		// link key) in this case. As the result, this device can't be seen in our UI, 
 		// however other applications are still freely to use its services.
-		// TRACE_INFO(_L("[BTEng]: CBTEngIncPair: JW pairing with no IO device" ) )
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: JW pairing with no IO device");
 		TBTEngConnectionStatus status = iParent.ConnectStatus( aDev.Address() );
 		if ( status == EBTEngConnecting || status == EBTEngConnected )
 			{
@@ -184,14 +193,15 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 			// exception handling option:
 			(void) iParent.AddUiCookieJustWorksPaired( aDev );
 			}
+		TRAP_IGNORE(ShowPairingResultNoteL(KErrNone));
 		iParent.RenewPairingHandler( NULL );
 		}
     else if (aDev.LinkKeyType() == ELinkKeyUnauthenticatedUpgradable && !iUserAwarePairing)
 		{
 		// The linkkey has been created  by an incoming OBEX service request
 		// which resulted a pairing event received from pair server.
-		// TRACE_INFO(_L("[BTEng]: CBTEngIncPair: JW pairing with IO device" ) )
-		  iParent.RenewPairingHandler( NULL );
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: JW pairing with IO device");
+		iParent.RenewPairingHandler( NULL );
 		}
     else
 		{
@@ -200,13 +210,14 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 			// The user was involved in the pairing, so display in the paired devices list
 			(void) iParent.AddUiCookieJustWorksPaired(aDev);
 			}
-		// TRACE_INFO(_L("[BTEng]: CBTEngIncPair: Non-JW pairing"))
+		BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: Non-JW pairing");
 		// Other pairing model than Just Works:
 		CancelPlaNotification();
 		SetPairResult( KErrNone );
+		TRAP_IGNORE(ShowPairingResultNoteL(KErrNone));
 		iParent.RenewPairingHandler( NULL );
 		}
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -215,13 +226,13 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 //
 void CBTNotifIncomingPairingHandler::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus )
     {
-    // TRACE_FUNC_ARG( ( _L( "aId: %d, aStatus: %d"), aId, aStatus ) )
-        // Check which request completed.
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    // Check which request completed.
     switch( aActive->RequestId() )
         {
         case EPhysicalLinkNotify:
             {
-                // Check if the link has disconnected.
+            // Check if the link has disconnected.
             HandlePhysicalLinkResultL( aStatus );
             break;
             }
@@ -239,31 +250,35 @@ void CBTNotifIncomingPairingHandler::RequestCompletedL( CBtSimpleActive* aActive
             break;
             } 
         default:
-                // Should not be possible, but no need for handling.
+            // Should not be possible, but no need for handling.
             break;
         }
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 
 // ---------------------------------------------------------------------------
-// From class MBTEngActiveObserver.
+// From class MBTNotifPairingAOObserver.
 // cancels an outstanding request according to the given id.
 // ---------------------------------------------------------------------------
 //
 void CBTNotifIncomingPairingHandler::CancelRequest( TInt aRequestId )
     {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     switch ( aRequestId ) 
         {
         case EPhysicalLinkNotify:
             {
             iPla.CancelNextBasebandChangeEventNotifier();
+            break;
             }
         case EWaitingForPairingOk:
             {
             iPairingOkTimer.Cancel();
+            break;
             }
         }
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -273,13 +288,14 @@ void CBTNotifIncomingPairingHandler::CancelRequest( TInt aRequestId )
 //
 void CBTNotifIncomingPairingHandler::HandleError( CBtSimpleActive* aActive, TInt aError )
     {
-    // TRACE_FUNC_ARG( ( _L( "request id: %d, error: %d" ), aId, aError ) )
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     (void) aActive;
     (void) aError;
-        // Our error handling is to just stop observing. 
-        // Nothing critical to be preserved here, the user 
-        // just won't get any notification of pairing result.
+    // Our error handling is to just stop observing. 
+    // Nothing critical to be preserved here, the user 
+    // just won't get any notification of pairing result.
     iParent.RenewPairingHandler( NULL );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -289,14 +305,14 @@ void CBTNotifIncomingPairingHandler::HandleError( CBtSimpleActive* aActive, TInt
 //
 void CBTNotifIncomingPairingHandler::MonitorPhysicalLink()
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     iActive->SetRequestId( EPhysicalLinkNotify );
-        // Subscribe to disconnect and error events.
+    // Subscribe to disconnect and error events.
     iPla.NotifyNextBasebandChangeEvent( iBbEvent, 
                             iActive->RequestStatus(), 
                             ENotifyPhysicalLinkDown | ENotifyPhysicalLinkError );
     iActive->GoActive();
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -305,17 +321,18 @@ void CBTNotifIncomingPairingHandler::MonitorPhysicalLink()
 //
 TInt CBTNotifIncomingPairingHandler::OpenPhysicalLinkAdaptor()
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     TInt err ( KErrNone );
     if( !iPla.IsOpen() )
         {
-            // Try to open the adapter in case it failed earlier.
-            // This can happen for outgoing dedicated bonding with 
-            // non-SSP device, as the PIN dialog can be kept open even 
-            // though the link has dropped because of a time-out.
+        // Try to open the adapter in case it failed earlier.
+        // This can happen for outgoing dedicated bonding with 
+        // non-SSP device, as the PIN dialog can be kept open even 
+        // though the link has dropped because of a time-out.
         err = iPla.Open( iParent.SocketServ(), iAddr );
         }
-    // TRACE_INFO( (_L("[BTEng]: CBTEngIncPair::HasPhysicalLink ? %d"), iPla.IsOpen() ) )
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:HasPhysicalLink ? %d", iPla.IsOpen() );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     return err;
     }
 
@@ -325,13 +342,13 @@ TInt CBTNotifIncomingPairingHandler::OpenPhysicalLinkAdaptor()
 //
 void CBTNotifIncomingPairingHandler::CancelPlaNotification()
     {
-    // TRACE_FUNC_ENTRY
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
     if( iActive && iActive->RequestId() == EPhysicalLinkNotify )
         {
         // cancel Baseband monitor
         iActive->Cancel();
         }
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 // ---------------------------------------------------------------------------
@@ -340,9 +357,8 @@ void CBTNotifIncomingPairingHandler::CancelPlaNotification()
 //
 void CBTNotifIncomingPairingHandler::HandlePhysicalLinkResultL( TInt aResult )
     {
-    // TRACE_FUNC_ARG( ( _L( " BBEvent 0x%08X, code %d"), 
-    //                        iBbEvent().EventType(), iBbEvent().SymbianErrorCode() ) )
-        // Check if the connection is still alive.
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    // Check if the connection is still alive.
     TBool physicalLinkDown = 
         ( iBbEvent().EventType() == ENotifyPhysicalLinkDown | ENotifyPhysicalLinkError );
 
@@ -361,7 +377,7 @@ void CBTNotifIncomingPairingHandler::HandlePhysicalLinkResultL( TInt aResult )
         // Uninteresting event, re-subscribe.
         MonitorPhysicalLink();
         }
-    // TRACE_FUNC_EXIT
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
 

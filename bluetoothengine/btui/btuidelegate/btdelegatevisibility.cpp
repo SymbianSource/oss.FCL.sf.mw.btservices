@@ -34,7 +34,7 @@ BtDelegateVisibility::BtDelegateVisibility(
 {
     TRAP_IGNORE( mBtengSettings = CBTEngSettings::NewL(this) );
     Q_CHECK_PTR( mBtengSettings );
-    mOperationOngoing = false;
+    mActiveHandling = false;
 }
 
 /*!
@@ -54,12 +54,12 @@ void BtDelegateVisibility::exec( const QVariant &params )
 {
     int minutes, err = 0;
 
-    if (mOperationOngoing) {
+    if (mActiveHandling) {
         // complete command with error
         emit commandCompleted(KErrInUse);
         return;
     } 
-    mOperationOngoing = true;
+    mActiveHandling = true;
     
     // read 1st parameter
     BTUI_ASSERT_X(params.toList().at(0).isValid(), "BtDelegateVisibility::exec", "invalid parameter");
@@ -70,12 +70,12 @@ void BtDelegateVisibility::exec( const QVariant &params )
     TBTVisibilityMode visibilityMode( EBTVisibilityModeNoScans );
     err = mBtengSettings->GetVisibilityMode( visibilityMode );
     if (err) {
-        mOperationOngoing = false;
+        mActiveHandling = false;
         emit commandCompleted(err);
         return;
     }
     if (visibilityMode == mOperation) {
-        mOperationOngoing = false;
+        mActiveHandling = false;
         emit commandCompleted(KErrNone);
         return;
     }
@@ -100,7 +100,7 @@ void BtDelegateVisibility::exec( const QVariant &params )
     }
     if (err) {
         // complete command with error
-        mOperationOngoing = false;
+        mActiveHandling = false;
         emit commandCompleted(err);
     }
 }
@@ -118,9 +118,9 @@ void BtDelegateVisibility::PowerStateChanged( TBTPowerStateValue aState )
  */
 void BtDelegateVisibility::VisibilityModeChanged( TBTVisibilityMode aState )
 {
-    if (mOperationOngoing) {
+    if (mActiveHandling) {
         //Error handling has to be done, if value is not set properly.
-        mOperationOngoing = false;
+        mActiveHandling = false;
         if (mOperation == aState) {
             emit commandCompleted(KErrNone);
         }

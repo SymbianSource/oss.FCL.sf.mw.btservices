@@ -38,19 +38,21 @@ END
 USERINCLUDE   ../inc
 SYSTEMINCLUDE  ../../../inc ../../../../inc  /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
+SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
+SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets
+SYSTEMINCLUDE  /epoc32/include/platform/mw/btservices
 
 LIBRARY         obexutils.lib 
 LIBRARY         euser.lib
 LIBRARY         efsrv.lib
 LIBRARY 		servicehandler.lib 
-LIBRARY			avkon.lib
 LIBRARY         irobex.lib          // For Object exchange
 LIBRARY	    	imageconversion.lib
 LIBRARY         bafl.lib
 LIBRARY         ecom.lib
 LIBRARY         sysutil.lib
 LIBRARY			esock.lib
-LIBRARY			charconv.lib aknnotify.lib eiksrv.lib
+LIBRARY			charconv.lib
 LIBRARY         platformenv.lib
 LIBRARY 		bluetooth.lib                       // Bluetooth libraries
 LIBRARY 		btdevice.lib                        // Bluetooth library
@@ -60,5 +62,7 @@ LIBRARY			btmanclient.lib
 LIBRARY 		btengdevman.lib				//btengdevman.dll
 LIBRARY 		btengsettings.lib			//btengsettings.dll
 LIBRARY 		btengconnman.lib			//btengconnman.dll
+LIBRARY			HbCore.lib		
+LIBRARY			HbWidgets.lib
 
 DEBUGLIBRARY	flogger.lib

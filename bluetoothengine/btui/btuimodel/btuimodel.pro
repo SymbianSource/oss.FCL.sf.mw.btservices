@@ -26,18 +26,20 @@ INCLUDEPATH += . \
 CONFIG += qt \
     hb \
     dll
-HEADERS += btdevicedata.h \
-    btlocalsetting.h \
+HEADERS += btdevicemodel_p.h \
+    btsettingmodel_p.h \
     ../inc/btsettingmodel.h \
     ../inc/btdevicemodel.h \
     ../inc/btuimodelsortfilter.h \
     ../inc/btuiutil.h
     
-SOURCES += btdevicedata.cpp \
-    btlocalsetting.cpp \
+SOURCES += btdevicemodel_p.cpp \
+    btsettingmodel_p.cpp \
     btsettingmodel.cpp \
     btdevicemodel.cpp \
     btuimodelsortfilter.cpp
+    
+defFilePath = .
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \

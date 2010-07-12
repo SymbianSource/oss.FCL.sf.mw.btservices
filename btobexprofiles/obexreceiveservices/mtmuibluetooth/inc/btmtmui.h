@@ -25,8 +25,7 @@
 #include <btdevice.h>
 #include <mtmuibas.h>
 #include <btengdiscovery.h>
-
-#include <obexutilsuilayer.h>
+#include <obexutilsdialog.h>
 
 const TUint KBTSdpObjectPush            = 0x1105;
 
@@ -37,7 +36,8 @@ class CClientMtmRegistry;
 *  CBtMtmUi
 *  Bluetooth messaging UI Module.
 */
-class CBtMtmUi : public CBaseMtmUi, public MBTEngSdpResultReceiver
+class CBtMtmUi : public CBaseMtmUi, public MBTEngSdpResultReceiver, 
+                 public MObexUtilsDialogObserver
 	{
     public: // Constructors and destructor
        /**
@@ -381,6 +381,11 @@ class CBtMtmUi : public CBaseMtmUi, public MBTEngSdpResultReceiver
         *             was called; otherwise one of the system-wide error codes.
         */
         void DeviceSearchComplete( CBTDevice* aDevice, TInt aErr );    
+        
+        /**
+         * Callback function from base class MObexUtilsDialogObserver.
+         */
+        void DialogDismissed(TInt aButtonId);
 
     protected:
 
@@ -440,7 +445,7 @@ class CBtMtmUi : public CBaseMtmUi, public MBTEngSdpResultReceiver
         CActiveSchedulerWait iWaiter;
         TInt                 iClientChannel;
         TInt                 iState;  
-        
+        CObexUtilsDialog*  iDialog;
 	};
 
 #endif      // CBTMTMUI_H  

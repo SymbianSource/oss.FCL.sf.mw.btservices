@@ -16,8 +16,8 @@
  */
 
 
-#ifndef BTSENDDIALOGWIDGET_H_
-#define BTSENDDIALOGWIDGET_H_
+#ifndef BTSENDDIALOGWIDGET_H
+#define BTSENDDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -29,9 +29,10 @@
 #include <hbprogressbar.h>
 #include <hblabel.h>
 #include <hblistview.h>
+#include <hbaction.h>
 
 
-class BTSendDialogWidget : public HbDialog,
+class BTSendDialogWidget : public QObject,
                                 public HbDeviceDialogInterface
     {
     Q_OBJECT
@@ -49,8 +50,8 @@ public: // from HbDeviceDialogInterface
     
 public slots:
 //    void hideClicked();
-//    void cancelClicked();
-    void inputClosed(HbAction* action);
+    void cancelClicked();
+//    void inputClosed(HbAction* action);
 private:
     bool constructDialog(const QVariantMap &parameters);
     void hideEvent(QHideEvent *event);
@@ -61,13 +62,21 @@ signals:
     
 private:
     HbDocumentLoader *mLoader;
-    QStandardItemModel* mContentItemModel;
+ //   QStandardItemModel* mContentItemModel;
     HbProgressBar*      mProgressBar;
-    HbLabel*            mLabel;
-    HbListView*         mListView;
-    int                 mFileIndex;
+    HbLabel*            mDialogHeading;
+    HbLabel*            mFileIconLabel;
+	HbLabel*			mFileNameLabel;
+	HbLabel*			mFileSizeLabel;
+    
+//    HbListView*         mListView;
+    HbDialog *mSendDialog;
+    HbAction *mHideAction;
+    HbAction *mCancelAction;
+    int       mFileIndex;
+
     
     Q_DISABLE_COPY(BTSendDialogWidget)
     };
 
-#endif /* BTSENDDIALOGWIDGET_H_ */
+#endif /* BTSENDDIALOGWIDGET_H */

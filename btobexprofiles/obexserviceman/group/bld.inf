@@ -48,7 +48,6 @@ backup_registration.xml  /epoc32/release/winscw/urel/z/private/101f7c87/backup_r
 ../rom/obexservicemanirda.iby                   CORE_MW_LAYER_IBY_EXPORT_PATH(obexservicemanirda.iby)
 ../rom/obexservicemanusb.iby                    CORE_MW_LAYER_IBY_EXPORT_PATH(obexservicemanusb.iby)
 ../rom/ObexUtils.iby                            CORE_MW_LAYER_IBY_EXPORT_PATH(ObexUtils.iby)
-../rom/ObexUtilsResources.iby                   LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(ObexUtilsResources.iby)
 
 
 #include  "../utils/group/bld.inf"

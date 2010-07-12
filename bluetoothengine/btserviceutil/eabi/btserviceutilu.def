@@ -40,4 +40,5 @@ EXPORTS
 	_ZN15CBtDevExtension17IsUserAwareBondedERK17TBTNamelessDevice @ 39 NONAME
 	_ZN15CBtDevExtension8IsBondedERK17TBTNamelessDevice @ 40 NONAME
 	_ZN15CBtDevExtension9IsHeadsetERK14TBTDeviceClass @ 41 NONAME
+	_ZN15CBtDevExtension5NewLCERK10TBTDevAddrRK7TDesC1621TDefaultDevNameOption @ 42 NONAME
 

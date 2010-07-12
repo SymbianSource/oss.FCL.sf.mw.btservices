@@ -1,50 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hbdocument version="1.0">
+<hbdocument version="1.1">
     <object name="allAction" type="HbAction">
-        <string name="text" value="All"/>
+        <icon iconName="qtg_mono_bt_show_all" name="icon"/>
+        <string name="text"/>
     </object>
     <object name="pairedAction" type="HbAction">
-        <string name="text" value="Paired"/>
+        <icon iconName="qtg_mono_bt_show_pair" name="icon"/>
+        <string name="text"/>
     </object>
     <object name="discoverAction" type="HbAction">
-        <string name="text" value="Discover"/>
+        <icon iconName="qtg_mono_search" name="icon"/>
+        <string name="text"/>
     </object>
     <object name="advanceSettings" type="HbAction">
-        <string name="text" value="Advanced Settings"/>
+        <string locid="txt_bt_opt_advanced_settings" name="text" value="Advanced Settings"/>
     </object>
     <object name="audioDevices" type="HbAction">
-        <string name="text" value="Audio Devices"/>
+        <string locid="txt_bt_list_audio_device" name="text" value="Audio Devices"/>
     </object>
     <object name="computers" type="HbAction">
-        <string name="text" value="Computers"/>
+        <string locid="txt_bt_list_computer" name="text" value="Computers"/>
     </object>
     <object name="inputDevices" type="HbAction">
-        <string name="text" value="Input Devices"/>
+        <string locid="txt_bt_list_input_device" name="text" value="Input Devices"/>
     </object>
     <object name="otherDevices" type="HbAction">
-        <string name="text" value="Other Devices"/>
+        <string locid="txt_bt_list_other" name="text" value="Other Devices"/>
     </object>
     <object name="removePairedDevices" type="HbAction">
-        <string name="text" value="Remove Paired Devices"/>
+        <string locid="txt_bt_opt_remove_paired_devices" name="text" value="Remove Paired Devices"/>
     </object>
     <object name="exit" type="HbAction">
-        <string name="text" value="Exit"/>
+        <string locid="txt_common_opt_exit" name="text" value="Exit"/>
     </object>
     <object name="phones" type="HbAction">
-        <string name="text" value="Phones"/>
+        <string locid="txt_bt_list_phone" name="text" value="Phones"/>
     </object>
     <widget name="view" type="HbView">
         <widget name="content" role="HbView:widget" type="HbWidget">
             <widget name="toolBar" type="HbToolBar">
                 <sizehint height="7.46269un" type="PREFERRED" width="22.38806un"/>
-                <ref object="allAction" role="HbToolBar:addAction"/>
-                <ref object="pairedAction" role="HbToolBar:addAction"/>
-                <ref object="discoverAction" role="HbToolBar:addAction"/>
+                <ref object="allAction" role="HbWidget:addAction"/>
+                <ref object="pairedAction" role="HbWidget:addAction"/>
+                <ref object="discoverAction" role="HbWidget:addAction"/>
             </widget>
             <widget name="container_1" type="HbWidget">
                 <widget name="groupBox" type="HbGroupBox">
                     <bool name="collapsable" value="FALSE"/>
-                    <string name="heading" value="Bluetooth"/>
+                    <string locid="txt_bt_subhead_bluetooth_paired_devices" name="heading" value="Bluetooth"/>
                 </widget>
                 <widget name="container" type="HbWidget">
                     <widget name="icon" type="HbLabel">
@@ -59,13 +62,12 @@
                         <real name="z" value="2"/>
                         <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
                         <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
-                        <string name="text" value="On"/>
+                        <string name="text"/>
                     </widget>
                     <widget name="combobox" type="HbComboBox">
                         <container name="items" type="stringlist">
-                            <string value="Hidden"/>
-                            <string value="Visible"/>
-                            <string value="Visible for 5 Min"/>
+                            <string locid="txt_bt_setlabel_visibility_val_hidden" value="Hidden"/>
+                            <string locid="txt_bt_setlabel_visibility_val_visible" value="Visible"/>
                         </container>
                         <real name="z" value="4"/>
                         <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
@@ -73,10 +75,10 @@
                     </widget>
                     <widget name="lineEdit" type="HbLineEdit">
                         <real name="z" value="3"/>
-                        <integer name="maxLength" value="30"/>
-                        <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
                         <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34un"/>
                         <string name="text" value="Text"/>
+                        <integer name="maxLength" value="30"/>
+                        <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
                     </widget>
                     <real name="z" value="0"/>
                     <sizehint height="23.8806un" type="PREFERRED" width="23.8806un"/>
@@ -105,10 +107,11 @@
             </widget>
             <widget name="listView" type="HbListView">
                 <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem"/>
-                <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
                 <enums name="selectionMode" value="NoSelection"/>
+                <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
             </widget>
-            <layout orientation="Vertical" type="linear">
+            <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
+                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
                 <linearitem itemname="container_1"/>
                 <linearitem itemname="listView"/>
                 <linearitem itemname="toolBar"/>
@@ -116,34 +119,20 @@
         </widget>
         <widget name="viewMenu" role="HbView:menu" type="HbMenu">
             <widget name="subMenu" role="HbMenu:menu" type="HbMenu">
-                <ref object="audioDevices" role="HbMenu:addAction"/>
-                <ref object="computers" role="HbMenu:addAction"/>
-                <ref object="phones" role="HbMenu:addAction"/>
-                <ref object="inputDevices" role="HbMenu:addAction"/>
-                <ref object="otherDevices" role="HbMenu:addAction"/>
-                <string name="title" value="Show Only"/>
+                <ref object="audioDevices" role="HbWidget:addAction"/>
+                <ref object="computers" role="HbWidget:addAction"/>
+                <ref object="phones" role="HbWidget:addAction"/>
+                <ref object="inputDevices" role="HbWidget:addAction"/>
+                <ref object="otherDevices" role="HbWidget:addAction"/>
+                <string locid="txt_bt_opt_show" name="title" value="Show Only"/>
             </widget>
-            <ref object="advanceSettings" role="HbMenu:addAction"/>
-            <ref object="removePairedDevices" role="HbMenu:addAction"/>
-            <ref object="exit" role="HbMenu:addAction"/>
+            <ref object="advanceSettings" role="HbWidget:addAction"/>
+            <ref object="removePairedDevices" role="HbWidget:addAction"/>
+            <ref object="exit" role="HbWidget:addAction"/>
         </widget>
-        <string name="title" value="Control Panel"/>
+        <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
     </widget>
     <section name="portrait">
-        <widget name="lineEdit" type="HbLineEdit">
-            <sizehint type="PREFERRED" width="29.25373un"/>
-        </widget>
-        <widget name="pushButton" type="HbPushButton">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
-        </widget>
-        <widget name="combobox" type="HbComboBox">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="31.34328un"/>
-        </widget>
-        <widget name="icon" type="HbLabel">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
-        </widget>
         <widget name="container" type="HbWidget">
             <layout type="anchor">
                 <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
@@ -160,6 +149,10 @@
                 <anchoritem dst="pushButton" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
             </layout>
         </widget>
+        <widget name="pushButton" type="HbPushButton">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+        </widget>
         <widget name="content" role="HbView:widget" type="HbWidget">
             <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
                 <linearitem itemname="groupBox"/>
@@ -168,17 +161,18 @@
                 <linearitem itemname="toolBar"/>
             </layout>
         </widget>
-    </section>
-    <section name="landscape">
-        <widget name="lineEdit" type="HbLineEdit">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="33un"/>
-        </widget>
-        <widget name="combobox" type="HbComboBox">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34.92537un"/>
-        </widget>
         <widget name="icon" type="HbLabel">
             <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
         </widget>
+        <widget name="lineEdit" type="HbLineEdit">
+            <sizehint type="PREFERRED" width="29.25373un"/>
+        </widget>
+        <widget name="combobox" type="HbComboBox">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="31.34328un"/>
+        </widget>
+    </section>
+    <section name="landscape">
         <widget name="container" type="HbWidget">
             <layout type="anchor">
                 <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
@@ -192,8 +186,17 @@
                 <anchoritem dst="pushButton" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="" srcEdge="TOP"/>
             </layout>
         </widget>
+        <widget name="icon" type="HbLabel">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+        </widget>
+        <widget name="lineEdit" type="HbLineEdit">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="33un"/>
+        </widget>
+        <widget name="combobox" type="HbComboBox">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34.92537un"/>
+        </widget>
     </section>
-    <metadata activeUIState="landscape" display="NHD landscape" unit="un">
+    <metadata activeUIState="Common ui state" display="NHD-3.2-inch_portrait" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="portrait" sections="#common"/>
         <uistate name="portrait_UI" sections="#common portrait"/>

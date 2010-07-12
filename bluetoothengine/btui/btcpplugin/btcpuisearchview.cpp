@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -25,6 +25,7 @@
 #include <HbLabel>
 #include <HbListView>
 #include <HbMenu>
+#include <HbSelectionDialog>
 #include <QString>
 #include <QStringList>
 #include <QDebug>
@@ -32,7 +33,8 @@
 #include "btcpuimainview.h"
 #include "btdelegatefactory.h"
 #include "btabstractdelegate.h"
-
+#include "btcpuisearchlistviewitem.h"
+#include "btuidevtypemap.h"
 
 
 // docml to load
@@ -46,6 +48,7 @@ BtCpUiSearchView::BtCpUiSearchView(
 {
     bool ret(false);
     
+    mQuery = 0;
     mMainView = (BtCpUiMainView *) parent;
     
     mMainWindow = hbInstance->allMainWindows().first();
@@ -58,11 +61,11 @@ BtCpUiSearchView::BtCpUiSearchView(
     // name in docml.
     setObjectName("bt_search_view");
 
-    QObjectList objectList;
-    objectList.append(this);
+    mLoader = new HbDocumentLoader();
     // Pass the view to documentloader. Document loader uses this view
     // when docml is parsed, instead of creating new view.
-    mLoader = new HbDocumentLoader();
+    QObjectList objectList;
+    objectList.append(this);
     mLoader->setObjectTree(objectList);
     
     // read view info from docml file
@@ -118,9 +121,8 @@ BtCpUiSearchView::BtCpUiSearchView(
     // load tool bar actions
     mViewBy = static_cast<HbAction*>( mLoader->findObject( "viewByAction" ) );
     BTUI_ASSERT_X( mViewBy, "bt-search-view", "view by action missing" ); 
-//    TODO - Need to implement the View by
-//    ret = connect(viewByAction, SIGNAL(triggered()), this, SLOT(noOp()));
-//    BTUI_ASSERT_X( ret, "bt-search-view", "viewByAction can't connect" ); 
+    ret = connect(mViewBy, SIGNAL(triggered()), this, SLOT(viewByDeviceTypeDialog()));
+    BTUI_ASSERT_X( ret, "bt-search-view", "viewByAction can't connect" ); 
 
     mStop = static_cast<HbAction*>( mLoader->findObject( "stopAction" ) );
     BTUI_ASSERT_X( mStop, "bt-search-view", "stopAction missing" ); 
@@ -150,28 +152,69 @@ BtCpUiSearchView::BtCpUiSearchView(
     
     ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
     BTUI_ASSERT_X( ret, "bt-search-view", "deviceSelected can't connect" ); 
+    
+    // initialize device type list for "view by" option
+    // Note:  this list needs to be in the same order as enum devTypeSelectionList
+    mDevTypeList << hbTrId("txt_bt_list_audio_devices")
+            << hbTrId("txt_bt_list_computers") 
+            << hbTrId("txt_bt_list_input_devices") 
+            << hbTrId("txt_bt_list_phones") 
+            << hbTrId("txt_bt_list_other_devices");
+    
+    // initialize sort model & create
+    // inquiry delegate
+    // Sort is set to dynamic sort filter = true in the class, will sort automatically
+    mBtuiModelSortFilter = new BtuiModelSortFilter(this);
+    mBtuiModelSortFilter->setSourceModel(mDeviceModel);
+    mBtuiModelSortFilter->addDeviceMajorFilter(
+            BtuiDevProperty::InRange, BtuiModelSortFilter::AtLeastMatch);
+    mDeviceList->setModel(mBtuiModelSortFilter);
+    // add sort order to show devices in the order they are found
+    mBtuiModelSortFilter->setSortRole(BtDeviceModel::SeqNumRole);
+    // Sort according to the first column (and the only column) in the listview - sorted according SeqNumRole
+    mBtuiModelSortFilter->sort(0, Qt::AscendingOrder);
+
+    BtCpUiSearchListViewItem *prototype = new BtCpUiSearchListViewItem(mDeviceList);
+    prototype->setModelSortFilter(mBtuiModelSortFilter);
+    mDeviceList->setItemPrototype(prototype);
+
+    // Create the inquiry delegate.
+    mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::Inquiry, mSettingModel, mDeviceModel );
+    
+    // Connect to the signal from the BtDelegateInquiry for completion of the search request
+    ret = connect(mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(searchDelegateCompleted(int)));
+    BTUI_ASSERT_X( ret, "bt-search-view", "searchDelegateCompleted can't connect" );
+    
+    // Connect to the signal from the BtuiModel when the search has been completed.
+    ret = connect(mDeviceModel, SIGNAL(deviceSearchCompleted(int)), this, SLOT(deviceSearchCompleted(int)));
+    BTUI_ASSERT_X( ret, "bt-search-view", "deviceSearchCompleted can't connect" ); 
 }
 
 BtCpUiSearchView::~BtCpUiSearchView()
 {
+    delete mLoader; // Also deletes all widgets that it constructed.
+    
     setNavigationAction(0);
+    disconnect( mSoftKeyBackAction );
     delete mSoftKeyBackAction;
     
     if(mAbstractDelegate) {
         delete mAbstractDelegate;
-        mAbstractDelegate = 0;
     }
-    
     if(mBtuiModelSortFilter) {
         delete mBtuiModelSortFilter;
-        mBtuiModelSortFilter = 0; 
+    }
+    if ( mQuery ) {
+        delete mQuery;
     }
 }
 
 void BtCpUiSearchView::changeOrientation( Qt::Orientation orientation )
 {
+    // ToDo:  this does not handle redrawing list view items differently for portrait/landscape
     bool ok = false;
     mOrientation = orientation;
+
     if( orientation == Qt::Vertical ) {
         // load "portrait" section
         mLoader->load( BTUI_SEARCHVIEW_DOCML, "portrait_ui", &ok );
@@ -183,22 +226,99 @@ void BtCpUiSearchView::changeOrientation( Qt::Orientation orientation )
     }
 }
 
+
+void BtCpUiSearchView::viewByDeviceTypeDialog()
+{
+    if ( !mQuery ) {
+        mQuery = new HbSelectionDialog;
+        mQuery->setStringItems(mDevTypeList, 0);
+        mQuery->setSelectionMode(HbAbstractItemView::MultiSelection);
+    
+        QList<QVariant> current;
+        current.append(QVariant(0));
+        mQuery->setSelectedItems(current);
+    
+        // Set the heading for the dialog.
+        HbLabel *headingLabel = new HbLabel(hbTrId("txt_bt_title_show"), mQuery);
+        mQuery->setHeadingWidget(headingLabel);
+    }
+    mQuery->open(this,SLOT(viewByDialogClosed(HbAction*)));
+}
+/*!
+   Callback for HbSelectionDialog closing
+
+ */
+void BtCpUiSearchView::viewByDialogClosed(HbAction* action)
+{
+    disconnect( mQuery );  // remove slot
+    if (action == mQuery->actions().first()) {  // user pressed "Ok"
+        // Get selected items.
+        QList<QVariant> selections;
+        selections = mQuery->selectedItems();
+        
+        int devTypesWanted = 0;
+        
+        for (int i=0; i < selections.count(); i++) {
+            switch (selections.at(i).toInt()) {
+            case BtUiDevAudioDevice:
+                devTypesWanted |= BtuiDevProperty::AVDev;
+                break;
+            case BtUiDevComputer:
+                devTypesWanted |= BtuiDevProperty::Computer;
+                break;
+            case BtUiDevInputDevice:
+                devTypesWanted |= BtuiDevProperty::Peripheral;
+                break;
+            case BtUiDevPhone:
+                devTypesWanted |= BtuiDevProperty::Phone;
+                break;
+            case BtUiDevOtherDevice:
+                devTypesWanted |= (BtuiDevProperty::LANAccessDev |
+                        BtuiDevProperty::Toy |
+                        BtuiDevProperty::WearableDev |
+                        BtuiDevProperty::ImagingDev |
+                        BtuiDevProperty::HealthDev |
+                        BtuiDevProperty::UncategorizedDev);
+                break;
+            default:
+                // should never get here
+                BTUI_ASSERT_X(false, "BtCpUiSearchView::viewByDialogClosed()", 
+                        "wrong device type in viewBy dialog!");
+            }
+        }
+        if (devTypesWanted) {
+            mBtuiModelSortFilter->clearDeviceMajorFilters();
+            mBtuiModelSortFilter->addDeviceMajorFilter(BtuiDevProperty::InRange,
+                            BtuiModelSortFilter::AtLeastMatch);   // device must be in range
+            mBtuiModelSortFilter->addDeviceMajorFilter(devTypesWanted,
+                    BtuiModelSortFilter::RoughMatch);             // device can be any one of selected ones
+        }
+        mBtuiModelSortFilter->sort(0, Qt::AscendingOrder);
+    }
+}
+
 void BtCpUiSearchView::stopSearching()
 {
-    // Stop delegate
+    // Stop searching
     
     // Change label and buttons to reflect status
     mLabelSearching->setPlainText(hbTrId("txt_bt_subhead_search_done"));
     mRetry->setEnabled(true);
     mStop->setEnabled(false);    
 
-    // Stop delegate
+    // Stop search delegate
     mAbstractDelegate->cancel();
+}
+
+void BtCpUiSearchView::startSearchDelegate ()
+{
+    
+    mAbstractDelegate->exec(QVariant());
 }
 
 void BtCpUiSearchView::retrySearch()
 {
-    // Retry delegate
+    // Retry search
 
     // Change label and buttons to reflect status
     mLabelSearching->setPlainText(hbTrId("txt_bt_subhead_searching"));
@@ -206,9 +326,7 @@ void BtCpUiSearchView::retrySearch()
     mStop->setEnabled(true);
     
     // Make use of the delegate and start the search.
-    mAbstractDelegate->cancel();
-    mDeviceList->setModel(mBtuiModelSortFilter);
-    mAbstractDelegate->exec(QVariant());
+    startSearchDelegate ();
 }
 
 void BtCpUiSearchView::setSoftkeyBack()
@@ -225,48 +343,31 @@ void BtCpUiSearchView::switchToPreviousView()
     mMainView->switchToPreviousView();
 }
 
-void BtCpUiSearchView::activateView( const QVariant& value, int cmdId )
+void BtCpUiSearchView::activateView( const QVariant& value, bool fromBackButton )
 {
     Q_UNUSED(value);
-    Q_UNUSED(cmdId);  
+
+    // ToDo:  consider whether orientation should be updated here rather than when orientation really changes;
+    // advantage:  if orientation changes temporarily in another view, but returns to previous setting before
+    // search is reactived, there is no processing overhead
     
     setSoftkeyBack();
-    
-    bool ret(false);
-    
-    if(!mAbstractDelegate) {
-        // Create the inquiry delegate.
-        mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::Inquiry, mSettingModel, mDeviceModel );
+            
+    if ( !fromBackButton ) {
+        startSearchDelegate();
     }
-    
-    // Connect to the signal from the BtDelegateInquiry for completion of the search request
-    ret = connect(mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(searchDelegateCompleted(int)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "searchDelegateCompleted can't connect" );
-    
-    // Connect to the signal from the BtuiModel when the search has been completed.
-    ret = connect(mDeviceModel, SIGNAL(deviceSearchCompleted(int)), this, SLOT(deviceSearchCompleted(int)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "deviceSearchCompleted can't connect" ); 
-    
-    if(!mBtuiModelSortFilter) {
-        mBtuiModelSortFilter = new BtuiModelSortFilter(this);
-    }
-    mBtuiModelSortFilter->setSourceModel(mDeviceModel);
-    mBtuiModelSortFilter->addDeviceMajorFilter(BtDeviceModel::InRange, BtuiModelSortFilter::AtLeastMatch);
-    mDeviceList->setModel(mBtuiModelSortFilter);
-
-    // Make use of the delegate and start the search.
-    mAbstractDelegate->exec(QVariant());
 }
 
 void BtCpUiSearchView::deactivateView()
 {
+    mAbstractDelegate->cancel();          // Stop searching when leaving view
+    deviceSearchCompleted(KErrNone);      // reset view 
 }
 
 void BtCpUiSearchView::searchDelegateCompleted(int error)
 {
-    //TODO - handle error.
     Q_UNUSED(error);
+    
 }
 
 void BtCpUiSearchView::deviceSearchCompleted(int error)

@@ -23,7 +23,6 @@
 
 //  INCLUDES
 #include <mtmuibas.h>
-#include <obexutilsuilayer.h>
 // CLASS DECLARATION
 
 // FORWARD DECLARATIONS

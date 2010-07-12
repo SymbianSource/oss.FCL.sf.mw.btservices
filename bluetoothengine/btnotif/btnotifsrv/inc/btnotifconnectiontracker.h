@@ -26,7 +26,7 @@
 
 class CBTNotificationManager;
 class CbtnotifConnectionTrackerTest;
-class CBTNotifPairingManager;
+class CBTNotifSecurityManager;
 
 
 
@@ -91,14 +91,14 @@ public:
         { return iSockServ; }
   
     /**
-     * Processes a message for notifiers related to pairings.
+     * Processes a message for notifiers related to remote devices.
      * ( These are usually issued by BT stack. However, any application
      * is not restricted to do so (e.g., for testing purpose).
      *
      * @since Symbian^4
      * @param aMessage The message containing the details of the client request.
      */
-    void HandlePairingNotifierRequestL( const RMessage2& aMessage );
+    void HandleNotifierRequestL( const RMessage2& aMessage );
     
     /**
      * Handle a request related to pairing.
@@ -167,7 +167,7 @@ private: // data
      * Object for managing the application pairing.
      * Own.
      */
-    CBTNotifPairingManager* iPairingManager;
+    CBTNotifSecurityManager* iPairingManager;
 
     BTUNITTESTHOOK
 

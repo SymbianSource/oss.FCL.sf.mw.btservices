@@ -42,7 +42,9 @@ SOURCE                  btnotifpairnotifier.cpp
 SOURCE                  btnotifbasepairinghandler.cpp 
 SOURCE                  btnotifincomingpairinghandler.cpp 
 SOURCE                  btnotifoutgoingpairinghandler.cpp 
-SOURCE                  btnotifpairingmanager.cpp
+SOURCE                  btnotifsecuritymanager.cpp
+SOURCE                  btnotifserviceauthorizer.cpp
+SOURCE                  btnotifutil.cpp
 
 USERINCLUDE             ../btnotifsrv/inc ../inc
 
@@ -65,3 +67,4 @@ LIBRARY                 HbCore.lib
 LIBRARY                 commonengine.lib
 LIBRARY					flogger.lib
 LIBRARY					charconv.lib
+

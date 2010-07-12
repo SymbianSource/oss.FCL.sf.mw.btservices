@@ -23,7 +23,7 @@
 #include <QSharedPointer>
 #include <btuimodeltypes.h>
 
-class BtLocalSetting;
+class BtSettingModelPrivate;
 
 /*!
     \class BtSettingModel
@@ -97,16 +97,19 @@ public:
 
     virtual QMap<int, QVariant> itemData( const QModelIndex & index ) const;
     
+private slots:
+
+    void settingDataChanged( int row, void *parent );
+    
+    void settingDataChanged( int first, int last, void *parent );
+    
 private:
     
-    void emitDataChanged(int row, int column, void *parent );
-    
-    void emitDataChanged(const QModelIndex &top, const QModelIndex &bottom );
+    void connectModelSignals();
     
 private:
-    QSharedPointer<BtLocalSetting> mLocalSetting;
-    
-    friend class BtLocalSetting;
+    QSharedPointer<BtSettingModelPrivate> d;
+
 };
 
 #endif

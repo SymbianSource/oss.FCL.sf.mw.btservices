@@ -15,8 +15,12 @@
 *
 */
 
-#include "btnotifpairingmanager.h"
+#include "btnotifsecuritymanager.h"
 #include "btnotifbasepairinghandler.h"
+#include "btnotificationmanager.h"
+#include "bluetoothnotification.h"
+#include "btnotifconnectiontracker.h"
+#include "bluetoothtrace.h"
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -24,7 +28,7 @@
 // C++ default constructor
 // ---------------------------------------------------------------------------
 //
-CBTNotifBasePairingHandler::CBTNotifBasePairingHandler( CBTNotifPairingManager& aParent, const TBTDevAddr& aAddr)
+CBTNotifBasePairingHandler::CBTNotifBasePairingHandler( CBTNotifSecurityManager& aParent, const TBTDevAddr& aAddr)
     : iAddr( aAddr ), iParent( aParent )
     {
     }
@@ -121,6 +125,38 @@ TBool CBTNotifBasePairingHandler::IsPairResultSet()
     return iPairResultSet;
     }
 
+// ---------------------------------------------------------------------------
+// Invalidate iPairResultSet
+// ---------------------------------------------------------------------------
+//
+void CBTNotifBasePairingHandler::ShowPairingResultNoteL(TInt aResult)
+    {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    CBluetoothNotification* notification = 
+            iParent.ConnectionTracker().NotificationManager()->GetNotification();
+    User::LeaveIfNull( notification ); // For OOM exception, leaves with KErrNoMemory
+    TBTDialogResourceId resourceId = EPairingSuccess;
+    if(KErrNone != aResult)
+        {
+        resourceId = EPairingFailure;
+        }
+    notification->SetNotificationType( TBluetoothDialogParams::ENote, resourceId );
+    const CBtDevExtension* dev = iParent.BTDevRepository().Device(iAddr);
+    if(dev)
+        {
+        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceName, dev->Alias()));
+        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceClass, dev->Device().DeviceClass().DeviceClass()));
+        }
+    else
+        {
+        TBTDeviceName name;
+        iAddr.GetReadable(name);
+        User::LeaveIfError(notification->SetData( TBluetoothDialogParams::EAddress, name ));
+        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceClass, 0)); // No device class
+        }
+    iParent.ConnectionTracker().NotificationManager()->QueueNotificationL( notification);
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
+    }
 
 
 

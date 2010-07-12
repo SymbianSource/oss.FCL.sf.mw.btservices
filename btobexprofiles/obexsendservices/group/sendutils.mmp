@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -30,6 +30,7 @@ SOURCE          BTServiceClient.cpp
 SOURCE          BTServiceUtils.cpp
 SOURCE          BTServiceStarter.cpp
 SOURCE          BTServiceParameterList.cpp
+SOURCE          BTServiceDelayedDestroyer.cpp
 
 SOURCE          BTSOPPController.cpp
 SOURCE          BTSBIPController.cpp
@@ -46,10 +47,9 @@ SOURCE          BTSURefObjectResolver.cpp
 SOURCE          BTSUXmlParser.cpp
 SOURCE          BTConnectionTimer.cpp
 SOURCE          BTSController.cpp
-SOURCE          BTSProgresstimer.cpp
 
 USERINCLUDE     ../obexservicesendutils/inc
-SYSTEMINCLUDE  ../../inc ../../../inc /epoc32/include/libc
+SYSTEMINCLUDE  ../../inc /epoc32/include/libc
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets
 MW_LAYER_SYSTEMINCLUDE

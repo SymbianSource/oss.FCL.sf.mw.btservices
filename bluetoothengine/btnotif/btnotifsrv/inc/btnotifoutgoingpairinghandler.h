@@ -63,7 +63,7 @@ public:
      * @param aParent the owner of this object
      * @param aAddr the remote device this observer is targeted to
      */
-    static CBTNotifBasePairingHandler* NewL( CBTNotifPairingManager& aParent, 
+    static CBTNotifBasePairingHandler* NewL( CBTNotifSecurityManager& aParent, 
             const TBTDevAddr& aAddr );
 
     /**
@@ -157,7 +157,7 @@ private:
     /**
      * C++ default constructor
      */
-    CBTNotifOutgoingPairingHandler( CBTNotifPairingManager& aParent, const TBTDevAddr& aAddr );
+    CBTNotifOutgoingPairingHandler( CBTNotifSecurityManager& aParent, const TBTDevAddr& aAddr );
 
     /**
      * Symbian 2nd-phase constructor

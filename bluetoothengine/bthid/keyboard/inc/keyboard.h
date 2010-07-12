@@ -27,9 +27,6 @@
 #include "hidkeys.h"
 #include "layoutmgr.h"
 #include "timeoutnotifier.h"
-#include <e32msgqueue.h>
-#include <e32cmn.h>
-#include "pointmsgqueue.h"
 #include "bthidsettings.h"
 
 class CField;
@@ -67,16 +64,6 @@ private:
         KNumInputFieldTypes
         };
 
-    // The types of keyboard input report fields that we handle:
-    enum TMouseFieldType
-        {
-        EMouseButtons = 0,
-        EMouseXY = 1,
-        EMouseWheel = 2,
-        EMouseMediaKeys = 3,
-        EMousePowerKeys = 4,
-        KMouseInputFieldTypes
-        };
 public:
     // Constructors and destructor
     /*!
@@ -210,14 +197,6 @@ private:
 
     // Handles the states of the modifier keys
     void UpdateModifiers(TInt aFieldIndex, const TDesC8& aReport);
-    // Handles the states of the XY (mouse up, down, left, right)
-    void UpdateXY(TInt aFieldIndex, const TDesC8& aReport);
-
-    // Handles the states of the Buttons (left & right button)
-    void UpdateButtons(TInt aFieldIndex, const TDesC8& aReport);
-
-    // Handles the states of the wheel
-    void UpdateWheel(TInt aFieldIndex, const TDesC8& aReport);
 
     // Handle key presses
     void ProcessKeys(TInt aFieldIndex, const TDesC8& aReport);
@@ -302,17 +281,10 @@ private:
     // ----------------------------------------
 
     static TInt ResetArrayToSize(RArray<TInt>& aArray, TInt aSize);
-    void MoveCursor(const TPoint& aPoint);
-    TInt PostPointer(const TPoint& aPoint);
-    TInt SendButtonEvent(TBool aButtonDown);
 
     TBool IsDigitKey(TInt aScanCode);
     TBool IsSpecialHandleKey(TInt aUniCode);
 
-    void LaunchApplicationL(const TDesC& aName);
-    
-    //Redraw cursor
-    void CursorRedraw();
 private:
 
     TKeyboardDriverState iDriverState;
@@ -333,9 +305,6 @@ private:
     // various types of key:
     const CField* iField[KNumInputFieldTypes];
 
-    // Pointers to the fields in the report descriptor containing the
-    // various types of key:
-    const CField* iMouseField[KMouseInputFieldTypes];
     // Pointer to the field in the report descriptor containing the LEDs:
     const CField* iLedField;
 
@@ -371,13 +340,6 @@ private:
 
     // This timer stops key repeating after defined time to prevent endless key repeats in error cases. Fix for EMKD-7FBB9H
     CTimeOutTimer* iRepeatEndTimer;
-
-    TBool iComboDevice;
-
-    RMsgQueue<TPointBuffer> iPointBufQueue;
-    TPointBuffer iPointerBuffer;
-    TBool iButtonDown;
-    TBool iButton2Down;
     };
 
 // ----------------------------------------------------------------------

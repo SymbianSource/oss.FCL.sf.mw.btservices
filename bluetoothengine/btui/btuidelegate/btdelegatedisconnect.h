@@ -20,6 +20,7 @@
 
 #include <e32base.h>
 #include <btengconnman.h>
+#include "btqtconstants.h"
 #include "btabstractdelegate.h"
 
 class BtuiModel;
@@ -29,7 +30,7 @@ class BtuiModel;
     \brief the base class for Disconnecting Bluetooth Connection.
  */
 class BtDelegateDisconnect : public BtAbstractDelegate,
-        public MBTEngConnObserver
+        public MBTEngConnObserver, public MBluetoothPhysicalLinksNotifier
 {
     Q_OBJECT
 
@@ -44,25 +45,59 @@ public:
     
     virtual void cancel();
     
-public slots:
+
 
 protected:
     //From MBTEngConnObserver
     virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
                                    RBTDevAddrArray* aConflicts );
     virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );
-    virtual void PairingComplete( TBTDevAddr& aAddr, TInt aErr );
+    
+    // from MBluetoothPhysicalLinksNotifier
+    virtual void HandleCreateConnectionCompleteL( TInt err );
 
-    void emitCommandComplete(int error);
+    virtual void HandleDisconnectCompleteL( TInt err );
+
+    virtual void HandleDisconnectAllCompleteL( TInt err );
+
+    void DisplayCommandCompleteNotif(int error);
+    
+private:
+    
+    void disconnectAllConnections_service();
+    
+    void disconnectAllConnections_physical();
+    
+    void disconnectSeviceLevel();
+        
+    void disconnectPhysicalLink();
+    
+    void disconnectServiceLevelCompleted(int err);
+
+    void disconnectPhysicalLinkCompleted(int err);
+    
+    
     
 private:
 
     CBTEngConnMan *mBtengConnMan;
 
-    TBTDevAddr mBtEngddr;
+    CBluetoothPhysicalLinks *mPhyLinks;
+
+    int mMajorRole;
+    bool mActiveHandling;
     
-    QString mdeviceName;
+    int mAddrArrayIndex;
+    DisconnectOption mDisconOpt;
+
+    RBTDevAddrArray mDevAddrArray;
+    TBTDevAddr mBtEngAddr;
     
+    QString mDeviceName;
+    int mCod;
+      
+    RSocketServ mSocketServ;
+       
     Q_DISABLE_COPY(BtDelegateDisconnect)
 
 };

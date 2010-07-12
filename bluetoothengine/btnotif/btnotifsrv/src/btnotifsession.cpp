@@ -128,7 +128,7 @@ void CBTNotifSession::ServiceL( const RMessage2& aMessage )
                         {
                          // Pass it to the connection tracker.
                          TRAP( err, 
-                                 connTracker->HandlePairingNotifierRequestL( aMessage ) );
+                                 connTracker->HandleNotifierRequestL( aMessage ) );
                         }
                     if ( err )
                         {

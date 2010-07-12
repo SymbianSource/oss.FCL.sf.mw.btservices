@@ -18,10 +18,9 @@
         <file>icons/qgn_prop_bt_printer.svg</file>
         <file>icons/qgn_prop_bt_unknown.svg</file>
         <file>icons/qgn_frwidget_add_friend_photo.svg</file>
-    </qresource>
-    <qresource prefix="/" >
         <file>docml/bt-main-view.docml</file>
         <file>docml/bt-search-view.docml</file>
         <file>docml/bt-device-view.docml</file>
+        <file>docml/bt-device-details-view.docml</file>
     </qresource>
 </RCC>

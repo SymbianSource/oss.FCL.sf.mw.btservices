@@ -20,5 +20,6 @@
 #define __OBEXUTILS_IBY__
 
 file=ABI_DIR\BUILD_DIR\obexutils.dll             SHARED_LIB_DIR\obexutils.dll
+data=/epoc32/data/z/resource/qt/translations/btdialogs_en_GB.qm   resource/qt/translations/btdialogs_en_GB.qm
 
 #endif

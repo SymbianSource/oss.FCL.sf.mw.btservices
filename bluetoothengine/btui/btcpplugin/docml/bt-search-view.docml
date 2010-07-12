@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <hbdocument version="1.1">
     <object name="viewByAction" type="HbAction">
-        <string name="text" value="View by"/>
+        <icon iconName="qtg_mono_filter" name="icon"/>
+        <string name="text"/>
         <bool name="visible" value="TRUE"/>
     </object>
     <object name="stopAction" type="HbAction">
-        <string name="text" value="Stop"/>
+        <icon iconName="qtg_mono_search_stop" name="icon"/>
+        <string name="text"/>
     </object>
     <object name="retryAction" type="HbAction">
-        <string name="text" value="Retry"/>
+        <icon iconName="qtg_mono_search" name="icon"/>
+        <string name="text"/>
     </object>
     <object name="exitAction" type="HbAction">
-        <string name="text" value="Exit"/>
+        <string locid="txt_common_opt_exit" name="text" value="Exit"/>
     </object>
     <object name="connectAction" type="HbAction">
-        <string name="text" value="Connect"/>
+        <string locid="txt_bt_menu_connect" name="text" value="Connect"/>
     </object>
     <object name="disconnectAction" type="HbAction">
         <string name="text" value="Disconnect"/>
@@ -26,7 +29,7 @@
                     <real name="z" value="3"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="38.20896un"/>
                     <bool name="visible" value="TRUE"/>
-                    <string name="plainText" value="Bluetooth - Found devices"/>
+                    <string locid="txt_bt_subhead_bluetooth_found_devices" name="plainText" value="Bluetooth - Found devices"/>
                 </widget>
                 <widget name="icon" type="HbLabel">
                     <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
@@ -40,7 +43,7 @@
                     <real name="z" value="3"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="38.20896un"/>
                     <bool name="visible" value="TRUE"/>
-                    <string name="plainText" value="Searching..."/>
+                    <string locid="txt_bt_subhead_searching" name="plainText" value="Searching..."/>
                 </widget>
                 <real name="z" value="0"/>
                 <sizehint height="21un" type="PREFERRED" width="51.19403un"/>
@@ -59,9 +62,7 @@
                 </layout>
             </widget>
             <widget name="toolBar" type="HbToolBar">
-                <real name="z" value="2"/>
-                <sizehint height="7.46269un" type="PREFERRED" width="52.98508un"/>
-                <bool name="visible" value="TRUE"/>
+                <sizehint height="7.46269un" type="PREFERRED" width="22.38806un"/>
                 <ref object="viewByAction" role="HbWidget:addAction"/>
                 <ref object="stopAction" role="HbWidget:addAction"/>
                 <ref object="retryAction" role="HbWidget:addAction"/>
@@ -72,7 +73,6 @@
             </widget>
             <real name="z" value="0"/>
             <layout orientation="Vertical" type="linear">
-                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
                 <linearitem itemname="search_container"/>
                 <linearitem itemname="deviceList"/>
                 <linearitem itemname="toolBar"/>
@@ -82,7 +82,7 @@
             <ref object="exitAction" role="HbWidget:addAction"/>
             <ref object="connectAction" role="HbWidget:addAction"/>
         </widget>
-        <string name="title" value="Control Panel"/>
+        <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
         <real name="z" value="1"/>
     </widget>
     <section name="landscape">
@@ -106,6 +106,7 @@
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="landscape_ui" sections="#common landscape"/>
         <uistate name="portrait_ui" sections="#common"/>
-        <dummydata objectName="deviceList" section="#common" value="app_list_template5"/>
+        <uistate name="landscape" sections="#common landscape"/>
+        <dummydata objectName="deviceList" section="#common" value="0"/>
     </metadata>
 </hbdocument>

@@ -24,13 +24,19 @@
 #include "btdevicedialoginputwidget.h"
 #include "btdevicedialogquerywidget.h"
 #include "btdevicedialognotifwidget.h"
+#include "btrecvprgrsdialogwidget.h"
 
 #include "btdevicedialogpluginerrors.h"
 #include "btdevicesearchdialogwidget.h"
 #include "btmoredevicesdialogwidget.h"
 #include "btsenddialogwidget.h"
+#include "btdevicedialogrecvquerywidget.h"
+#include <hbtranslator.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
+
+const char* BTDIALOG_TRANSLATION = "btdialogs";
+const char* BTVIEW_TRANSLATION = "btviews";        
 
 // This plugin implements one device dialog type
 static const struct {
@@ -57,7 +63,8 @@ BtDeviceDialogPluginPrivate::BtDeviceDialogPluginPrivate()
 /*! 
     BtDeviceDialogPlugin Constructor
  */
-BtDeviceDialogPlugin::BtDeviceDialogPlugin()
+BtDeviceDialogPlugin::BtDeviceDialogPlugin():
+ mDialogTranslator(0),mViewTranslator(0)
 {
     d = new BtDeviceDialogPluginPrivate;
 }
@@ -68,6 +75,8 @@ BtDeviceDialogPlugin::BtDeviceDialogPlugin()
 BtDeviceDialogPlugin::~BtDeviceDialogPlugin()
 {
     delete d;
+    delete mDialogTranslator;
+    delete mViewTranslator;
 }
 
 /*! 
@@ -95,6 +104,15 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
     d->mError = NoError;
 
     int i;
+    
+    if(!mDialogTranslator)
+        {
+        mDialogTranslator = new HbTranslator(BTDIALOG_TRANSLATION);
+        }
+    if(!mViewTranslator)
+        {
+        mViewTranslator = new HbTranslator(BTVIEW_TRANSLATION);
+        }
     // verify that requested dialog type is supported
     const int numTypes = sizeof(noteInfos) / sizeof(noteInfos[0]);
     for(i = 0; i < numTypes; i++) {
@@ -184,7 +202,7 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
     switch ( i.value().toInt() ) {
         case TBluetoothDialogParams::ENote:
             deviceDialog =
-                new BtDeviceDialogQueryWidget(HbMessageBox::MessageTypeInformation, parameters);
+                new BtDeviceDialogNotifWidget(parameters);
             break;
         case TBluetoothDialogParams::EQuery:
             deviceDialog =
@@ -204,6 +222,12 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EGlobalNotif:
             deviceDialog = new BtDeviceDialogNotifWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EUserAuthorization:
+            deviceDialog = new BTRecvQueryDialogWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EReceiveProgress:
+            deviceDialog = new BTRecvPrgrsDialogWidget(parameters);
             break;
         default:
             d->mError = UnknownDeviceDialogError;

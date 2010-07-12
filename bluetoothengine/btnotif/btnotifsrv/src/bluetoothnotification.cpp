@@ -148,7 +148,7 @@ TInt CBluetoothNotification::Close()
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     iDialog->Cancel();
     iManager->ReleaseNotification( this );
-	BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+	BOstraceFunctionExit0( DUMMY_DEVLIST );
     return KErrNone;
     }
 
@@ -161,7 +161,6 @@ void CBluetoothNotification::SetDataL( TInt aType, const TDesC& aData )
     {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aType );
     TBuf16<6> key;
-    TInt err = 0;
     CHbSymbianVariant* value = NULL;
     switch( aType )
         {
@@ -191,12 +190,7 @@ void CBluetoothNotification::SetDataL( TInt aType, const TDesC& aData )
                     TPtrC16 *ptr = (TPtrC16 *)value->Data();
                     BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%S]", &p, ptr);
                     );
-            err = iNotificationData->Add( key, value );   // Takes ownership of value
-            if ( err )
-                {
-                // Note: need a proper exception handling. 
-                // NOTIF_NOTHANDLED( err )
-                }
+            User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
             break;
         case TBluetoothDialogParams::EResource:
         case TBluetoothDeviceDialog::EDeviceClass:
@@ -220,7 +214,6 @@ void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
     {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aType );
     TBuf<6> key;
-    TInt err = 0;
     CHbSymbianVariant* value = NULL;
     switch( aType )
         {
@@ -251,13 +244,7 @@ void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
                     TInt *intPtr = (TInt *)value->Data();
                     BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%d]", &p, *intPtr);
                     );
-			err = iNotificationData->Add( key, value );   // Takes ownership of value
-	         if ( err )
-	             {
-                 // need a proper exception handling.
-                 //NOTIF_NOTHANDLED( !err )
-	             }
-            
+			User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
             break;
         case TBluetoothDialogParams::EAddress:
         case TBluetoothDeviceDialog::EDeviceName:
@@ -297,7 +284,10 @@ void CBluetoothNotification::DataReceived( CHbSymbianVariantMap& aData )
                 }
             }
         }
-    iObserver->MBRDataReceived( aData );
+    if( iObserver )
+        {
+    	iObserver->MBRDataReceived( aData );
+        }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 
@@ -400,6 +390,6 @@ void CBluetoothNotification::DeviceDialogClosed( TInt aCompletionCode )
     resultBuf.Close();
     iManager->ReleaseNotification( this );
     // Note that we might get deleted after releasing ourselves.
-    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 

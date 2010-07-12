@@ -600,7 +600,8 @@ TInt CBTEngServer::AutoPowerOffCallBack( TAny* aPtr )
 //
 GLDEF_C TInt E32Main()
     {
-    __UHEAP_MARK;
+    //TODO uncomment UHEAP macros after orbit memory leaks are resolved till then it should be commented.
+//    __UHEAP_MARK;
     TRACE_FUNC_ENTRY
     CTrapCleanup* cleanup = CTrapCleanup::New();
     TInt err = KErrNoMemory;
@@ -609,6 +610,6 @@ GLDEF_C TInt E32Main()
         TRAP( err, RunServerL() );
         delete cleanup;
         }
-    __UHEAP_MARKEND;
+//    __UHEAP_MARKEND;
     return err;
     }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -19,16 +19,21 @@
 #ifndef COBEXUTILSDIALOG_H
 #define COBEXUTILSDIALOG_H
 
-//  INCLUDES
 #include    <e32base.h>
-#include    <AknWaitDialog.h>
 
-// FORWARD DECLARATIONS
-class CAknWaitDialog;
+#include <hbdeviceprogressdialogsymbian.h>
+#include <hbdevicedialogsymbian.h>
+#include <hbdevicemessageboxsymbian.h>
+#include <hbsymbianvariant.h>
+
 class CObexUtilsDialogTimer;
 
-// CLASS DECLARATION
-
+enum TButtonId
+    {
+    ECancelButton = -1,
+    EYesButton,
+    ENoButton
+    };
 /**
 *  An observer interface for asking progress status of an operation using 
 *  a progress dialog.
@@ -57,10 +62,10 @@ NONSHARABLE_CLASS(  MObexUtilsDialogObserver )
         /**
         * Informs the observer that a dialog has been dismissed.
         * @since 2.6
+        * todo check whether the parameter is required
         * @param aButtonId The button that was used to dismiss the dialog.
-        * @return None.
         */
-        virtual void DialogDismissed( TInt aButtonId ) = 0;
+        virtual void DialogDismissed(TInt aButtonId) = 0; //TInt aButtonId
     };
 
 
@@ -69,7 +74,10 @@ NONSHARABLE_CLASS(  MObexUtilsDialogObserver )
 /**
 *  A class for launching and managing dialogs.
 */
-NONSHARABLE_CLASS( CObexUtilsDialog ) : public CBase, public MProgressDialogCallback
+NONSHARABLE_CLASS( CObexUtilsDialog ) : public CBase, 
+                                        public MHbDeviceProgressDialogObserver,
+                                        public MHbDeviceDialogObserver,
+                                        public MHbDeviceMessageBoxObserver
     {
     public:// Constructors and destructor
 
@@ -89,81 +97,75 @@ NONSHARABLE_CLASS( CObexUtilsDialog ) : public CBase, public MProgressDialogCall
    
     public: // New functions
         
+        
         /**
         * Launches a progress dialog.
-        * @since 2.6
         * @param aObserverPtr A pointer to progress observer. A NULL pointer if 
                               the progress dialog is updated manually.
-        * @param aFinalValue The final value of the operation (progress=100%).
-        * @param aResId A resource id for the string to be shown in the dialog.
+        * @param aFileCount Total number of files to be sent.
+        * @param aDeviceName Device Name to which files to be sent.
         * @param aTimeoutValue A value telling how often should the dialog be
-                               updated. Relevant only if observer given.
-        * @return None.
+                               updated. Relevant only if observer is given.
         */
         IMPORT_C void LaunchProgressDialogL( 
-            MObexUtilsProgressObserver* aObserverPtr, TInt aFinalValue, 
-            TInt aResId, TInt aTimeoutValue );    
+            MObexUtilsProgressObserver* aObserverPtr, TInt aFileCount, 
+            const TDesC& aDeviceName, TInt aTimeoutValue );
+        
+        /**
+        * Updates the progress dialog with new file information when multiples files are sent.
+        * @param aFileSize Size of the file to be sent
+        * @param aFileIndex Index of the file to be sent
+        * @param aFileName Name of the file to be sent.
+        */
+        IMPORT_C void UpdateProgressNoteL( TInt aFileSize,TInt aFileIndex, const TDesC& aFileName );    
         
         /**
         * Launches a wait dialog.
-        * @since 2.6
-        * @param aResId A resource id for the string to be shown in the dialog.
-        * @return None.
+        * @param aDisplayText Text that needs to be displayed.
         */
-        IMPORT_C void LaunchWaitDialogL( TInt aResId );
+        IMPORT_C void LaunchWaitDialogL( const TDesC& aDisplayText );
         
         /**
         * Cancels a wait dialog if one exists.
         * @since 2.6        
         * @return None.
         */
-        IMPORT_C void CancelWaitDialogL();
+        IMPORT_C void CancelWaitDialog();
         
         /**
         * Cancels a wait progress dialog if one exists.
         * @since 2.6       
         * @return None.
         */
-        IMPORT_C void CancelProgressDialogL();
+        IMPORT_C void CancelProgressDialog();
         
         /**
-        * Updates a progress dialog. Should not be used if the 
-        * MObexUtilsDialogObserver pointer was given.
-        * @since 2.6
+        * Updates a progress dialog with the latest progress value 
         * @param aValue A progress value relative to final value.
-        * @param aResId A resource id for the string to be shown in the dialog.
         * @return None
         */
-        IMPORT_C void UpdateProgressDialogL( TInt aValue, TInt aResId );
+        IMPORT_C void UpdateProgressDialogL( TInt aProgressValue );
         
         /**
         * Show a query note
-        * @param aResourceID A resource id for the note.
-        * @return User's input - Yes/No
+        * @param aConfirmText text for the note.
+        * @return None		
         */
-        IMPORT_C TInt LaunchQueryDialogL( const TInt& aResourceID );
-        
-        /**
-        * Show how many files are sent in case not all images are supported
-        * @param aSentNum Number of sent files
-        * @param aTotlNum Number of total files
-        * return None.
-        */
-        
-        IMPORT_C void ShowNumberOfSendFileL( TInt aSentNum, TInt aTotalNum );
+        IMPORT_C void LaunchQueryDialogL( const TDesC& aConfirmText );
 
         /**
-        * Prepares dialog for execution
-        * @param aResourceID Resource ID of the dialog
-        * @param aDialog Dialog
+        * Shows an error note.
+        * @param aTextId A resource id for the note.
+        * @return None.
         */
-        void PrepareDialogExecuteL( const TInt& aResourceID, CEikDialog* aDialog );
+        IMPORT_C void ShowErrorNoteL( const TDesC& aErrorText );
 
         /**
-        * Check if cover display is enabled
-        * return True if enabled
+        * Shows an information note.
+        * @param aTextId A resource id for the note.
+        * @return None.
         */
-        TBool IsCoverDisplayL();
+        IMPORT_C void ShowInformationNoteL( const TDesC& aInfoText );
 
     public: // New functions (not exported)
 
@@ -174,16 +176,42 @@ NONSHARABLE_CLASS( CObexUtilsDialog ) : public CBase, public MProgressDialogCall
         void UpdateProgressDialog();
 
     private: // Functions from base classes
-
+        
         /**
-        * From MProgressDialogCallback A dialog has been dismissed.
-        * @param aButtonId The button that was used to dismiss the dialog.
+        * From MHbDeviceProgressDialogObserver called when dialog is closed by pressing the "cancel" button
+        * @param aDialog Pointer to dialog that was cancelled.
         * @return None.
         */
-        void DialogDismissedL( TInt aButtonId );
-
-    private:
-        TInt ExecuteDialogL( const TInt& aResourceID, CEikDialog* aDialog );
+        void ProgressDialogCancelled(const CHbDeviceProgressDialogSymbian* aDialog);
+        
+        /**
+        * From MHbDeviceProgressDialogObserver called when a device progress dialog is has closed
+        * @param aDialog Pointer to dialog instance that has closed.
+        * @return None.
+        */
+        void ProgressDialogClosed(const CHbDeviceProgressDialogSymbian* aDialog )  ; 
+        
+        /**
+          * From MHbDeviceDialogObserver called when data is received from a device dialog
+          * @param aDialog Pointer to dialog instance that has closed.
+          * @return None.
+          */
+        void DataReceived(CHbSymbianVariantMap& aData);
+       
+        /**
+          * From MHbDeviceDialogObserver called when a device dialog is closed
+          * @param  aData contains data from the dialog plugin.
+          * @return None.
+          */
+         void DeviceDialogClosed(TInt aCompletionCode);
+        
+        /**
+        * from base class MHbDeviceMessageBoxObserver
+        * @param aMessageBox Pointer to dialog instance that has closed.
+        * @param aButton the id of the button the user pressed
+        */    
+        void  MessageBoxClosed(const CHbDeviceMessageBoxSymbian *aMessageBox, 
+                CHbDeviceMessageBoxSymbian::TButtonId aButton); 
 
     private:
 
@@ -197,14 +225,40 @@ NONSHARABLE_CLASS( CObexUtilsDialog ) : public CBase, public MProgressDialogCall
         */
         void ConstructL();
 
+        /**
+         * Add a data item into the given CHbSymbianVariantMap.
+         * @param aMap the instance to which the data item will be added.
+         * @param aKey the key of the data item.
+         * @param aData the value of the data item
+         * @param aDataType the data-type of the data item
+         */
+        void AddDataL(CHbSymbianVariantMap* aMap, const TDesC& aKey, 
+                const TAny* aData, CHbSymbianVariant::TType aDataType);
+        
+        /**
+         * Creates and shows a message box.
+         * @param aType the type of the message box to create.
+         * @param aText the text to be shown in the message box
+         * @param aObserver the observer that receives the events from the 
+         *         message box
+         * @param aTimeout the timeout value of the message box 
+         */
+        CHbDeviceMessageBoxSymbian* CreateAndShowMessageBoxL(
+                CHbDeviceMessageBoxSymbian::TType aType,
+                const TDesC& aText, 
+                MHbDeviceMessageBoxObserver* aObserver,
+                TInt aTimeout );
+        
     private: // Data
 
-        CAknProgressDialog*         iProgressDialog;
-        CAknWaitDialog*             iWaitDialog;
+        CHbDeviceDialogSymbian *iProgressDialog;
+        CHbDeviceProgressDialogSymbian* iWaitDialog;
+        CHbDeviceMessageBoxSymbian* iMessageBox;
+        
         CObexUtilsDialogTimer*      iObexDialogTimer;
-        TInt                        iResourceFileId;
-        TInt                        iProgressDialogResId;
-        TBool                       iCoverDisplayEnabled;
+        TInt                        iFileIndex;
+        TInt                        iFileCount;
+        RBuf                        iDeviceName;
 
         // Not Owned
         //

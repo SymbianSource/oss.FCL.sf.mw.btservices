@@ -47,7 +47,7 @@ public:
     virtual void cancel();
     
 public slots:
-    
+    void powerDelegateCompleted(int error);
 protected:
     //From MBTEngConnObserver
     virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
@@ -58,6 +58,7 @@ protected:
 private:
     void launchWaitDialog();
     void emitCommandComplete(int error);
+    void exec_pair();
     
 private:
 
@@ -66,6 +67,8 @@ private:
     QString mdeviceName;
     
     HbDocumentLoader *mLoader;
+    BtAbstractDelegate* mAbstractDelegate;
+    QModelIndex deviceIndex;
     
     Q_DISABLE_COPY(BtDelegatePair)
 

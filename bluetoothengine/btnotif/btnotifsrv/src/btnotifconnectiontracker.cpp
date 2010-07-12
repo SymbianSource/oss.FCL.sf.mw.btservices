@@ -27,7 +27,7 @@
 #include "btnotifsession.h"
 #include "btnotifclientserver.h"
 #include "bluetoothtrace.h"
-#include "btnotifpairingmanager.h"
+#include "btnotifsecuritymanager.h"
 
 /**  Time window for determining if there are too many requests. */
 #ifndef __WINS__
@@ -62,7 +62,7 @@ void CBTNotifConnectionTracker::ConstructL()
     User::LeaveIfError( iBTRegistrySession.Connect() );
     // Open a handle to the socket server
     User::LeaveIfError( iSockServ.Connect() );
-    iPairingManager = CBTNotifPairingManager::NewL(*this, iServer->DevRepository() );
+    iPairingManager = CBTNotifSecurityManager::NewL(*this, iServer->DevRepository() );
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
@@ -99,10 +99,10 @@ CBTNotifConnectionTracker::~CBTNotifConnectionTracker()
 // Process notifier message related to pairing notifiers.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifConnectionTracker::HandlePairingNotifierRequestL( const RMessage2& aMessage )
+void CBTNotifConnectionTracker::HandleNotifierRequestL( const RMessage2& aMessage )
     {
     BOstraceFunctionEntryExt ( DUMMY_LIST, this, aMessage.Function() );
-    iPairingManager->HandlePairingNotifierRequestL(aMessage);
+    iPairingManager->HandleNotifierRequestL(aMessage);
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 

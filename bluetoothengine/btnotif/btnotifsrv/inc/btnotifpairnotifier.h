@@ -20,24 +20,23 @@
 
 #include <e32base.h>
 #include <btmanclient.h>
+#include <hb/hbcore/hbsymbianvariant.h>
 #include "bluetoothdevicedialogs.h"
 #include "btnotificationresult.h"
 #include "bluetoothtrace.h"
 
-class CBTNotifPairingManager;
+class CBTNotifSecurityManager;
 class CBTNotifConnectionTracker;
 class CBluetoothNotification;
 
 /**
- *  Helper class for performing user prompt for pairing and authorization.
+ *  Helper class for performing user prompt for pairing.
  *  
  *  The design of this class is focussed on structure and maintainability first.
  *  Duplicate (state) information is kept to a minimum. And memory usage comes
  *  before processing. Pairing is an infrequent operation, and this class is
  *  only instantiated when there is pairing-related processing, so extreme
  *  focus on memory or processing efficiency would have relatively little effect.
- *  
- *  Auth represents Authenticate and Authorize
  *  
  *  @since Symbian^4
  */
@@ -53,7 +52,7 @@ public:
      * @param aDevice Pointer to information of the remote device.
      * aParam The owner of this object
      */
-    static CBTNotifPairNotifier* NewL( CBTNotifPairingManager& aParent );
+    static CBTNotifPairNotifier* NewL( CBTNotifSecurityManager& aParent );
 
     /**
     * Destructor.
@@ -118,7 +117,7 @@ private:
     /**
      * C++ default constructor.
      */
-    CBTNotifPairNotifier( CBTNotifPairingManager& aParent );
+    CBTNotifPairNotifier( CBTNotifSecurityManager& aParent );
 
     /**
      * Symbian 2nd-phase constructor.
@@ -154,7 +153,7 @@ private:
      * @param aResult The user response; ETrue if the user accepted the query,
      *                otherwise EFalse.
      */
-    void CompleteAcceptPairingQueryL( TInt aError, TBool aResult );
+    void CompleteAcceptPairingQueryL( TInt aError);
     
     /**
      * Parse the parameters of a request for pairing.
@@ -231,13 +230,6 @@ private:
      */
     void NotificationClosedL( TInt aError, const TDesC8& aData );
     
-    /**
-     * Ask the user if he/she wants to block future connection requests.
-     *
-     * @since Symbian^4
-     */    
-    void LaunchBlockingQueryL();
-
 private: // data
 
     enum TNotifierState
@@ -246,7 +238,7 @@ private: // data
         EPairingInputConfirm,
         };
     
-    CBTNotifPairingManager& iParent;
+    CBTNotifSecurityManager& iParent;
     
     /**
      * The client request.
@@ -289,6 +281,11 @@ private: // data
     TBTDeviceName iCurrentDeviceName;
     
     TNotifierState iState;
+    
+    // Defines if the check box in the dialog is checked or not.
+    TBool   iCheckBoxState;
+    
+    TBool   iAcceptPairingResult;
     
     BTUNITTESTHOOK
 

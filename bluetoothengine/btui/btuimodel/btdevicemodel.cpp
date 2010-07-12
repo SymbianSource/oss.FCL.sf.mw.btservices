@@ -16,7 +16,8 @@
 */
 
 #include <btdevicemodel.h>
-#include "btdevicedata.h"
+#include "btdevicemodel_p.h"
+#include "bluetoothuitrace.h"
 
 /*!
     This Constructor creates new instances of model data structure.
@@ -24,17 +25,18 @@
 BtDeviceModel::BtDeviceModel( QObject *parent )
     : QAbstractItemModel( parent )
 {
-   mDeviceData = QSharedPointer<BtDeviceData>( new BtDeviceData( *this ) );
+   d = QSharedPointer<BtDeviceModelPrivate>( new BtDeviceModelPrivate( *this ) );
+   connectModelSignals();
 }
 
 /*!
-    This Constructor shares the instances of model data structure with the
-    given model.
+    This Constructor shares the private implementation of the device model.
  */
 BtDeviceModel::BtDeviceModel( const BtDeviceModel &model, QObject *parent )
     : QAbstractItemModel( parent )
 {
-    mDeviceData = model.mDeviceData;
+    d = model.d;
+    connectModelSignals();
 }
 
 /*!
@@ -50,7 +52,7 @@ BtDeviceModel::~BtDeviceModel()
  */
 bool BtDeviceModel::searchDevice()
 {
-    return mDeviceData->searchDevice();
+    return d->searchDevice();
 }
 
 /*!
@@ -58,7 +60,7 @@ bool BtDeviceModel::searchDevice()
  */
 void BtDeviceModel::cancelSearchDevice()
 {
-    mDeviceData->cancelSearchDevice();
+    d->cancelSearchDevice();
 }
 
 /*!
@@ -67,7 +69,7 @@ void BtDeviceModel::cancelSearchDevice()
  */
 void BtDeviceModel::removeTransientDevices()
 {
-    mDeviceData->removeTransientDevices();
+    d->removeTransientDevices();
 }
 
 /*!
@@ -76,8 +78,8 @@ void BtDeviceModel::removeTransientDevices()
 QModelIndex BtDeviceModel::index( int row, int column, const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    if ( mDeviceData->isValid( row, column ) ) {
-        return createIndex( row, column, mDeviceData.data() );
+    if ( d->isValid( row, column ) ) {
+        return createIndex( row, column, d.data() );
     }
     // invalid row and column:
     return QModelIndex();
@@ -99,7 +101,7 @@ QModelIndex BtDeviceModel::parent( const QModelIndex &child ) const
 int BtDeviceModel::rowCount( const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    return mDeviceData->rowCount();
+    return d->rowCount();
 }
 
 /*!
@@ -108,7 +110,7 @@ int BtDeviceModel::rowCount( const QModelIndex &parent ) const
 int BtDeviceModel::columnCount( const QModelIndex &parent ) const
 {
     Q_UNUSED( parent );
-    return mDeviceData->columnCount();
+    return d->columnCount();
 }
 
 /*!
@@ -117,33 +119,94 @@ int BtDeviceModel::columnCount( const QModelIndex &parent ) const
 QVariant BtDeviceModel::data( const QModelIndex &index, int role ) const
 {
     QVariant val( QVariant::Invalid );
-    mDeviceData.data()->data( val, index.row(), index.column(), role );
+    d.data()->data( val, index.row(), index.column(), role );
     return val;
 }
 
 QMap<int, QVariant> BtDeviceModel::itemData( const QModelIndex & index ) const
 {
-    return  mDeviceData.data()->itemData( index.row(), index.column() );
+    return  d.data()->itemData( index.row(), index.column() );
+}
+
+
+/*!
+    emits dataChanged signal.
+ */
+void BtDeviceModel::deviceDataChanged( int row, void *parent )
+{
+    QModelIndex idx = createIndex( row, 0, parent );
+    emit dataChanged( idx, idx );
 }
 
 /*!
     emits dataChanged signal.
  */
-void BtDeviceModel::emitDataChanged( int row, int column, void *parent )
+void BtDeviceModel::deviceDataChanged( int first, int last, void *parent )
 {
-    QModelIndex idx = createIndex( row, column, parent );
-    emit dataChanged( idx, idx );
+    QModelIndex top = createIndex( first, 0, parent );
+    QModelIndex bottom = createIndex( last, 0, parent );
+    emit dataChanged( top, bottom );
 }
 
-void BtDeviceModel::emitDataChanged(const QModelIndex &top, const QModelIndex &bottom )
-    {
-    emit dataChanged( top, bottom );
-    }
+/*!
+    call beginInsertRows.
+ */
+void BtDeviceModel::beginInsertDevices(int first, int last, void *parent)
+{
+    Q_UNUSED( parent);
+    beginInsertRows(QModelIndex(), first, last); 
+}
+
+/*!
+    calls endInsertRows.
+ */
+void BtDeviceModel::BtDeviceModel::endInsertDevices()
+{
+    endInsertRows();
+}
+
+/*!
+    calls beginRemoveRows.
+ */
+void BtDeviceModel::beginRemoveDevices(int first, int last, void *parent)
+{
+    Q_UNUSED( parent);
+    beginRemoveRows(QModelIndex(), first, last); 
+}
+
+/*!
+    calls endRemoveRows.
+ */
+void BtDeviceModel::endRemoveDevices()
+{
+    endRemoveRows();
+}
 
 /*!
     emits deviceSearchCompleted signal.
  */
-void BtDeviceModel::emitdeviceSearchCompleted( int error )
+void BtDeviceModel::emitDeviceSearchCompleted( int error )
 {
     emit deviceSearchCompleted( error );
+}
+
+/*!
+ connects all signals of private impl to slots of this
+ */
+void BtDeviceModel::connectModelSignals()
+{
+    bool ok = connect(d.data(), SIGNAL(deviceDataChanged(int,void*)), SLOT(deviceDataChanged(int,void*)));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "deviceDataChanged can't connect" );
+    ok = connect(d.data(), SIGNAL(deviceDataChanged(int,int,void*)), SLOT(deviceDataChanged(int,int,void*)));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "deviceDataChanged can't connect 2" );
+    ok = connect(d.data(), SIGNAL(beginInsertDevices(int,int,void*)), SLOT(beginInsertDevices(int,int,void*)));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "beginInsertDevices can't connect" );
+    ok = connect(d.data(), SIGNAL(endInsertDevices()), SLOT(endInsertDevices()));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "endInsertDevices can't connect" );    
+    ok = connect(d.data(), SIGNAL(beginRemoveDevices(int,int,void*)), SLOT(beginRemoveDevices(int,int,void*)));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "beginRemoveDevices can't connect" );
+    ok = connect(d.data(), SIGNAL(endRemoveDevices()), SLOT(endRemoveDevices()));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "endRemoveDevices can't connect" );
+    ok = connect(d.data(), SIGNAL(deviceSearchCompleted(int)), SLOT(emitDeviceSearchCompleted(int)));
+    BTUI_ASSERT_X( ok, "BtDeviceModel", "emitDeviceSearchCompleted can't connect" );    
 }

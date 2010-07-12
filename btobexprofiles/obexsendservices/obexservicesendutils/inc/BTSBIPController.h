@@ -48,6 +48,8 @@ NONSHARABLE_CLASS (CBTSBIPController) : public CBTSController,
         * Destructor.
         */
         virtual ~CBTSBIPController();
+        
+        void SendUnSupportedFiles();
 
     private: // Functions from base classes
 

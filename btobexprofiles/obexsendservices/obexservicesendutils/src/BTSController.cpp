@@ -58,6 +58,11 @@ void CBTSController::Abort()
     FLOG(_L("[BTSU]\t CBTSController::Abort"));            
     }
 
+void CBTSController::SendUnSupportedFiles()
+    {
+    
+    }
+
 // ---------------------------------------------------------------------------
 // CBTSController::Abort
 // ---------------------------------------------------------------------------

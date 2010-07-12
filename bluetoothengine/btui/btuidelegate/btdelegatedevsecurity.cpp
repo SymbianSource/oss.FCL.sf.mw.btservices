@@ -17,16 +17,18 @@
 
 #include <QModelIndex>
 
+#include "btqtconstants.h"
 #include "btdelegatedevsecurity.h"
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
+#include <btdelegatefactory.h>
 #include <hbnotificationdialog.h>
 
 BtDelegateDevSecurity::BtDelegateDevSecurity(            
         BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel, 
         QObject *parent) :
-    BtAbstractDelegate(settingModel, deviceModel, parent), mBtEngDevMan(0)
+    BtAbstractDelegate(settingModel, deviceModel, parent), mBtEngDevMan(0), mBtengConnMan(0), mDisconnectDelegate(0)
 {
     
 }
@@ -34,6 +36,8 @@ BtDelegateDevSecurity::BtDelegateDevSecurity(
 BtDelegateDevSecurity::~BtDelegateDevSecurity()
 {
     delete mBtEngDevMan;
+    delete mBtengConnMan;
+    delete mDisconnectDelegate;
 }
 
 
@@ -50,7 +54,35 @@ void BtDelegateDevSecurity::exec( const QVariant &params )
     TBTDevAddr symaddr;
     TBuf<KBTDevAddrSize * 2> buffer(strBtAddr.utf16());
     symaddr.SetReadable( buffer );
+    
+    // Disconnect if paired device was connected 
+    if ( ! mBtengConnMan ){
+        TRAP( error, mBtengConnMan = CBTEngConnMan::NewL(this) );
+    }
+    TBTEngConnectionStatus connstatus;
+    if ( !error && mBtengConnMan->IsConnected(symaddr, connstatus ) == KErrNone) {
+        if ( connstatus == EBTEngConnected) {
+            if (! mDisconnectDelegate){
+                mDisconnectDelegate = BtDelegateFactory::newDelegate(
+                                        BtDelegate::Disconnect, getSettingModel(), getDeviceModel()); 
+                connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectDelegateCompleted(int)) );
+                
+            }
+            QList<QVariant>list;
+            QVariant paramFirst;
+            paramFirst.setValue(index);            
+            QVariant paramSecond;
+            DisconnectOption discoOpt = ServiceLevel;
+            paramSecond.setValue((int)discoOpt);
+            list.append(paramFirst);
+            list.append(paramSecond);
+            QVariant paramsList;
+            paramsList.setValue(list);
+            mDisconnectDelegate->exec(paramsList);
+        }
+    }
 
+    // Set device as unpaired
     CBTDevice *symBtDevice = 0;
     TRAP( error, {
             symBtDevice = CBTDevice::NewL( symaddr );
@@ -78,6 +110,11 @@ void BtDelegateDevSecurity::cancel()
     
 }
 
+void BtDelegateDevSecurity::disconnectDelegateCompleted( int err )
+{
+    Q_UNUSED(err);
+}
+
 void BtDelegateDevSecurity::HandleDevManComplete( TInt aErr )
 {
     emitCommandComplete(aErr);
@@ -91,19 +128,25 @@ void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt aErr, CBTDeviceArray*
 
 void BtDelegateDevSecurity::emitCommandComplete(int error)
 {
-    QString str(hbTrId("Unpaired to %1"));
-    QString err(hbTrId("Unpairing with %1 Failed"));
+    // no dialogs here since stack provides "unpaired to %1" dialog
+    // and failures are not reported
     
-    if(error != KErrNone) {
-        HbNotificationDialog::launchDialog(err.arg(mdeviceName));
-    }
-    else {
-        HbNotificationDialog::launchDialog(str.arg(mdeviceName));
-    }
-
     emit commandCompleted(error);
 }
 
+void BtDelegateDevSecurity::ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
+                                   RBTDevAddrArray* aConflicts )
+{
+    Q_UNUSED(aAddr);
+    Q_UNUSED(aErr);
+    Q_UNUSED(aConflicts);  
+}
+
+void BtDelegateDevSecurity::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
+{
+    Q_UNUSED(aAddr);
+    Q_UNUSED(aErr);    
+}
 
 
 

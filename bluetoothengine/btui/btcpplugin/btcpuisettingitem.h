@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -24,22 +24,22 @@
 
 #include "btcpuimainview.h"
 
+class HbTranslator;
+
 class BtCpUiSettingItem : public CpSettingFormEntryItemData
 {
 	Q_OBJECT
 public:
-	explicit BtCpUiSettingItem(CpItemDataHelper &itemDataHelper,
-		const QString &text = QString(),
-		const QString &description = QString(),
-		const HbIcon &icon = HbIcon(),
-		const HbDataFormModelItem *parent = 0);	 
+	explicit BtCpUiSettingItem(CpItemDataHelper &itemDataHelper);	 
 	virtual ~BtCpUiSettingItem();
 private slots:
 	void onLaunchView();
 	void handleCloseView();
+	void handleDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
 private:
 	virtual CpBaseSettingView *createSettingView() const;
-	
+	void updateStatus();
+	void loadTranslators();
 private:
 	HbMainWindow* mMainWindow;
 	
@@ -50,6 +50,9 @@ private:
 	BtDeviceModel *mDeviceModel;
 	
 	HbView *mCpView;
+	
+	HbTranslator *mViewTranslator;
+	HbTranslator *mDialogTranslator;
 	
 };
 

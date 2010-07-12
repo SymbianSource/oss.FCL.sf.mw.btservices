@@ -22,7 +22,7 @@
 #include <btextnotifierspartner.h>
 #endif
 #include "btnotifconnectiontracker.h"
-#include "btnotifpairingmanager.h"
+#include "btnotifsecuritymanager.h"
 #include "btnotificationmanager.h"
 #include "bluetoothnotification.h"
 #include "btnotifserver.h"
@@ -42,7 +42,7 @@ _LIT( KPassKeyFormat, "%06u" );
 // ---------------------------------------------------------------------------
 //
 CBTNotifPairNotifier::CBTNotifPairNotifier(
-        CBTNotifPairingManager& aParent )
+        CBTNotifSecurityManager& aParent )
 :   iParent( aParent )
     {
     }
@@ -60,7 +60,7 @@ void CBTNotifPairNotifier::ConstructL()
 // ---------------------------------------------------------------------------
 //
 CBTNotifPairNotifier* CBTNotifPairNotifier::NewL(
-        CBTNotifPairingManager& aParent )
+        CBTNotifSecurityManager& aParent )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
     CBTNotifPairNotifier* self = new( ELeave ) CBTNotifPairNotifier( aParent );
@@ -102,23 +102,23 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
     
-    // todo: move Authorize notifier to a separate class
     TInt uid = aMessage.Int0();
-    if ( KBTManAuthNotifierUid.iUid == uid )
-        {
-        TPckgBuf<TBool> answer;
-        answer() = ETrue;
-        TInt err = aMessage.Write( EBTNotifSrvReplySlot, answer);
-        aMessage.Complete( KErrNone );
-        return;
-        }
+    TInt opCode = aMessage.Function();
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:Opcode: %d",opCode);
     
-    //BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aUid );
-    if ( !iNotifierMessage.IsNull() )
+    if ( (!iNotifierMessage.IsNull()) && 
+         (opCode != EBTNotifCancelNotifier )&&(opCode != EBTNotifUpdateNotifier))
         {
         // todo: do we allow concurrent pairing?
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:We are busy");
         User::Leave(KErrServerBusy );
         }
+    
+    if(opCode == EBTNotifCancelNotifier){
+        CancelPairingNotifierL(uid);
+        aMessage.Complete(KErrNone);
+        return;
+    }
     
     // Store the parameters locally, we need them later again.
     iParams.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
@@ -127,6 +127,12 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
     
     // Read the notifier parameters
     ParseNotifierReqParamsL();
+
+    if(opCode ==EBTNotifUpdateNotifier ){
+        UpdatePairingNotifierL(uid,iParams);
+        aMessage.Complete(KErrNone);
+        return;
+    }
     
     const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
     if(dev)
@@ -134,13 +140,16 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
         if (!iLocallyInitiated && dev->Device().GlobalSecurity().Banned() )
             {
             // If the device is banned and pairing is not locally initiated
-            // then we ignore.
-            aMessage.Complete( KErrNone );
+            // then we reject.
+            BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:Device is banned");
+            iNotifierMessage.Complete( KErrCancel );
+            return;
             }
         if (iLocallyInitiated && dev->Device().GlobalSecurity().Banned())
             {
             // Remove the banned device from the blocking history
             iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),ETrue);
+            iParent.BlockDevice(dev->Addr(),EFalse);
             }
         if(0 != dev->Device().FriendlyName().Length()&& dev->Device().IsValidFriendlyName())
             {
@@ -168,6 +177,7 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
     // If this is an incoming pairing, we first ask the user to accept it.
     if( !iLocallyInitiated  )
         {
+        User::LeaveIfError(iParent.SetPairObserver(iRemote,ETrue));
         StartAcceptPairingQueryL();
         }
     else
@@ -304,8 +314,22 @@ void CBTNotifPairNotifier::CancelPairingNotifierL( TInt aUid )
 void CBTNotifPairNotifier::MBRDataReceived( CHbSymbianVariantMap& aData )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    (void) aData;
-    NOTIF_NOTIMPL
+    if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult")) == 0)
+        {
+        TInt val = *(static_cast<TInt*>(aData.Get(_L("actionResult"))->Data()));
+        if(val)
+            {
+                iAcceptPairingResult = ETrue;
+            }
+        else
+            {
+                iAcceptPairingResult = EFalse;
+            }
+        }
+    else if(aData.Keys().MdcaPoint(0).Compare(_L("checkBoxState")) == 0)
+        {
+        iCheckBoxState = *(static_cast<TInt*>(aData.Get(_L("checkBoxState"))->Data()));
+        }
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
@@ -318,10 +342,9 @@ void CBTNotifPairNotifier::MBRNotificationClosed( TInt aError, const TDesC8& aDa
     {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aError );
     // First unregister from the notification, so we can already get the next one.
-    //iNotification->RemoveObserver();
-    //iNotification = NULL;
-    TRAP_IGNORE( NotificationClosedL( aError, aData ) );
+    iNotification->RemoveObserver();
     iNotification = NULL;
+    TRAP_IGNORE( NotificationClosedL( aError, aData ) );
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 
@@ -354,13 +377,17 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
     TPtrC8 resultData(KNullDesC8);
     TBTPinCode pinCode;
     TPckgBuf<TBool> userAcceptance;
+    TInt uid = iNotifierMessage.Int0();
+ 
     if( !err )
         {
-        TInt uid = iNotifierMessage.Int0();
         // The returned data is the entered passkey.
-        // const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
-        // TBool proceed = iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),aResult);
-        if( uid == KBTNumericComparisonNotifierUid.iUid )
+        const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
+        if(dev)
+            {
+            iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),aResult);
+            }
+         if( uid == KBTNumericComparisonNotifierUid.iUid )
             {
             // Numeric comparison needs the boolean result passed back.
             userAcceptance() = aResult;
@@ -374,12 +401,18 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
                 // Check the passkey entered by the user.
                 // The length of the returned data equals the number of characters
                 // entered by the user.
-                pinCode().iLength = aData.Length();
+                // Check that the passkey length do not exceed the maximum allowed size
+                TInt pinCodeLength = aData.Length();
+                if(pinCodeLength > KHCIPINCodeSize)
+                    {
+                        pinCodeLength = KHCIPINCodeSize;
+                    }
+                pinCode().iLength = pinCodeLength;
                 // Check that the length of the passkey meets the minimum 
                 // required pin code length
-                if( aData.Length() >= iMinPinLength )
+                if( pinCodeLength >= iMinPinLength )
                     {
-                    for( TInt i = 0; i < aData.Length(); i++ )
+                    for( TInt i = 0; i < pinCodeLength; i++ )
                         {
                         pinCode().iPIN[i] = aData[i];
                         }
@@ -387,7 +420,7 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
                     }
                 else
                     {
-                    // todo: PIN wasn't long enough. This should be handled by the dialog though.
+                    // shouldn't happen since the length is checked in the dialog
                     err = KErrCompletion;
                     }
                 }
@@ -395,26 +428,19 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
         else
             {
             err = KErrCancel;
-            if( iLocallyInitiated )
-                {
-                // The user denied the connection, ask to block the device.
-                // This is only for pairing (and not bonding) initiated by us,
-                // as the user already gets the opportunity to block when
-                // rejecting an incoming pairing request.
-                // This case may be for someone requesting to access a service
-                // which requires authentication by us, but not by the remote device.
-                // if(proceed)
-                //    {
-                //    LaunchBlockingQueryL();
-                //    }
-                // For incoming pairing, blocking is asked after rejecting the 
-                // pairing request. This is done in CompleteAcceptPairingQueryL
-                }
             }
         }
     // Complete the message with the result, and result data if any.
     if ( !err && resultData.Length() )
         {
+        err = iNotifierMessage.Write( EBTNotifSrvReplySlot, resultData );
+        }
+    if(err && (uid == KBTNumericComparisonNotifierUid.iUid))
+        {
+        // We need to reject the numeric comparaison otherwise
+        // the link will remain active
+        userAcceptance() = aResult;
+        resultData.Set( userAcceptance );
         err = iNotifierMessage.Write( EBTNotifSrvReplySlot, resultData );
         }
     iNotifierMessage.Complete( err );
@@ -428,7 +454,7 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
 void CBTNotifPairNotifier::StartAcceptPairingQueryL()
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    PrepareNotificationL( TBluetoothDialogParams::EQuery, EIncomingPairing );
+    PrepareNotificationL( TBluetoothDialogParams::EUserAuthorization, EAuthorization );
     iState = EIncomingPairingAcceptconfirm;
     // if rejected, the client message is completed in CompleteAcceptPairingQueryL
     BOstraceFunctionExit0( DUMMY_DEVLIST );
@@ -438,32 +464,37 @@ void CBTNotifPairNotifier::StartAcceptPairingQueryL()
 // The user was asked to accept an incoming pairing. Process and proceed. 
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairNotifier::CompleteAcceptPairingQueryL( TInt aError, TBool aResult )
+void CBTNotifPairNotifier::CompleteAcceptPairingQueryL( TInt aError)
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
     TInt err = aError;
+    TBool proceed = EFalse;
+    
     if( !err )
         {
-        // const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
-        // TBool proceed = iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),aResult);
-        if( aResult )
+        const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
+        if(dev)
+            {
+            proceed = iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),iAcceptPairingResult);
+            }
+        if( iAcceptPairingResult )
             {
             // User accepted, continue to show pairing query.
+            // Trust the device
+            if(iCheckBoxState){
+            iParent.TrustDevice(iRemote);
+            }
             StartPairingUserInputL();
-            if( iDialogNumeric.Length() )
-                {
-                err = iNotification->SetData( 
-                TBluetoothDeviceDialog::EAdditionalDesc, iDialogNumeric );
-                }            
-             }
+            }
         else
             {
-            err = KErrCancel;
-            // if( proceed )
-            //    {
-            //    //ask to block the device.
-            //    LaunchBlockingQueryL();
-            //    }
+            if( proceed && iCheckBoxState )
+                {
+                //ask to block the device.
+                iParent.BlockDevice(iRemote,proceed);
+                }
+            err = iParent.SetPairObserver(iRemote,EFalse);
+            err = KErrCancel; // We need to complete the pairing request here
             }
         }
     if( err )
@@ -571,6 +602,7 @@ void CBTNotifPairNotifier::ParseNumericCompReqParamsL( TBool& aLocallyInitiated,
     TBTNumericComparisonParams::TComparisonScenario scenario =
                 paramsPckg().ComparisonScenario();
     aNumVal.Format( KNumCompFormat, paramsPckg().NumericalValue() );
+    aNumVal.Insert(3,_L(" "));
     aAddr = paramsPckg().DeviceAddress();
     iCurrentDeviceName = paramsPckg().DeviceName();
     BOstraceFunctionExit0( DUMMY_DEVLIST );
@@ -624,6 +656,14 @@ void CBTNotifPairNotifier::PrepareNotificationL( TBluetoothDialogParams::TBTDial
         }
     err = iNotification->SetData( (TInt) TBluetoothDeviceDialog::EDeviceClass, 
                 classofdevice );
+    if( iDialogNumeric.Length() )
+        {
+        err = iNotification->SetData( 
+        TBluetoothDeviceDialog::EAdditionalDesc, iDialogNumeric );
+        }
+    err = iNotification->SetData( TBluetoothDialogParams::EDialogTitle, TBluetoothDialogParams::EPairingRequest);
+    iCheckBoxState = ETrue;
+    iAcceptPairingResult = EFalse;
     iParent.ConnectionTracker().NotificationManager()->QueueNotificationL( iNotification);
     NOTIF_NOTHANDLED( !err )
     BOstraceFunctionExit0( DUMMY_DEVLIST );
@@ -641,9 +681,10 @@ void CBTNotifPairNotifier::NotificationClosedL( TInt aError, const TDesC8& aData
     result.Set( aData.Ptr(), result.Length() ); // Read the part containing the result
     // Set a pointer descriptor to capture the remaining data, if any.
     TPtrC8 dataPtr( aData.Mid( result.Length() ) );
+
     if ( iState == EIncomingPairingAcceptconfirm )
         {
-        CompleteAcceptPairingQueryL(aError, result());
+        CompleteAcceptPairingQueryL(aError);
         }
     else
         {
@@ -651,25 +692,6 @@ void CBTNotifPairNotifier::NotificationClosedL( TInt aError, const TDesC8& aData
         }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
-
-// ---------------------------------------------------------------------------
-// Ask the user if he/she wants to block future connection requests. 
-// ---------------------------------------------------------------------------
-//
-void CBTNotifPairNotifier::LaunchBlockingQueryL()
-    {
-    BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    TBTDialogResourceId resourceId = EBlockUnpairedDevice;
-    const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
-    if(dev->Device().IsValidPaired() && dev->Device().IsPaired() &&
-            dev->Device().LinkKeyType() != ELinkKeyUnauthenticatedUpgradable )
-        {
-        resourceId = EBlockPairedDevice;
-        }
-    PrepareNotificationL( TBluetoothDialogParams::EQuery, resourceId );
-    BOstraceFunctionExit0( DUMMY_DEVLIST );
-    }
-
 
 
 

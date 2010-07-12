@@ -16,8 +16,8 @@
  */
 
 
-#ifndef BTMOREDEVICESDIALOGWIDGET_H_
-#define BTMOREDEVICESDIALOGWIDGET_H_
+#ifndef BTMOREDEVICESDIALOGWIDGET_H
+#define BTMOREDEVICESDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -26,10 +26,9 @@
 #include <hbpopup.h>
 #include <hbdocumentloader.h>
 #include <qstandarditemmodel.h>
+#include <hbaction.h>
 
-
-class BTMoreDevicesDialogWidget : public HbDialog,
-                                public HbDeviceDialogInterface
+class BTMoreDevicesDialogWidget : public QObject,  public HbDeviceDialogInterface
     {
     Q_OBJECT
     
@@ -37,12 +36,12 @@ public:
     BTMoreDevicesDialogWidget(const QVariantMap &parameters);
     ~BTMoreDevicesDialogWidget();
     
-public: // from HbDeviceDialogInterface
+public: // from HbDeviceDialogInterface`
     bool setDeviceDialogParameters(const QVariantMap &parameters);
     int deviceDialogError() const;
     void closeDeviceDialog(bool byClient);
     HbPopup *deviceDialogWidget() const;
-  //  virtual QObject *signalSender() const;
+    virtual QObject *signalSender() const;
     
 public slots:
     void moreDevicesClicked();
@@ -52,8 +51,8 @@ public slots:
     
 private:
     bool constructDialog(const QVariantMap &parameters);
-    void hideEvent(QHideEvent *event);
-    void showEvent(QShowEvent *event);
+ //   void hideEvent(QHideEvent *event);
+ //   void showEvent(QShowEvent *event);
     QIcon icon(/*QString deviceType*/);
     
 signals:
@@ -63,8 +62,9 @@ signals:
 private:
     HbDocumentLoader *mLoader;
     int              mDeviceDialogData;
-//    HbAction *mMoreAction;
-//    HbAction *mCancelAction;
+    HbDialog *mMoreDeviceDialog;
+    HbAction *mMoreAction;
+    HbAction *mCancelAction;
     
     /**
      * 
@@ -76,4 +76,4 @@ private:
     Q_DISABLE_COPY(BTMoreDevicesDialogWidget)
     };
 
-#endif /* BTMOREDEVICESDIALOGWIDGET_H_ */
+#endif /* BTMOREDEVICESDIALOGWIDGET_H */
