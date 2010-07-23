@@ -15,8 +15,8 @@
 *
 */
 
-#ifndef BTRECVPRGRSDIALOGWIDGET_H_
-#define BTRECVPRGRSDIALOGWIDGET_H_
+#ifndef BTRECVPRGRSDIALOGWIDGET_H
+#define BTRECVPRGRSDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -73,4 +73,4 @@ private:
     Q_DISABLE_COPY(BTRecvPrgrsDialogWidget)
     };
 
-#endif /* BTRECVPRGRSDIALOGWIDGET_H_ */
+#endif /* BTRECVPRGRSDIALOGWIDGET_H */

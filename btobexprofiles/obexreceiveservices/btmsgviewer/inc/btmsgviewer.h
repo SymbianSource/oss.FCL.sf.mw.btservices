@@ -22,6 +22,7 @@
 #include <xqserviceprovider.h>
 #include <hbview.h>
 #include <xqappmgr.h>
+
 #include "btmsgviewerutils.h"
 
 
@@ -30,12 +31,19 @@ class BTMsgViewer : public XQServiceProvider
     Q_OBJECT
     
 public:
-    BTMsgViewer (QObject *parent = 0 );
-    ~BTMsgViewer ();    
+    BTMsgViewer (QObject* parent=0 );
+    ~BTMsgViewer ();
+    
 public slots:
-    int displaymsg(int messageId);
+    void displaymsg(int messageId);
+
 private:
     bool isError(int aError);
+    QString copyVCardToTemp(const QString& filepath);
+    void deleteVCardFromTemp(const QString& filepath);
+    
+private:
+    int mCurrentRequestIndex;
 };
 
 #endif // BTMSGVIEWER_H

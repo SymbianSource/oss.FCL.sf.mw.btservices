@@ -27,12 +27,14 @@ public:
     static CBtMsgViewerUtils* NewL();
     ~CBtMsgViewerUtils();
     HBufC* GetMessagePath(TInt aMessageId, TInt aError);
+    HBufC8* GetMimeType();
 
 private: // From MMsvSessionObserver
     void HandleSessionEventL(TMsvSessionEvent aEvent, TAny* aArg1, TAny* aArg2, TAny* aArg3);
     
 private:
     void GetMessagePathL(TPtr aMsgPath, const TInt aMessageId);
+    void StoreMessageMimeTypeL(TPtr aMsgPath);
        
 private:
     CBtMsgViewerUtils();
@@ -40,6 +42,7 @@ private:
     
 private:
     CMsvSession* iMsvSession;
+    HBufC8*      iMimeType;
     };
 
 #endif // BTMSGVIEWERUTILS_H_

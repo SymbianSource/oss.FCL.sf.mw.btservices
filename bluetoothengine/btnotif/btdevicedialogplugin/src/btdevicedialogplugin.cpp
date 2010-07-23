@@ -31,6 +31,7 @@
 #include "btmoredevicesdialogwidget.h"
 #include "btsenddialogwidget.h"
 #include "btdevicedialogrecvquerywidget.h"
+#include "btrecvcompleteddialogwidget.h"
 #include <hbtranslator.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
@@ -206,7 +207,7 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EQuery:
             deviceDialog =
-                new BtDeviceDialogQueryWidget(HbMessageBox::MessageTypeQuestion, parameters);
+                new BtDeviceDialogQueryWidget(HbMessageBox::MessageTypeWarning,parameters);
             break;
         case TBluetoothDialogParams::EInput:
             deviceDialog = new BtDeviceDialogInputWidget(parameters);
@@ -228,6 +229,9 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EReceiveProgress:
             deviceDialog = new BTRecvPrgrsDialogWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EReceiveDone:
+            deviceDialog = new BTRecvcompletedDialogWidget(parameters);
             break;
         default:
             d->mError = UnknownDeviceDialogError;

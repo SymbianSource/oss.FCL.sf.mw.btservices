@@ -20,13 +20,16 @@
 
 #include <hblistview.h>
 #include <hbtoolbar.h>
-#include <hbselectiondialog.h>
+
 
 #include <qstandarditemmodel.h>
 #include <hbaction.h>
 #include <xqconversions.h>
 #include <qtranslator.h>
 #include <qcoreapplication.h>
+#include <bluetoothdevicedialogs.h>
+#include <btuidevtypemap.h>
+#include <btuiiconutil.h>
 
 const char* DOCML_BTDEV_SEARCH_DIALOG = ":/docml/bt-device-search-dialog.docml";
 
@@ -39,13 +42,19 @@ const char* DOCML_BTDEV_SEARCH_DIALOG = ":/docml/bt-device-search-dialog.docml";
 
 BTDeviceSearchDialogWidget::BTDeviceSearchDialogWidget(const QVariantMap &parameters)
     {
-    mDeviceLstIdx = 0;
-    mViewByChosen = false;
-    mSelectedType = 0;
-    mDeviceDialogData = 0;
+//    mDeviceLstIdx = 0;
+//    mViewByChosen = false;
+    mSelectedDeviceType = 0;
+ //   mDeviceDialogData = 0;
     mLoader = 0;
     mContentItemModel = 0;
     mStopRetryFlag = 0; // Stop 
+    mQuery = 0;
+    mSelectedDeviceType |= (BtuiDevProperty::AVDev | BtuiDevProperty::Computer |
+            BtuiDevProperty::Phone | BtuiDevProperty::Peripheral |
+            BtuiDevProperty::LANAccessDev | BtuiDevProperty::Toy |
+            BtuiDevProperty::WearableDev | BtuiDevProperty::ImagingDev |
+            BtuiDevProperty::HealthDev | BtuiDevProperty::UncategorizedDev);       
     constructDialog(parameters);
     }
 
@@ -53,6 +62,9 @@ BTDeviceSearchDialogWidget::~BTDeviceSearchDialogWidget()
     {
     delete mLoader;
     delete mContentItemModel;
+    if ( mQuery ) {
+        delete mQuery;
+    }
     
  //   delete mRbl;
  //   delete mViewByDialog;
@@ -62,6 +74,7 @@ bool BTDeviceSearchDialogWidget::setDeviceDialogParameters(const QVariantMap &pa
     {
     if(parameters.keys().at(0).compare("Search Completed")==0)
         {
+        mStopRetryFlag = 1; // Retry 
         mSearchLabel->hide();
         
         mSearchIconLabel->hide();
@@ -75,43 +88,40 @@ bool BTDeviceSearchDialogWidget::setDeviceDialogParameters(const QVariantMap &pa
         }
     else
         {
-        device newDevice;
+        double cod  = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass)).toDouble();
+        int uiMajorDevice;
+        int uiMinorDevice;
     
-       // newDevice.mDeviceName = parameters.value("deviceName").toString();
-        newDevice.mDeviceName = parameters.value(parameters.keys().at(0)).toString();
+        BtuiDevProperty::mapDeiveType(uiMajorDevice, uiMinorDevice, cod);
+
+        BtSendDataItem devData;
+        devData[NameAliasRole] = QVariant(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+        devData[ReadableBdaddrRole] = QVariant(parameters.value(QString::number(TBluetoothDialogParams::EAddress)).toString());
+        devData[CoDRole] = QVariant(cod);
+        devData[DeviceTypeRole] = QVariant(uiMajorDevice);
+        setMajorProperty(devData,BtuiDevProperty::Bonded,
+                parameters.value("Bonded").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Blocked,
+                parameters.value("Blocked").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Trusted,
+                parameters.value("Trusted").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Connected,
+                parameters.value("Connected").toBool());
+        mData.append(devData);
         
-     //   newDevice.mDeviceType = parameters.value("deviceType").toString();
-        newDevice.mDeviceIdx = mDeviceLstIdx;
-        
-        mDeviceList.append(newDevice);
-        mDeviceLstIdx++;
-    
-        QStringList info;
-     //   if(!mViewByChosen)
+        if(mSelectedDeviceType & devData[DeviceTypeRole].toInt())
             {
-            info.append(newDevice.mDeviceName);
-       //     info.append(newDevice.mDeviceType);
             QStandardItem* listitem = new QStandardItem();
+            QStringList info;
+            info.append(devData[NameAliasRole].toString());
             listitem->setData(info, Qt::DisplayRole);
-        
-            listitem->setIcon(icon());
-        
-            mContentItemModel->appendRow(listitem);
+            HbIcon icon =  getBadgedDeviceTypeIcon(devData[CoDRole].toDouble(),
+                    devData[MajorPropertyRole].toInt(),
+                    BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight);
+            listitem->setIcon(icon.qicon());
+            mContentItemModel->appendRow(listitem);    
+            mSelectedData.append(devData);
             }
-     /*   else
-            {
-            if(mDeviceTypeList[mSelectedType] == newDevice.mDeviceType)
-                {
-                info.append(newDevice.mDeviceName);
-                info.append(newDevice.mDeviceType);
-                QStandardItem* listitem = new QStandardItem();
-                listitem->setData(info, Qt::DisplayRole);
-    
-                listitem->setIcon(icon(newDevice.mDeviceType));
-    
-                mContentItemModel->appendRow(listitem);
-                }
-            }*/
         }
                 
     return true;
@@ -168,7 +178,7 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         mSearchLabel->setPlainText(LOC_SEARCHING_DEVICE);
  
         mSearchIconLabel = qobject_cast<HbLabel*>(mLoader->findWidget("iconLabel"));
-        mSearchIconLabel->setIcon(icon());
+        mSearchIconLabel->setIcon(QIcon(QString(":/icons/qtg_large_bluetooth.svg")));
 
         mSearchDoneLabel = qobject_cast<HbLabel*>(mLoader->findWidget("searchDoneLabel"));
         mSearchDoneLabel->hide();
@@ -190,13 +200,16 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
  //       connect(mStopRetryBtn, SIGNAL(clicked()), this, SLOT(stopRetryClicked()));
  //       connect(mViewByBtn, SIGNAL(clicked()), this, SLOT(viewByClicked()));
         
-        mViewByAction = static_cast<HbAction*>( mLoader->findObject( "viewaction" ) );
-        mViewByAction->disconnect(mSearchDevicesDialog);
+        mShowAction = static_cast<HbAction*>( mLoader->findObject( "viewaction" ) );
+        mShowAction->disconnect(mSearchDevicesDialog);
         
         mStopRetryAction = static_cast<HbAction*>( mLoader->findObject( "stopretryaction" ) );
         mStopRetryAction->disconnect(mSearchDevicesDialog);
         
-        connect(mViewByAction, SIGNAL(triggered()), this, SLOT(viewByClicked()));
+//        mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelaction" ) );
+//        mCancelAction->disconnect(mSearchDevicesDialog);
+        
+        connect(mShowAction, SIGNAL(triggered()), this, SLOT(viewByClicked()));
         connect(mStopRetryAction, SIGNAL(triggered()), this, SLOT(stopRetryClicked()));
 
         connect(mSearchDevicesDialog, SIGNAL(aboutToClose()), this, SLOT(searchDialogClosed()));
@@ -205,9 +218,15 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         //setContentWidget(widget);
         }
     mSearchDevicesDialog->setBackgroundFaded(false);
-    mSearchDevicesDialog->setDismissPolicy(HbPopup::TapOutside);
+    mSearchDevicesDialog->setDismissPolicy(HbPopup::NoDismiss);
     mSearchDevicesDialog->setTimeout(HbPopup::NoTimeout);
     mSearchDevicesDialog->setAttribute(Qt::WA_DeleteOnClose);
+    
+    mDevTypeList << hbTrId("txt_bt_list_audio_devices")
+            << hbTrId("txt_bt_list_computers") 
+            << hbTrId("txt_bt_list_input_devices") 
+            << hbTrId("txt_bt_list_phones") 
+            << hbTrId("txt_bt_list_other_devices");
     
  /*   mViewByDialog = new HbDialog();
     mRbl = new HbRadioButtonList(mViewByDialog);
@@ -216,20 +235,6 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
     return true;
     }
 
-/*void BTDeviceSearchDialogWidget::hideEvent(QHideEvent *event)
-    {
- //   HbDialog::hideEvent(event);
-    QVariantMap val;
-    QVariant index(-1);
-    val.insert("selectedindex",index);
-    emit deviceDialogData(val);    
-    emit deviceDialogClosed();
-    }
-
-void BTDeviceSearchDialogWidget::showEvent(QShowEvent *event)
-    {
- //   HbDialog::showEvent(event);
-    }*/
 
 void BTDeviceSearchDialogWidget::stopRetryClicked()
     {
@@ -249,7 +254,7 @@ void BTDeviceSearchDialogWidget::stopRetryClicked()
         mSearchLabel->setAlignment(Qt::AlignHCenter);
         mSearchLabel->setPlainText(LOC_SEARCHING_DEVICE);
         
-        mSearchIconLabel->setIcon(icon());     
+        mSearchIconLabel->setIcon(QIcon(QString(":/icons/qtg_large_bluetooth.svg")));     
         mSearchLabel->show();
         
         mSearchIconLabel->show();
@@ -292,58 +297,27 @@ void BTDeviceSearchDialogWidget::retryClicked()
 
 void BTDeviceSearchDialogWidget::viewByClicked()
     {
-    QStringList list;
-    list << "Select all" << "Audio devices" << "Computers" << "Input devices" << "Phones" << "Other devices";
-
-    HbSelectionDialog *query = new HbSelectionDialog;
-    query->setStringItems(list);
-    query->setSelectionMode(HbAbstractItemView::MultiSelection);
-
-    QList<QVariant> current;
-    current.append(QVariant(0));
-    query->setSelectedItems(current);
-
-    query->setAttribute(Qt::WA_DeleteOnClose);
-
-    query->open(this,SLOT(selectionDialogClosed(HbAction*)));
     
-    //connect(query, SIGNAL(finished(HbAction*)), this, SLOT(selectionDialogClosed(HbAction*)));
+    if ( !mQuery ) {
+        mQuery = new HbSelectionDialog;
+        mQuery->setStringItems(mDevTypeList, 0);
+        mQuery->setSelectionMode(HbAbstractItemView::MultiSelection);
     
-/*    mViewByDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mViewByDialog->setTimeout(HbPopup::NoTimeout);
+        QList<QVariant> current;
+        current.append(QVariant(0));
+        mQuery->setSelectedItems(current);
+ 
+        //todo need to check whether the dialog is destroyed without setting this flag
+        //if not destoryed then set this flag in the destructor and then delete it
+        
+//        mQuery->setAttribute(Qt::WA_DeleteOnClose);
+        // Set the heading for the dialog.
+        HbLabel *headingLabel = new HbLabel(hbTrId("txt_bt_title_show"), mQuery);
+        mQuery->setHeadingWidget(headingLabel);
+    }
+    mQuery->open(this,SLOT(selectionDialogClosed(HbAction*)));
 
-    bool foundEntry = false;
-    QStringList st;
-    st << "All";
-    mDeviceTypeList.clear();
-    for(int i = 0; i < mDeviceList.count(); i++)
-        {
-        for(int j = 0; j < mDeviceTypeList.count(); j++)
-            {
-            if(mDeviceTypeList[j] == mDeviceList[i].mDeviceType)
-                {
-                foundEntry = true;
-                break;
-                }
-            }
-        if(!foundEntry)
-            {
-            mDeviceTypeList.append(mDeviceList[i].mDeviceType);
-            }
-        foundEntry = false;
-        }
-    
-    for(int k = 0; k < mDeviceTypeList.count(); k++)
-        {
-        st << mDeviceTypeList[k];
-        }
-    
-    mRbl->setItems(st);
-    mViewByDialog->setContentWidget(mRbl);
-    mViewByDialog->setMaximumHeight(300);
-    mViewByDialog->setMaximumWidth(500);
-
-    mViewByDialog->show();*/
+     
     }
 
 void BTDeviceSearchDialogWidget::searchDialogClosed() 
@@ -358,6 +332,49 @@ void BTDeviceSearchDialogWidget::searchDialogClosed()
 void BTDeviceSearchDialogWidget::selectionDialogClosed(HbAction* action)
     {
     Q_UNUSED(action);
+    
+    disconnect( mQuery ); 
+    int devTypesWanted = 0;
+
+    if (action == mQuery->actions().first()) {  // user pressed "Ok"
+        // Get selected items.
+        QList<QVariant> selections;
+        selections = mQuery->selectedItems();
+        
+        for (int i=0; i < selections.count(); i++) {
+            switch (selections.at(i).toInt()) {
+            case BtUiDevAudioDevice:
+                devTypesWanted |= BtuiDevProperty::AVDev;
+                break;
+            case BtUiDevComputer:
+                devTypesWanted |= BtuiDevProperty::Computer;
+                break;
+            case BtUiDevInputDevice:
+                devTypesWanted |= BtuiDevProperty::Peripheral;
+                break;
+            case BtUiDevPhone:
+                devTypesWanted |= BtuiDevProperty::Phone;
+                break;
+            case BtUiDevOtherDevice:
+                devTypesWanted |= (BtuiDevProperty::LANAccessDev |
+                        BtuiDevProperty::Toy |
+                        BtuiDevProperty::WearableDev |
+                        BtuiDevProperty::ImagingDev |
+                        BtuiDevProperty::HealthDev |
+                        BtuiDevProperty::UncategorizedDev);
+                break;
+            default:
+                // should never get here
+                break;
+            }
+        }
+    }
+    else
+        {
+        devTypesWanted = mSelectedDeviceType;
+        }
+        
+    
 
  /*   HbSelectionDialog *dlg = (HbSelectionDialog*)(sender());
     if(dlg->actions().first() == action) {
@@ -365,6 +382,34 @@ void BTDeviceSearchDialogWidget::selectionDialogClosed(HbAction* action)
      } 
     else if(dlg->actions().at(1) == action) {
      }*/
+    
+    if((devTypesWanted != mSelectedDeviceType) &&(devTypesWanted !=0))
+        {
+        mSelectedDeviceType = devTypesWanted;
+//        mViewByChosen = true;
+        delete mContentItemModel;
+        mContentItemModel = new QStandardItemModel(this);
+        mListView->setModel(mContentItemModel);
+        mSelectedData.clear();
+        for(int i=0;i<mData.count();i++)
+            {
+            const BtSendDataItem& qtdev = mData[i];
+            if(devTypesWanted & qtdev[DeviceTypeRole].toInt() )
+                {
+                QStandardItem* listitem = new QStandardItem();
+                QStringList info;
+                info.append(qtdev[NameAliasRole].toString());
+    
+                listitem->setData(info, Qt::DisplayRole);
+                HbIcon icon =  getBadgedDeviceTypeIcon(qtdev[CoDRole].toDouble(),
+                        qtdev[MajorPropertyRole].toInt(),
+                         BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight);
+                listitem->setIcon(icon.qicon());
+                mContentItemModel->appendRow(listitem);        
+                mSelectedData.append(qtdev);
+                }
+            }
+        }
     }
 
 void BTDeviceSearchDialogWidget::deviceSelected(const QModelIndex& modelIndex)
@@ -382,109 +427,19 @@ void BTDeviceSearchDialogWidget::deviceSelected(const QModelIndex& modelIndex)
         }
     
     QVariantMap val;
-    QVariant index(row);
-    val.insert("selectedindex",index);
+//    QVariant index(row);
+//    val.insert("selectedindex",index);
+    
+    const BtSendDataItem& qtdev = mSelectedData.at(row);
+    val.insert("selectedindex",QVariant(row));
+    val.insert("devicename",QVariant(qtdev[NameAliasRole]));
+    val.insert("deviceaddress",QVariant(qtdev[ReadableBdaddrRole]));
+    val.insert("deviceclass",QVariant(qtdev[CoDRole]));
+
     emit deviceDialogData(val);
 //    mDeviceDialogData = 1;//flag is to say that device dialog data is emitted required when we cancel the dialog
     //emit deviceDialogClosed();
   //  this->close();
     }
 
-//void BTDeviceSearchDialogWidget::viewByItemSelected(int index)
-  //  {
-    //  (void) index;
- /*   if(index == 0)
-        {
-        //Option 'All' selected    
-        mViewByDialog->close();
-        delete mContentItemModel;
-        mContentItemModel = new QStandardItemModel(this);
-        mListView->setModel(mContentItemModel);
-        mViewByChosen = false;
-
-        for(int i = 0; i < mDeviceList.count(); i++)
-            {        
-            QStandardItem* listitem = new QStandardItem();
-                
-            QStringList info;
-            info << mDeviceList[i].mDeviceName << mDeviceList[i].mDeviceType ;
-            listitem->setData(info, Qt::DisplayRole);
-    
-            //listitem->setIcon(icon(mDeviceList[i].mDeviceType));
-    
-            mContentItemModel->appendRow(listitem);
-            }
-        }
-    else
-        {
-        index--;
-        mSelectedType = index;
-        mViewByDialog->close();
-        
-        delete mContentItemModel;
-        mContentItemModel = new QStandardItemModel(this);
-        mListView->setModel(mContentItemModel);
-    
-        mDeviceLstOfType.clear();
-        for(int i = 0; i < mDeviceList.count(); i++)
-            {
-            if(mDeviceList[i].mDeviceType == mDeviceTypeList[index])
-                {
-                mDeviceLstOfType.append(mDeviceList[i]);
-            
-                QStandardItem* listitem = new QStandardItem();
-                
-                QStringList info;
-                info << mDeviceList[i].mDeviceName << mDeviceTypeList[index];
-                listitem->setData(info, Qt::DisplayRole);
-        
-                //listitem->setIcon(icon(mDeviceTypeList[index]));
-        
-                mContentItemModel->appendRow(listitem);
-                }
-            }
-        mViewByChosen = true;
-        }*/
- //   }
-
-QIcon BTDeviceSearchDialogWidget::icon()
-    {
- /*   if(deviceType == "Audio")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_audio.svg")));
-        }
-    else if(deviceType == "Car-kit")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_car_kit.svg")));
-        }
-    else if(deviceType == "Computer")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_computer.svg")));
-        }
-    else if(deviceType == "Headset")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_headset.svg")));
-        }
-    else if(deviceType == "Keyboard")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_keyboard.svg")));
-        }
-    else if(deviceType == "Mouse")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_mouse.svg")));
-        }
-    else if(deviceType == "Phone")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_phone.svg")));
-        }
-    else if(deviceType == "Printer")
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_printer.svg")));
-        }
-    else
-        {
-        return (QIcon(QString(":/icons/qgn_prop_bt_unknown.svg")));
-        }*/
-    return QIcon(QString(":/icons/qtg_large_bluetooth.svg"));
-    }
 

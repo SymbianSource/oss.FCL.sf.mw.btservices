@@ -118,6 +118,7 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             sizeInMB = ((float)mFileSz ) / (1024*1024);
             QString fileSzMb;
             fileSzMb.setNum(sizeInMB);
+            //TODO - check for localization
             fileSzMb.append(QString(" Mb"));
             mFileSize->setPlainText(fileSzMb);
             }
@@ -128,6 +129,7 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             sizeInKB = mFileSz >> 10;
             QString fileSzKb;
             fileSzKb.setNum(sizeInKB);
+            //TODO - check for localization
             fileSzKb.append(QString(" Kb"));
             mFileSize->setPlainText(fileSzKb);
             }
@@ -136,6 +138,7 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             {
             QString fileSzB;
             fileSzB.setNum(mFileSz);
+            //TODO - check for localization
             fileSzB.append(QString(" Bytes"));
             mFileSize->setPlainText(fileSzB);
             }
@@ -146,8 +149,8 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             {
             mFileCount->setVisible(true);  
             
-            QString fCntStr(hbTrId("txt_bt_info_ln_files_already_received"));
-            mFileCount->setPlainText(fCntStr.arg(fCnt));
+            QString fCntStr(hbTrId("txt_bt_info_ln_files_already_received", fCnt));
+            mFileCount->setPlainText(fCntStr);
             }
     }
 
@@ -164,7 +167,7 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
 void BTRecvPrgrsDialogWidget::hideClicked()
 {
     QVariantMap data;
-    data.insert(QString("actionResult"), QVariant(true));
+    data.insert(QString("actionResult"), QVariant(TBluetoothDialogParams::EHide));
     emit deviceDialogData(data);
     emit deviceDialogClosed();
 }
@@ -172,7 +175,7 @@ void BTRecvPrgrsDialogWidget::hideClicked()
 void BTRecvPrgrsDialogWidget::cancelClicked()
 {
     QVariantMap data;
-    data.insert(QString("actionResult"), QVariant(false));
+    data.insert(QString("actionResult"), QVariant(TBluetoothDialogParams::ECancelReceive));
     emit deviceDialogData(data);
     emit deviceDialogClosed();
 }

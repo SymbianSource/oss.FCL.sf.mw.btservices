@@ -32,6 +32,9 @@
 #include "cmgwcommandhandler.h"
 #include "cmgdcommandhandler.h"
 #include "telephonywrapper.h"
+#include "cgmmcommandhandler.h"
+#include "scpbrcommandhandler.h"
+#include "scpbwcommandhandler.h"
 #endif
 
 
@@ -40,6 +43,8 @@
 #include "debug.h"
 
 #include <exterror.h>           // Additional RMobilePhone error code
+#include <etelmmerr.h>          // ETelMM error code
+#include <gsmerror.h>           // GSM error code
 
 // +CME error code
 _LIT8(KCMEMemoryFailure, "+CME ERROR: 23\r\n"); // Memory failure.\r\n
@@ -48,6 +53,15 @@ _LIT8(KCMEPUKRequired, "+CME ERROR: 12\r\n"); // PUK required.\r\n
 _LIT8(KCMENotAllowed, "+CME ERROR: 3\r\n"); // Operation not allowed.\r\n
 _LIT8(KCMEPhoneError, "+CME ERROR: 0\r\n"); // Phone failure.\r\n
 _LIT8(KCMEPhoneUnknown, "+CME ERROR: 100\r\n"); // unknown error
+_LIT8(KCMESimNotInserted, "+CME ERROR: 10\r\n"); // SIM not inserted 
+_LIT8(KCMEMemoryFull, "+CME ERROR: 20\r\n"); // Memory full
+_LIT8(KCMEInvalidIndex, "+CME ERROR: 21\r\n"); // Invalid index 
+_LIT8(KCMENotFound, "+CME ERROR: 22\r\n"); // Not found 
+_LIT8(KCMEDialStringTooLong, "+CME ERROR: 26\r\n"); // Dial string too long 
+_LIT8(KCMETextStringTooLong, "+CME ERROR: 24\r\n"); // Text string too long 
+_LIT8(KCMEInvalidCharacters, "+CME ERROR: 27\r\n"); // Invalid characters in dial string
+
+
 
 const TInt KErrorReplyLength = 9;  // CR+LF+"ERROR"+CR+LF
 const TInt KEditorReplyLength = 4;  // CR+LF+'>'+' '
@@ -79,6 +93,9 @@ CATMiscCmdPlugin::~CATMiscCmdPlugin()
     delete iCGMIHandler;
     delete iCMGWHandler;
     delete iCMGDHandler;
+    delete iCGMMHandler;
+	delete iSCPBRHandler;
+    delete iSCPBWHandler;
 #endif    
 	
     iPhone.Close();
@@ -110,6 +127,10 @@ void CATMiscCmdPlugin::ConstructL()
     iCGMIHandler = CCGMICommandHandler::NewL(this, iCommandParser, iPhone);
     iCMGWHandler = CCMGWCommandHandler::NewL(this, iCommandParser, iPhone);
     iCMGDHandler = CCMGDCommandHandler::NewL(this, iCommandParser, iPhone); 
+    iCGMMHandler = CCGMMCommandHandler::NewL(this, iCommandParser, iPhone);
+	iSCPBRHandler = CSCPBRCommandHandler::NewL(this, iCommandParser, iPhone);
+    iSCPBWHandler = CSCPBWCommandHandler::NewL(this, iCommandParser, iPhone);
+    
    
     // Get telephony information - Model, IMEI, Manufacturer
     CTelephonyWrapper* telephonyWrapper = CTelephonyWrapper::NewL();
@@ -120,12 +141,15 @@ void CATMiscCmdPlugin::ConstructL()
         static_cast<CHVERCommandHandler*>(iHVERHandler)->SetHWVersion(telephonyWrapper->GetPhoneModel());
         static_cast<CCGSNCommandHandler*>(iCGSNHandler)->SetSerialNum(telephonyWrapper->GetPhoneSerialNum());
         static_cast<CCGMICommandHandler*>(iCGMIHandler)->SetManufacturer(telephonyWrapper->GetPhoneManufacturer());
+        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetManufacturer(telephonyWrapper->GetPhoneManufacturer());
+        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetModelID(telephonyWrapper->GetPhoneModel());
         }
     else // The result is used to determine whether to display CME error or not
         {
         static_cast<CHVERCommandHandler*>(iHVERHandler)->SetTelephonyError(result);
         static_cast<CCGSNCommandHandler*>(iCGSNHandler)->SetTelephonyError(result);
         static_cast<CCGMICommandHandler*>(iCGMIHandler)->SetTelephonyError(result);
+        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetTelephonyError(result);
         }
     delete telephonyWrapper;
 #endif    
@@ -208,17 +232,25 @@ TBool CATMiscCmdPlugin::IsCommandSupported( const TDesC8& aCmd )
             iCurrentHandler = iHVERHandler;
             break;
             }
-        case (TAtCommandParser::ECmdAtCgsn):
+        case (TAtCommandParser::ECmdAtCgsn): // intentional fall through
+        case (TAtCommandParser::ECmdAtGsn):
+        case (TAtCommandParser::ECmdAtI1):
             {
             iCurrentHandler = iCGSNHandler;
             break;
             }
-        case (TAtCommandParser::ECmdAtCgmr):
+        case (TAtCommandParser::ECmdAtCgmr): // intentional fall through
+        case (TAtCommandParser::ECmdAtGmr):
+        case (TAtCommandParser::ECmdAtI2):
+        case (TAtCommandParser::ECmdAtI4):
             {
             iCurrentHandler = iCGMRHandler;
             break;
             }
-        case (TAtCommandParser::ECmdAtCgmi):
+        case (TAtCommandParser::ECmdAtCgmi): // intentional fall through
+        case (TAtCommandParser::ECmdAtGmi):
+        case (TAtCommandParser::ECmdAtI):
+        case (TAtCommandParser::ECmdAtI0):
             {
             iCurrentHandler = iCGMIHandler;
             break;
@@ -236,6 +268,23 @@ TBool CATMiscCmdPlugin::IsCommandSupported( const TDesC8& aCmd )
 		case (TAtCommandParser::ECmdAtCmgf):
             {
             iCurrentHandler = NULL;
+            break;
+            }
+		case (TAtCommandParser::ECmdAtCgmm): // intentional fall through
+		case (TAtCommandParser::ECmdAtGmm):
+		case (TAtCommandParser::ECmdAtI3):
+            {
+            iCurrentHandler = iCGMMHandler;
+            break;
+            }
+		case (TAtCommandParser::ECmdAtScpbr):
+            {
+            iCurrentHandler = iSCPBRHandler;
+            break;
+            }    
+		case (TAtCommandParser::ECmdAtScpbw):
+            {
+            iCurrentHandler = iSCPBWHandler;
             break;
             }
 #endif
@@ -630,9 +679,55 @@ void CATMiscCmdPlugin::CreateCMEReplyAndComplete(TInt aError)
 	            break;
 	            }
             case KErrUnknown:
+            case KErrGsmSimServAnrFull:
                 {
                 // unknown error
                 response.Append(KCMEPhoneUnknown);
+                break;
+                }
+            case KErrNotFound:
+                {
+                response.Append(KCMENotFound);
+                break;
+                }
+            case KErrInUse:
+            case KErrGsmMMServiceOptionTemporaryOutOfOrder:
+                {
+                // SIM not inserted
+                response.Append(KCMESimNotInserted);
+                break;
+                }
+            case KErrArgument:
+            case KErrGsm0707InvalidIndex:
+            case KErrGsm0707NotFound:
+                {
+                // Invalid index
+                response.Append(KCMEInvalidIndex);
+                break;
+                }
+            case KErrGsm0707TextStringTooLong:
+                {
+                // Text string too long
+                response.Append(KCMETextStringTooLong);
+                break;
+                }
+            case KErrGsm0707DialStringTooLong:
+                {
+                // Dial string too long
+                response.Append(KCMEDialStringTooLong);
+                break;
+                }
+            case KErrGsmCCUnassignedNumber:
+            case KErrGsm0707InvalidCharsInDialString:
+                {
+                // Invalid characters in dial string
+                response.Append(KCMEInvalidCharacters);
+                break;
+                }
+            case KErrMMEtelMaxReached:
+                {
+                // Memory full
+                response.Append(KCMEMemoryFull);
                 break;
                 }
             default:
@@ -688,9 +783,8 @@ void CATMiscCmdPlugin::CreateCMSReplyAndComplete(TInt aError)
                 response.AppendNum(EATCMSErr304);
                 break;
                 }
-            case KErrNotReady:
-            case KErrNotFound:
-            case KErrGsmSMSSimNotInserted:
+            case KErrGsm0707SimFailure:
+            case KErrGsmMMServiceOptionTemporaryOutOfOrder:
                 {    
                 // SIM card not inserted
                 response.AppendNum(EATCMSErr310);
@@ -736,7 +830,7 @@ void CATMiscCmdPlugin::CreateCMSReplyAndComplete(TInt aError)
                 }
             default:
 				{
-                response.AppendNum(EATCmsErrGeneral);
+				response.AppendNum(EATCmsErrGeneral);
 				break;
 				}
             }
@@ -817,6 +911,12 @@ void CATMiscCmdPlugin::ConnectToEtelL(RTelServer& aTelServer, RMobilePhone& aPho
         }
     User::LeaveIfError(aTelServer.GetPhoneInfo(0, info));
     User::LeaveIfError(aPhone.Open(aTelServer, info.iName));
+    
+    if (iTelServer.SetExtendedErrorGranularity(RTelServer::EErrorExtended)!=KErrNone)
+        {
+        User::LeaveIfError(iTelServer.SetExtendedErrorGranularity(RTelServer::EErrorBasic));
+        }
+
     TRACE_FUNC_EXIT
     }
 

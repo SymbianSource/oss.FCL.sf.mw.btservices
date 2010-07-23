@@ -21,7 +21,7 @@
 #include <qglobal.h>
 #include <bt_sock.h>
 #include <HbIcon>
-#include "btdevicemodel.h"
+//#include "btdevicemodel.h"
 #include "btuidevtypemap.h"
 
 enum BtuiIconCorner {

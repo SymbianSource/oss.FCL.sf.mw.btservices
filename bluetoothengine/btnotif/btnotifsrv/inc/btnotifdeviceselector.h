@@ -30,6 +30,7 @@
 #include <btservices/devdiscoveryobserver.h>
 #include "bluetoothnotification.h"
 #include <btservices/btdevrepository.h>
+#include <hb/hbcore/hbsymbianvariant.h>
 
 class CBTNotifServer;
 class CAdvanceDevDiscoverer;
@@ -154,7 +155,18 @@ private:
             TBluetoothDialogParams::TBTDialogType aType,
             TBTDialogResourceId aResourceId );
 			
-	void LoadUsedDevicesL();		
+	void LoadUsedDevicesL();	
+	
+	void AddDataL(CHbSymbianVariantMap* aMap, const TDesC& aKey, const TAny* aData, 
+	        CHbSymbianVariant::TType aDataType);
+	
+	void setMajorProperty(TInt aMajorProperty, TInt prop, TBool addto);
+	
+	TBool isBonded( const CBTDevice &dev );
+	
+	CBtDevExtension* GetDeviceFromRepositoryL( const TBTDevAddr& addr );
+	
+	void SendSelectedDeviceL( CHbSymbianVariantMap& aData );
     
 private: // data    
 
@@ -176,9 +188,9 @@ private: // data
     CAdvanceDevDiscoverer* iDiscoverer;
     
     /**
-     * do not own the elements in the array.
+     *  own's the elements in the array.
      */
-    RPointerArray<CBtDevExtension> iDevices;
+    RDevExtensionArray iDevices;
     
     /**
      * The message for a pending device selection request from a RNotifier client.

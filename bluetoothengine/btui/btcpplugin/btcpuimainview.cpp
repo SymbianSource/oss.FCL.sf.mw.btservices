@@ -34,6 +34,7 @@
 #include <hbaction.h>
 #include <hbcombobox.h>
 #include <hbgroupbox.h>
+#include <hbdataform.h>
 #include "btcpuisearchview.h"
 #include "btcpuideviceview.h"
 #include <bluetoothuitrace.h>
@@ -144,23 +145,22 @@ BtCpUiMainView::BtCpUiMainView(
     ret = connect(mPairAction, SIGNAL(triggered()), this, SLOT(pairActionTriggered()));
     BTUI_ASSERT_X( ret, "bt-main-view", "pair action can't connect" ); 
 
-    mGroupBox = qobject_cast<HbGroupBox *>( mLoader->findWidget( "groupBox" ) );
-    BTUI_ASSERT_X( mGroupBox != 0, "bt-main-view", "Group Box not found" ); 
+    mDataForm = qobject_cast<HbDataForm *>( mLoader->findWidget( "dataForm" ) );
+    BTUI_ASSERT_X( mDataForm != 0, "bt-main-view", "dataForm not found" ); 
     
-    //*********************Testing device view START****************************//
-    HbAction *removePairedDevices = static_cast<HbAction*>( mLoader->findObject( "removePairedDevices" ) );
-    BTUI_ASSERT_X( removePairedDevices, "bt-main-view", "remove action missing" ); 
-    //ret = connect(removePairedDevices, SIGNAL(triggered()), this, SLOT(goToDeviceView()));
-    //BTUI_ASSERT_X( ret, "bt-main-view", "orientation toggle can't connect" ); 
-        
-    
-    
-    //*********************Testing device view END****************************//
         
     // load menu
     HbMenu *optionsMenu = qobject_cast<HbMenu *>(mLoader->findWidget("viewMenu"));
     BTUI_ASSERT_X( optionsMenu != 0, "bt-main-view", "Options menu not found" );   
     this->setMenu(optionsMenu);
+    
+    HbMenu *menu = this->menu();
+    mRemovePairedDevices = menu->addAction(hbTrId("txt_bt_opt_remove_paired_devices"));
+    
+    mSubMenu = new HbMenu(hbTrId("txt_bt_opt_remove"));
+    mSubMenu->addAction(hbTrId("txt_bt_opt_remove_sub_all_devices"));
+    mSubMenu->addAction(hbTrId("txt_bt_opt_remove_sub_paired_devices"));
+    mSubMenu->addAction(hbTrId("txt_bt_opt_remove_sub_blocked_devices"));
     
     // update display when setting data changed
     ret = connect(mSettingModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)), 
@@ -183,13 +183,12 @@ BtCpUiMainView::BtCpUiMainView(
     mMainFilterModel = new BtuiModelSortFilter(this);
     
     mMainFilterModel->setSourceModel( mDeviceModel );
+    mDeviceList->setModel(mMainFilterModel);
     updateDeviceListFilter(BtuiPaired);
 	    // List view item
     BtCpUiMainListViewItem *prototype = new BtCpUiMainListViewItem(mDeviceList);
     prototype->setModelSortFilter(mMainFilterModel);
     mDeviceList->setItemPrototype(prototype);
-
-    mDeviceList->setModel(mMainFilterModel);
 
 }
 
@@ -204,6 +203,7 @@ BtCpUiMainView::~BtCpUiMainView()
 	if (mAbstractDelegate) {
         delete mAbstractDelegate;
     }
+
 }
 
 /*! 
@@ -214,6 +214,9 @@ void BtCpUiMainView::activateView(const QVariant& value, bool fromBackButton )
     Q_UNUSED(value);
     Q_UNUSED(fromBackButton);
     
+    //Reset the device list when returning to the view, as it may have been invalidated by the device view
+    mMainFilterModel->setSourceModel( mDeviceModel );
+    mDeviceList->setModel(mMainFilterModel);
 }
 
 /*! 
@@ -321,11 +324,18 @@ void BtCpUiMainView::setPrevVisibilityMode()
 
 void BtCpUiMainView::allActionTriggered()
 {
+    HbMenu *menu = this->menu();
+    menu->removeAction(mRemovePairedDevices);
+    mRemoveDevices = menu->addMenu( mSubMenu );
+
     updateDeviceListFilter(BtuiAll);
 }
 
 void BtCpUiMainView::pairActionTriggered()
 {
+    HbMenu *menu = this->menu();
+    menu->removeAction(mRemoveDevices);
+    mRemovePairedDevices = menu->addAction(hbTrId("txt_bt_opt_remove_paired_devices"));
     updateDeviceListFilter(BtuiPaired);
 }
 
@@ -335,7 +345,7 @@ void BtCpUiMainView::updateDeviceListFilter(BtCpUiMainView::filterType filter)
     
     switch (filter) {
         case BtuiAll:
-            mGroupBox->setHeading(hbTrId("txt_bt_subhead_bluetooth_all_devices"));
+            mDataForm->setHeading(hbTrId("txt_bt_subhead_bluetooth_all_devices"));
             mPairAction->setEnabled(true);
             mAllAction->setEnabled(false);
             mMainFilterModel->addDeviceMajorFilter(
@@ -344,7 +354,7 @@ void BtCpUiMainView::updateDeviceListFilter(BtCpUiMainView::filterType filter)
 
             break;
         case BtuiPaired:
-            mGroupBox->setHeading(hbTrId("txt_bt_subhead_bluetooth_paired_devices"));
+            mDataForm->setHeading(hbTrId("txt_bt_subhead_bluetooth_paired_devices"));
             mPairAction->setEnabled(false);
             mAllAction->setEnabled(true);
             mMainFilterModel->addDeviceMajorFilter(

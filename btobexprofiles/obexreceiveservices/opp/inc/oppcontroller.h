@@ -157,6 +157,9 @@ private:
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
     TInt                        iFileCount;
+    TBool                       iReceivingFailed;
+    CHbDeviceDialogSymbian*     iRecvDoneDialog;
+    TBool                       iShowRecvCompleteDialog;
     };
 
 #endif      // OPPCONTROLLER_H

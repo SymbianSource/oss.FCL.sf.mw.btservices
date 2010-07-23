@@ -138,7 +138,7 @@ void CBTNotifBasePairingHandler::ShowPairingResultNoteL(TInt aResult)
     TBTDialogResourceId resourceId = EPairingSuccess;
     if(KErrNone != aResult)
         {
-        resourceId = EPairingFailure;
+        resourceId = EPairingFailureOk;
         }
     notification->SetNotificationType( TBluetoothDialogParams::ENote, resourceId );
     const CBtDevExtension* dev = iParent.BTDevRepository().Device(iAddr);

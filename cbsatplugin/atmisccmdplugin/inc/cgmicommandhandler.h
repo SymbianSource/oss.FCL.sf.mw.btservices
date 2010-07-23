@@ -21,7 +21,7 @@
 
 #include "atcmdsyncbase.h"
 
-#include <Etel3rdParty.h>
+#include <etel3rdparty.h>
 
 /**
  *  AT+CGMI command handler implementation class

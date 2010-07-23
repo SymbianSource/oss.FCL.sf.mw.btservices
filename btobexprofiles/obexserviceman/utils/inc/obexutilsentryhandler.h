@@ -54,19 +54,7 @@ public:
      */
     TInt AddEntryAttachment(const TDesC &aFilePath, CMsvAttachment* anAttachInfo, CMsvStore* aStore );
     
-    /**
-     * Update an entry attachment
-     * @since S60 v5.0
-     * @param aFilePath the absolute file path of the linked attachment file.
-     * @param anAttachInfo the attachment info associated with the file.
-     * @param aStore An interface ove the message store that is associated with a message entry.
-     * @return error code
-     */
-    TInt UpdateEntryAttachment(TFileName& aFileName,
-                              CMsvAttachment* anOldAttachInfo,
-                              CMsvAttachment* aNewAttachInfo,
-                              CMsvStore* aStore );
-    
+   
     // from base class CActive
          
     /**
@@ -97,23 +85,6 @@ private:
      */ 
     void ConstructL();
 
-    /**
-     * Add link attachment 
-     * 
-     * @since S60 v5.0
-     */
-    void DoAddEntryAttachmentL(const TDesC &aFilePath, CMsvAttachment* anAttachInfo, CMsvStore* aStore);
-    
-   
-    /**
-     * Update link attachment 
-     * 
-     * @since S60 v5.0
-     */
-    void DoUpdateEntryAttachmentL(TFileName& aFileName,
-                                 CMsvAttachment* anOldAttachInfo,
-                                 CMsvAttachment* aNewAttachInfo,
-                                 CMsvStore* aStore);
     
 private: // member data
 

@@ -34,9 +34,9 @@ BTIndicatorPlugin::BTIndicatorPlugin() : mError(0),mIndicatorTranslator(0)
 // BTIndicatorPlugin::~BTIndicatorPlugin
 // ----------------------------------------------------------------------------
 BTIndicatorPlugin::~BTIndicatorPlugin()
-    {
+{
     delete mIndicatorTranslator;
-    }
+}
 
 // ----------------------------------------------------------------------------
 // BTIndicatorPlugin::indicatorTypes
@@ -70,10 +70,9 @@ bool BTIndicatorPlugin::accessAllowed(const QString &indicatorType,
 // ----------------------------------------------------------------------------
 HbIndicatorInterface* BTIndicatorPlugin::createIndicator(const QString &indicatorType)
 {
-    if(!mIndicatorTranslator)
-        {
+    if(!mIndicatorTranslator) {
         mIndicatorTranslator = new HbTranslator(BTINDICATOR_TRANSLATION);
-        }
+    }
     HbIndicatorInterface *indicator = new BTIndicator(indicatorType);
     return indicator;
 }

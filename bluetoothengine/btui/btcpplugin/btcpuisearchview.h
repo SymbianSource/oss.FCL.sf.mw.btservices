@@ -31,6 +31,8 @@ class HbDocumentLoader;
 class HbListView;
 class BtAbstractDelegate;
 class HbSelectionDialog;
+class HbGroupBox;
+class HbDataForm;
 
 class BtCpUiSearchView : public BtCpUiBaseView
 {
@@ -72,7 +74,7 @@ private:
 private:
     HbDocumentLoader *mLoader;
     HbLabel *mDeviceIcon;
-    HbLabel *mLabelFoundDevices;
+    HbDataForm *mDataForm;
     HbLabel *mLabelSearching;        
     HbListView *mDeviceList;
     QStringList mDevTypeList;

@@ -35,7 +35,6 @@ BtDeviceDialogQueryWidget::BtDeviceDialogQueryWidget(
     mLastError = NoError;
     mShowEventReceived = false;
     mMessageBox = new HbMessageBox(type);
-    
     resetProperties();
     constructQueryDialog(parameters);
     TRACE_EXIT
@@ -129,7 +128,7 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
         mLastError = UnknownDeviceDialogError;
         return;
     }
-    title = QString(hbTrId("txt_bt_title_pairing_with_1"));
+
     param = parameters.value( keyStr );
     int key = param.toInt();
     switch ( key ) {
@@ -139,7 +138,12 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
         case EPasskeyDisplay:
             prompt = QString( hbTrId( "txt_bt_info_enter_the_following_code_to_the_1" ) );
             break;
-        // Note dialogs, but not Notification dialogs
+        case EPairingFailureRetry:
+            prompt = QString( hbTrId( "txt_bt_info_pairing_with_1_failed_either_the_pas" ) );
+            break;
+        case EPairingFailureOk:
+            prompt = QString( hbTrId( "txt_bt_info_unable_to_pair_with_1" ) );
+            break;
         // Input dialogs
         case EPinInput:
         case EObexPasskeyInput:
@@ -154,18 +158,41 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
     if ( repls > 0 ) {
         name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
         prompt = prompt.arg( name.toString() );
-        addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
-        // todo: Formating the prompt need to be discussed with UI designer
-        // The passcode could be displayed on a separate row if it the label did support
-        // the use of newline escape character.
-        prompt.append(tr(" "));
-        prompt.append(addval.toString());
+        if(key != EPairingFailureRetry && key != EPairingFailureOk)
+            {
+            addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
+            // todo: Formating the prompt need to be discussed with UI designer
+            // The passcode could be displayed on a separate row if it the label did support
+            // the use of newline escape character.
+            prompt.append(tr("\n\n")); // insert 2 newlines for clarity
+            prompt.append(addval.toString());
+            if(key == EPasskeyDisplay)
+                {
+                prompt.append("\n");   
+                }
+            }
     }
-    title = title.arg(name.toString());
     // set property value to this dialog widget
-    mMessageBox->setHeadingWidget(new HbLabel(title));
+    if(key != EPairingFailureRetry && key != EPairingFailureOk)
+        {
+        title = QString(hbTrId("txt_bt_title_pairing_with_1"));
+        title = title.arg(name.toString());
+        mMessageBox->setHeadingWidget(new HbLabel(title));
+        mMessageBox->setIconVisible(false);
+        mMessageBox->setStandardButtons( HbMessageBox::Yes | HbMessageBox::No);
+        }
+    else
+        {
+        if(key == EPairingFailureRetry)
+            {
+            mMessageBox->setStandardButtons( HbMessageBox::Retry | HbMessageBox::Cancel);
+            }
+        else
+            {
+            mMessageBox->setStandardButtons( HbMessageBox::Ok);
+            }
+        }
     mMessageBox->setText( prompt );
-    mMessageBox->setIconVisible(false);
     TRACE_EXIT
 }
 

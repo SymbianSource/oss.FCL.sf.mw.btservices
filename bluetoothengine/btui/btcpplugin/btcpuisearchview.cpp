@@ -26,6 +26,7 @@
 #include <HbListView>
 #include <HbMenu>
 #include <HbSelectionDialog>
+#include <HbGroupBox>
 #include <QString>
 #include <QStringList>
 #include <QDebug>
@@ -49,12 +50,14 @@ BtCpUiSearchView::BtCpUiSearchView(
     bool ret(false);
     
     mQuery = 0;
-    mMainView = (BtCpUiMainView *) parent;
+    mLoader = 0;
+    mSoftKeyBackAction = 0;
     
+    mMainView = (BtCpUiMainView *) parent;
     mMainWindow = hbInstance->allMainWindows().first();
     
     mSoftKeyBackAction = new HbAction(Hb::BackNaviAction, this);
-    BTUI_ASSERT_X(mSoftKeyBackAction, "BtCpUiBaseView::BtCpUiBaseView", "can't create back action");
+    BTUI_ASSERT_X(mSoftKeyBackAction, "BtCpUiSearchView::BtCpUiSearchView", "can't create back action");
     
     // Create view for the application.
     // Set the name for the view. The name should be same as the view's
@@ -62,6 +65,7 @@ BtCpUiSearchView::BtCpUiSearchView(
     setObjectName("bt_search_view");
 
     mLoader = new HbDocumentLoader();
+    BTUI_ASSERT_X( mLoader != 0, "BtCpUiSearchView::BtCpUiSearchView", "can't create mLoader" );
     // Pass the view to documentloader. Document loader uses this view
     // when docml is parsed, instead of creating new view.
     QObjectList objectList;
@@ -83,21 +87,21 @@ BtCpUiSearchView::BtCpUiSearchView(
     mDeviceIcon=0;
     // can't use qobject_cast since HbIcon is not derived from QObject!
     mDeviceIcon = qobject_cast<HbLabel *>( mLoader->findWidget( "icon" ) );  
-    BTUI_ASSERT_X( mDeviceIcon != 0, "bt-search-view", "Device Icon not found" );
+    BTUI_ASSERT_X( mDeviceIcon != 0, "BtCpUiSearchView::BtCpUiSearchView", "Device Icon not found" );
     
-    mLabelFoundDevices=0;
-    mLabelFoundDevices = qobject_cast<HbLabel *>( mLoader->findWidget( "label_found_devices" ) );
-    BTUI_ASSERT_X( mLabelFoundDevices != 0, "bt-search-view", "Found Devices not found" );
-    mLabelFoundDevices->setPlainText(hbTrId("txt_bt_subhead_bluetooth_found_devices"));
+    mDataForm=0;
+    mDataForm = qobject_cast<HbDataForm *>( mLoader->findWidget( "dataForm" ) );
+    BTUI_ASSERT_X( mDataForm != 0, "BtCpUiSearchView::BtCpUiSearchView", "dataForm not found" );
+    mDataForm->setHeading(hbTrId("txt_bt_subhead_bluetooth_found_devices"));
 
     mLabelSearching=0;
     mLabelSearching = qobject_cast<HbLabel *>( mLoader->findWidget( "label_searching" ) );
-    BTUI_ASSERT_X( mLabelSearching != 0, "bt-search-view", "Searching not found" );
+    BTUI_ASSERT_X( mLabelSearching != 0, "BtCpUiSearchView::BtCpUiSearchView", "Searching not found" );
     mLabelSearching->setPlainText(hbTrId("txt_bt_subhead_searching"));
     
     mDeviceList=0;
     mDeviceList = qobject_cast<HbListView *>( mLoader->findWidget( "deviceList" ) );
-    BTUI_ASSERT_X( mDeviceList != 0, "bt-search-view", "Device List not found" );   
+    BTUI_ASSERT_X( mDeviceList != 0, "BtCpUiSearchView::BtCpUiSearchView", "Device List not found" );   
     
     
     mDeviceList->setSelectionMode( HbAbstractItemView::SingleSelection );
@@ -107,10 +111,10 @@ BtCpUiSearchView::BtCpUiSearchView(
     
     if (mOrientation == Qt::Horizontal) {
         mLoader->load(BTUI_SEARCHVIEW_DOCML, "landscape_ui", &ok);
-        BTUI_ASSERT_X( ok, "bt-search-view", "Invalid docml file: landscape section problem" );
+        BTUI_ASSERT_X( ok, "BtCpUiSearchView::BtCpUiSearchView", "Invalid docml file: landscape section problem" );
     } else {
         mLoader->load(BTUI_SEARCHVIEW_DOCML, "portrait_ui", &ok);
-        BTUI_ASSERT_X( ok, "bt-search-view", "Invalid docml file: portrait section problem" );        
+        BTUI_ASSERT_X( ok, "BtCpUiSearchView::BtCpUiSearchView", "Invalid docml file: portrait section problem" );        
     }
 
     // listen for orientation changes
@@ -120,38 +124,38 @@ BtCpUiSearchView::BtCpUiSearchView(
     
     // load tool bar actions
     mViewBy = static_cast<HbAction*>( mLoader->findObject( "viewByAction" ) );
-    BTUI_ASSERT_X( mViewBy, "bt-search-view", "view by action missing" ); 
+    BTUI_ASSERT_X( mViewBy, "BtCpUiSearchView::BtCpUiSearchView", "view by action missing" ); 
     ret = connect(mViewBy, SIGNAL(triggered()), this, SLOT(viewByDeviceTypeDialog()));
-    BTUI_ASSERT_X( ret, "bt-search-view", "viewByAction can't connect" ); 
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "viewByAction can't connect" ); 
 
     mStop = static_cast<HbAction*>( mLoader->findObject( "stopAction" ) );
-    BTUI_ASSERT_X( mStop, "bt-search-view", "stopAction missing" ); 
+    BTUI_ASSERT_X( mStop, "BtCpUiSearchView::BtCpUiSearchView", "stopAction missing" ); 
     ret = connect(mStop, SIGNAL(triggered()), this, SLOT(stopSearching()));
-    BTUI_ASSERT_X( ret, "bt-search-view", "stopAction can't connect" ); 
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "stopAction can't connect" ); 
     mStop->setEnabled(true);
     
     mRetry = static_cast<HbAction*>( mLoader->findObject( "retryAction" ) );
-    BTUI_ASSERT_X( mRetry, "bt-search-view", "retryAction missing" ); 
+    BTUI_ASSERT_X( mRetry, "BtCpUiSearchView::BtCpUiSearchView", "retryAction missing" ); 
     ret = connect(mRetry, SIGNAL(triggered()), this, SLOT(retrySearch()));
-    BTUI_ASSERT_X( ret, "bt-search-view", "retryAction can't connect" ); 
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "retryAction can't connect" ); 
     // Disable for initial search
     mRetry->setEnabled(false);
     
     // load menu
     HbMenu *optionsMenu = qobject_cast<HbMenu *>(mLoader->findWidget("viewMenu"));
-    BTUI_ASSERT_X( optionsMenu != 0, "bt-search-view", "Options menu not found" );   
+    BTUI_ASSERT_X( optionsMenu != 0, "BtCpUiSearchView::BtCpUiSearchView", "Options menu not found" );   
     this->setMenu(optionsMenu);      
     
     mExit = static_cast<HbAction*>( mLoader->findObject( "exitAction" ) );
-    BTUI_ASSERT_X( mExit, "bt-search-view", "exitAction missing" ); 
+    BTUI_ASSERT_X( mExit, "BtCpUiSearchView::BtCpUiSearchView", "exitAction missing" ); 
     mExit->setText(hbTrId("txt_common_opt_exit"));
     
     mConnect = static_cast<HbAction*>( mLoader->findObject( "connectAction" ) );
-    BTUI_ASSERT_X( mConnect, "bt-search-view", "connectAction missing" ); 
+    BTUI_ASSERT_X( mConnect, "BtCpUiSearchView::BtCpUiSearchView", "connectAction missing" ); 
     mConnect->setText(hbTrId("txt_bt_menu_connect"));
     
     ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "deviceSelected can't connect" ); 
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "deviceSelected can't connect" ); 
     
     // initialize device type list for "view by" option
     // Note:  this list needs to be in the same order as enum devTypeSelectionList
@@ -181,13 +185,7 @@ BtCpUiSearchView::BtCpUiSearchView(
     // Create the inquiry delegate.
     mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::Inquiry, mSettingModel, mDeviceModel );
     
-    // Connect to the signal from the BtDelegateInquiry for completion of the search request
-    ret = connect(mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(searchDelegateCompleted(int)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "searchDelegateCompleted can't connect" );
-    
-    // Connect to the signal from the BtuiModel when the search has been completed.
-    ret = connect(mDeviceModel, SIGNAL(deviceSearchCompleted(int)), this, SLOT(deviceSearchCompleted(int)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "deviceSearchCompleted can't connect" ); 
+
 }
 
 BtCpUiSearchView::~BtCpUiSearchView()
@@ -199,6 +197,7 @@ BtCpUiSearchView::~BtCpUiSearchView()
     delete mSoftKeyBackAction;
     
     if(mAbstractDelegate) {
+        disconnect(mAbstractDelegate);   
         delete mAbstractDelegate;
     }
     if(mBtuiModelSortFilter) {
@@ -218,11 +217,11 @@ void BtCpUiSearchView::changeOrientation( Qt::Orientation orientation )
     if( orientation == Qt::Vertical ) {
         // load "portrait" section
         mLoader->load( BTUI_SEARCHVIEW_DOCML, "portrait_ui", &ok );
-        BTUI_ASSERT_X( ok, "bt-search-view", "Invalid docml file: portrait section problem" );
+        BTUI_ASSERT_X( ok, "BtCpUiSearchView::changeOrientation", "Invalid docml file: portrait section problem" );
     } else {
         // load "landscape" section
         mLoader->load( BTUI_SEARCHVIEW_DOCML, "landscape_ui", &ok );
-        BTUI_ASSERT_X( ok, "bt-search-view", "Invalid docml file: landscape section problem" );
+        BTUI_ASSERT_X( ok, "BtCpUiSearchView::changeOrientation", "Invalid docml file: landscape section problem" );
     }
 }
 
@@ -293,26 +292,31 @@ void BtCpUiSearchView::viewByDialogClosed(HbAction* action)
             mBtuiModelSortFilter->addDeviceMajorFilter(devTypesWanted,
                     BtuiModelSortFilter::RoughMatch);             // device can be any one of selected ones
         }
-        mBtuiModelSortFilter->sort(0, Qt::AscendingOrder);
     }
 }
 
 void BtCpUiSearchView::stopSearching()
 {
     // Stop searching
-    
-    // Change label and buttons to reflect status
-    mLabelSearching->setPlainText(hbTrId("txt_bt_subhead_search_done"));
-    mRetry->setEnabled(true);
-    mStop->setEnabled(false);    
 
     // Stop search delegate
     mAbstractDelegate->cancel();
+    // reset view 
+    deviceSearchCompleted(KErrNone);      
 }
 
 void BtCpUiSearchView::startSearchDelegate ()
 {
+    bool ret = false;
     
+    // Connect to the signal from the BtDelegateInquiry for completion of the search request
+    ret = connect(mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(searchDelegateCompleted(int)));
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "searchDelegateCompleted can't connect" );
+    
+    // Connect to the signal from the BtuiModel when the search has been completed.
+    ret = connect(mDeviceModel, SIGNAL(deviceSearchCompleted(int)), this, SLOT(deviceSearchCompleted(int)));
+    BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "deviceSearchCompleted can't connect" );     
+
     mAbstractDelegate->exec(QVariant());
 }
 
@@ -354,7 +358,8 @@ void BtCpUiSearchView::activateView( const QVariant& value, bool fromBackButton 
     setSoftkeyBack();
             
     if ( !fromBackButton ) {
-        startSearchDelegate();
+        // Sets the label and toolbar buttons
+        retrySearch();
     }
 }
 
@@ -374,9 +379,14 @@ void BtCpUiSearchView::deviceSearchCompleted(int error)
 {
     //TODO - handle error.
     Q_UNUSED(error);
+    
     mLabelSearching->setPlainText(hbTrId("txt_bt_subhead_search_done"));
     mRetry->setEnabled(true);
-    mStop->setEnabled(false);    
+    mStop->setEnabled(false);
+    
+    // disconnect signals
+    disconnect(mAbstractDelegate);
+    disconnect(mDeviceModel);
 }
 
 void BtCpUiSearchView::deviceSelected(const QModelIndex& modelIndex)

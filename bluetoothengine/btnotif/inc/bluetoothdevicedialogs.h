@@ -39,7 +39,8 @@ enum TBTDialogResourceId
     EBlockUnpairedDevice,
     EBlockPairedDevice,
     EPairingSuccess,
-    EPairingFailure,
+    EPairingFailureRetry,
+    EPairingFailureOk,
     EVisibilityTimeout,
     EUnpairedDevice,
     EUnusedResource	// The last ID
@@ -68,7 +69,9 @@ public:
         ESend,
         EGlobalNotif,
         EUserAuthorization,
-        EReceiveProgress
+        EReceiveProgress,
+        ETransferFailed, 
+        EReceiveDone
         };
 
     /**  Enumeration for the notification parameters data type to be configured. */
@@ -88,7 +91,18 @@ public:
         EReceive,
         EReceiveFromPairedDevice,
         EConnect,
-        EPairingRequest
+        EPairingRequest,
+        ERecvFailed,
+        ESendFailed,
+        EReceiveCompleted
+        };
+    
+    enum TDialogActionType
+        {
+        EHide,
+        EShow,
+        ECancelReceive,
+        ECancelShow
         };
 
     inline TBluetoothDialogParams();

@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef BTINDCONSTANTS_H
-#define BTINDCONSTANTS_H
+#ifndef BTINDICATORCONSTANTS_H
+#define BTINDICATORCONSTANTS_H
 
 
 
@@ -36,7 +36,7 @@ enum TBTDisplayStatus
     EBTIndicatorHiddenConnected
     };
 
-#endif /* BTINDCONSTANTS_H */
+#endif /* BTINDICATORCONSTANTS_H */
 
 
 

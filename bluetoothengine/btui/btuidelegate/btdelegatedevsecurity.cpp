@@ -14,11 +14,9 @@
 * Description: 
 *
 */
-
-#include <QModelIndex>
-
-#include "btqtconstants.h"
 #include "btdelegatedevsecurity.h"
+#include "btqtconstants.h"
+#include <QModelIndex>
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
 #include <btdelegatefactory.h>

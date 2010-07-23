@@ -52,8 +52,8 @@ BtCpUiDeviceView::BtCpUiDeviceView(
         BtDeviceModel &deviceModel, 
         QGraphicsItem *parent) :
     BtCpUiBaseView(settingModel,deviceModel,parent),
-    mPairedStatus(false), mConnectedStatus(false), mTrustedStatus(false), mBlockedStatus(false), 
-    mConnectable(false), mAbstractDelegate(0), mDeviceDetail(0)   
+    mPairedStatus(false), mConnectedStatus(false),mPreviousConnectedStatus(false), mTrustedStatus(false), 
+    mBlockedStatus(false), mConnectable(false), mAbstractDelegate(0), mDeviceDetail(0)   
 {
     mDeviceIndex = QModelIndex();//is it needed to initialize mIndex???
     
@@ -187,15 +187,45 @@ void BtCpUiDeviceView::switchToPreviousView()
 {
     BTUI_ASSERT_X(mMainView, "BtCpUiSearchView::switchToPreviousView", "invalid mMainView");
     mMainView->switchToPreviousView();
-    delete mDeviceDetail;
-    mDeviceDetail = 0;
+
+    if(mDeviceDetail) {
+        mDeviceDetail->sendCloseEvent();
+    }
+    unloadDeviceDetails();
+}
+
+void BtCpUiDeviceView::loadDeviceDetails()
+{
+    bool ret(false);
+    
+    unloadDeviceDetails();
+    
+    mDeviceDetail = new BtCpUiDeviceDetail();
+    
+    ret=connect(mDeviceDetail, SIGNAL(deviceSettingsChanged(bool)),
+           this, SLOT(handleDeviceSettingsChange(bool)));
+    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::loadDeviceDetails", "deviceSettingsChanged() connect failed");
+
+    mDeviceDetail->loadDeviceDetailPlugins(mDeviceBdAddr.toString(), mDeviceName->text());
+}
+
+void BtCpUiDeviceView::unloadDeviceDetails()
+{
+    if(mDeviceDetail) {
+        disconnect(mDeviceDetail);
+        delete mDeviceDetail;
+        mDeviceDetail = 0;
+    }
 }
 
 void BtCpUiDeviceView::activateView( const QVariant& value, bool fromBackButton )
 {
+    
     Q_UNUSED( fromBackButton );  
     
+    mConnectedStatus = false;
     setSoftkeyBack();
+    
     
     QModelIndex index = value.value<QModelIndex>();
     mDeviceBdAddr = (mDeviceModel->data(index, BtDeviceModel::ReadableBdaddrRole));
@@ -205,31 +235,24 @@ void BtCpUiDeviceView::activateView( const QVariant& value, bool fromBackButton 
     updateDeviceData();
     
     mDeviceSetting->setVisible(false);
-    
-    mDeviceDetail = new BtCpUiDeviceDetail();
-    
+        
     bool ret(false);
     ret=connect(mDeviceModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
            this, SLOT(updateDeviceData()));
     BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::activateView", "dataChanged() connect failed");
 
-    ret=connect(mDeviceDetail, SIGNAL(deviceSettingsChanged(bool)),
-           this, SLOT(handleDeviceSettingsChange(bool)));
-    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::activateView", "deviceSettingsChanged() connect failed");
-
-    
-    mDeviceDetail->loadDeviceDetailPlugins(mDeviceBdAddr.toString(), mDeviceName->text());
-    
 }
 
 void BtCpUiDeviceView::handleDeviceSettingsChange(bool status)
 {
-    mDeviceSetting->setVisible(status);        
+    mDeviceSetting->setVisible(status);
 }
 
 void BtCpUiDeviceView::handleDeviceSetting()
 {
-    mDeviceDetail->loadDeviceDetailsView();
+    if(mDeviceDetail) {
+        mDeviceDetail->loadDeviceDetailsView();
+    }
 }
 
 void BtCpUiDeviceView::deactivateView()
@@ -257,13 +280,15 @@ void BtCpUiDeviceView::clearViewData()
     mDeviceIcon->clear();
     mDeviceCategory->clear();
     mDeviceStatus->clear();
-    
+    mConnectable = false;
+    /*
     mPairedStatus = false;
     mConnectedStatus = false;
     mTrustedStatus = false;
     mBlockedStatus = false;
     
     mConnectable = false;
+    */
 }
     
 void BtCpUiDeviceView::updateDeviceData()
@@ -355,6 +380,8 @@ void BtCpUiDeviceView::setConnectionCombobox(){
  */
 void BtCpUiDeviceView::updateStatusVariables(int majorRole)
 {
+    mPreviousConnectedStatus = mConnectedStatus;
+    
     if (majorRole & BtuiDevProperty::Trusted ) {
         mTrustedStatus = true;
     } 
@@ -369,6 +396,10 @@ void BtCpUiDeviceView::updateStatusVariables(int majorRole)
     }
     if (majorRole & BtuiDevProperty::Connected) {
         mConnectedStatus = true;
+        if (!mPreviousConnectedStatus){
+            //Loading device detail plugins after successfull connection.
+            loadDeviceDetails();
+        }
     }
     else {
         mConnectedStatus = false;
@@ -402,6 +433,7 @@ void BtCpUiDeviceView::setTextAndVisibilityOfButtons()
     
     if (mConnectable)
     {
+        mConnect_Disconnect->setVisible(true);
         mConnect_Disconnect->setStretched(true);
         if (mConnectedStatus)
         {
@@ -539,8 +571,6 @@ void BtCpUiDeviceView::connectDelegateCompleted(int status)
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }   
-    
-    
 }
 
 void BtCpUiDeviceView::disconnectDevice()
@@ -582,9 +612,14 @@ void BtCpUiDeviceView::disconnectDelegateCompleted(int status)
         disconnect(mAbstractDelegate);
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
-    }   
-    
-    
+    }
+}
+
+void BtCpUiDeviceView::setPrevBtDeviceName()
+{
+    QString deviceName = (mDeviceModel->data(mDeviceIndex, 
+                BtDeviceModel::NameAliasRole)).toString(); 
+   mDeviceName->setText(deviceName);
 }
 
 void BtCpUiDeviceView::changeBtDeviceName(){
@@ -609,6 +644,9 @@ void BtCpUiDeviceView::changeBtDeviceName(){
         connect( mAbstractDelegate, SIGNAL(commandCompleted(int, QVariant)), this, SLOT(changeDevNameDelegateCompleted(int, QVariant)) );
         mAbstractDelegate->exec(params);
     }
+    else {
+        setPrevBtDeviceName();
+    }
     
 }
 
@@ -620,7 +658,7 @@ void BtCpUiDeviceView::changeDevNameDelegateCompleted(int status, QVariant param
         mDeviceName->setText(param.toString());
     }
     else {
-        //setPrevBtLocalName();
+        setPrevBtDeviceName();
     }
     //TODO:Error handling has to be done.    
     if (mAbstractDelegate)

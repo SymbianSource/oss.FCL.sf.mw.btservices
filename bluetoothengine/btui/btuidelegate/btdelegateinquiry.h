@@ -16,8 +16,8 @@
 */
 
 
-#ifndef BTDELEGATEINQUIRY_H_
-#define BTDELEGATEINQUIRY_H_
+#ifndef BTDELEGATEINQUIRY_H
+#define BTDELEGATEINQUIRY_H
 
 #include <e32base.h>
 #include <btengsettings.h>
@@ -53,4 +53,4 @@ private:
     
 };
 
-#endif /* BTDELEGATEINQUIRY_H_ */
+#endif /* BTDELEGATEINQUIRY_H */

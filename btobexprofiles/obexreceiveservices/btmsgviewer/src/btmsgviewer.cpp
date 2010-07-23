@@ -19,23 +19,31 @@
 #include "btmsgviewer.h"
 #include "apmstd.h"
 #include <xqaiwrequest.h>
-#include <f32file.h>
-//#include <documenthandler.h>
+#include <xqconversions.h>
+#include <apgcli.h>
+#include <QFileInfo>
+#include <QDir>
+#include <QFile>
+#include <hbapplication.h>
+
+const QString KMimeTypeVCard("text/X-vCard");
 
 
 BTMsgViewer::BTMsgViewer(QObject* parent)
-: XQServiceProvider("com.nokia.services.btmsgdispservices.displaymsg",parent)
+: XQServiceProvider("com.nokia.services.btmsgdispservices.displaymsg", parent), mCurrentRequestIndex(0)
     {    
     publishAll();
+    connect(this, SIGNAL(returnValueDelivered()), qApp, SLOT(quit()));
     }
 
 BTMsgViewer::~BTMsgViewer ()
     {
-    
+
     }
 
-int BTMsgViewer::displaymsg( int messageId )
-    {    
+void BTMsgViewer::displaymsg( int messageId )
+    { 
+    mCurrentRequestIndex = setCurrentRequestAsync(); 
     CBtMsgViewerUtils* btViewerUtils = 0;
     
     TRAPD(error, btViewerUtils = CBtMsgViewerUtils::NewL());  
@@ -44,7 +52,9 @@ int BTMsgViewer::displaymsg( int messageId )
         if(btViewerUtils)
             delete btViewerUtils;
         
-        return error;   
+        QVariant retVal(error); 
+        completeRequest(mCurrentRequestIndex, retVal);
+        return;
         }
         
     HBufC* fileName = 0;
@@ -55,19 +65,65 @@ int BTMsgViewer::displaymsg( int messageId )
             delete fileName;
         
         delete btViewerUtils;
-        return error;
+        
+        QVariant retVal(error); 
+        completeRequest(mCurrentRequestIndex, retVal);
+        return;
         }
     
-    QString attachmentFName = QString::fromUtf16(fileName->Ptr(),fileName->Length());    
-    
+    QString attachmentFName = XQConversions::s60DescToQString(fileName->Des());
+    QString mimeType = XQConversions::s60Desc8ToQString(btViewerUtils->GetMimeType()->Des());
     delete fileName;
     delete btViewerUtils;
+    
+    if(mimeType == KMimeTypeVCard)
+        {
+        int error = KErrGeneral;
+        
+        /*todo: copyVCardToTemp() has to be removed when phonebook updates it's capabilites to
+                access messages from private folder*/
+        QString newfilepath = copyVCardToTemp(attachmentFName);
+    
+        QString service("com.nokia.services.phonebookservices");
+        QString interface("Fetch");
+        QString operation("editCreateNew(QString)");
+        XQApplicationManager appManager;
+        XQAiwRequest* request = appManager.create(service, interface, operation, true); //embedded
+        if(request)
+        {
+            QList<QVariant> args;
+            args << newfilepath;
+            request->setArguments(args);
+            QVariant retValue;
+            bool res = request->send(retValue);
+            if  (!res) 
+                {
+                error = request->lastError();
+                }
+            else
+                {
+                error = retValue.toInt();
+                }
+            
+            delete request;
+        }
 
+        /*todo: copyVCardToTemp() has to be removed when phonebook updates it's capabilites to
+                access messages from private folder*/        
+        deleteVCardFromTemp(newfilepath);
+        
+        QVariant retVal(error); 
+        completeRequest(mCurrentRequestIndex, retVal);
+        return;
+        }
+    
     XQSharableFile sf;
     XQAiwRequest* request = 0;
 
     if (!sf.open(attachmentFName)) {
-        return KErrNotFound;
+    QVariant retVal(KErrGeneral); 
+    completeRequest(mCurrentRequestIndex, retVal);
+    return;
     }
 
     // Get handlers
@@ -79,12 +135,18 @@ int BTMsgViewer::displaymsg( int messageId )
 
         if (!request) {
             sf.close();
-            return KErrGeneral;
+            
+            QVariant retVal(KErrGeneral); 
+            completeRequest(mCurrentRequestIndex, retVal);
+            return;
         }
     }
     else {
         sf.close();
-        return KErrGeneral;
+        
+        QVariant retVal(KErrGeneral); 
+        completeRequest(mCurrentRequestIndex, retVal);
+        return;
     }
 
     request->setEmbedded(true);
@@ -95,23 +157,39 @@ int BTMsgViewer::displaymsg( int messageId )
     args << qVariantFromValue(sf);
     request->setArguments(args);
 
+    int err = KErrNone;
     bool res = request->send();
     if  (!res) 
         {
-        QString errMsg = request->lastErrorMessage();
+        err = request->lastError();
         }
 
     // Cleanup
     sf.close();
     delete request;
     
-    if(!res)
-        return request->lastError();
-    else
-        return KErrNone;
+    QVariant retVal(err); 
+    completeRequest(mCurrentRequestIndex, retVal);
+    return;
     }
 
 bool BTMsgViewer::isError(int aError)
     {
     return ((aError < KErrNone)?true:false);
     }
+
+QString BTMsgViewer::copyVCardToTemp(const QString& filepath)
+{
+    QDir tempDir;
+    QString tempFilePath(QDir::toNativeSeparators(tempDir.tempPath()));
+    tempFilePath.append(QDir::separator());
+    QFileInfo fInfo(filepath);
+    tempFilePath.append(fInfo.fileName());
+    QFile::copy(filepath, tempFilePath);
+    return tempFilePath;
+}
+
+void BTMsgViewer::deleteVCardFromTemp(const QString& filepath)
+{
+    QFile::remove(filepath);
+}

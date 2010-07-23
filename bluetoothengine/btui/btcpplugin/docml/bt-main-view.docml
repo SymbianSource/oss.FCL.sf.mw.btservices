@@ -15,26 +15,8 @@
     <object name="advanceSettings" type="HbAction">
         <string locid="txt_bt_opt_advanced_settings" name="text" value="Advanced Settings"/>
     </object>
-    <object name="audioDevices" type="HbAction">
-        <string locid="txt_bt_list_audio_device" name="text" value="Audio Devices"/>
-    </object>
-    <object name="computers" type="HbAction">
-        <string locid="txt_bt_list_computer" name="text" value="Computers"/>
-    </object>
-    <object name="inputDevices" type="HbAction">
-        <string locid="txt_bt_list_input_device" name="text" value="Input Devices"/>
-    </object>
-    <object name="otherDevices" type="HbAction">
-        <string locid="txt_bt_list_other" name="text" value="Other Devices"/>
-    </object>
-    <object name="removePairedDevices" type="HbAction">
-        <string locid="txt_bt_opt_remove_paired_devices" name="text" value="Remove Paired Devices"/>
-    </object>
-    <object name="exit" type="HbAction">
-        <string locid="txt_common_opt_exit" name="text" value="Exit"/>
-    </object>
-    <object name="phones" type="HbAction">
-        <string locid="txt_bt_list_phone" name="text" value="Phones"/>
+    <object name="showOnly" type="HbAction">
+        <string locid="txt_bt_opt_show" name="text" value="Show only"/>
     </object>
     <widget name="view" type="HbView">
         <widget name="content" role="HbView:widget" type="HbWidget">
@@ -45,8 +27,9 @@
                 <ref object="discoverAction" role="HbWidget:addAction"/>
             </widget>
             <widget name="container_1" type="HbWidget">
-                <widget name="groupBox" type="HbGroupBox">
-                    <bool name="collapsable" value="FALSE"/>
+                <widget name="dataForm" type="HbDataForm">
+                    <widget name="dataformviewItemPrototype" role="HbAbstractView:prototype" type="HbDataFormViewItem"/>
+                    <sizehint height="7.8806un" type="MINIMUM"/>
                     <string locid="txt_bt_subhead_bluetooth_paired_devices" name="heading" value="Bluetooth"/>
                 </widget>
                 <widget name="container" type="HbWidget">
@@ -101,13 +84,14 @@
                 <sizehint height="23.8806un" type="PREFERRED" width="11.9403un"/>
                 <layout orientation="Vertical" spacing="0un" type="linear">
                     <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
-                    <linearitem itemname="groupBox"/>
+                    <linearitem itemname="dataForm"/>
                     <linearitem itemname="container"/>
                 </layout>
             </widget>
             <widget name="listView" type="HbListView">
                 <widget name="listItemPrototype" role="HbAbstractView:prototype" type="HbListViewItem"/>
                 <enums name="selectionMode" value="NoSelection"/>
+                <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
                 <sizehint height="47.7612un" type="PREFERRED" width="35.8209un"/>
             </widget>
             <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
@@ -118,21 +102,35 @@
             </layout>
         </widget>
         <widget name="viewMenu" role="HbView:menu" type="HbMenu">
-            <widget name="subMenu" role="HbMenu:menu" type="HbMenu">
-                <ref object="audioDevices" role="HbWidget:addAction"/>
-                <ref object="computers" role="HbWidget:addAction"/>
-                <ref object="phones" role="HbWidget:addAction"/>
-                <ref object="inputDevices" role="HbWidget:addAction"/>
-                <ref object="otherDevices" role="HbWidget:addAction"/>
-                <string locid="txt_bt_opt_show" name="title" value="Show Only"/>
-            </widget>
             <ref object="advanceSettings" role="HbWidget:addAction"/>
-            <ref object="removePairedDevices" role="HbWidget:addAction"/>
-            <ref object="exit" role="HbWidget:addAction"/>
+            <ref object="showOnly" role="HbWidget:addAction"/>
         </widget>
         <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
     </widget>
     <section name="portrait">
+        <widget name="combobox" type="HbComboBox">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="31.34328un"/>
+        </widget>
+        <widget name="content" role="HbView:widget" type="HbWidget">
+            <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
+                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
+                <linearitem itemname="dataForm"/>
+                <linearitem itemname="container"/>
+                <linearitem itemname="listView"/>
+                <linearitem itemname="toolBar"/>
+            </layout>
+        </widget>
+        <widget name="lineEdit" type="HbLineEdit">
+            <sizehint type="PREFERRED" width="29.25373un"/>
+        </widget>
+        <widget name="pushButton" type="HbPushButton">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+        </widget>
+        <widget name="icon" type="HbLabel">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+        </widget>
         <widget name="container" type="HbWidget">
             <layout type="anchor">
                 <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
@@ -149,30 +147,17 @@
                 <anchoritem dst="pushButton" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
             </layout>
         </widget>
-        <widget name="pushButton" type="HbPushButton">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
+    </section>
+    <section name="landscape">
+        <widget name="combobox" type="HbComboBox">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34.92537un"/>
         </widget>
-        <widget name="content" role="HbView:widget" type="HbWidget">
-            <layout orientation="Vertical" spacing="var(hb-param-margin-gene-middle-vertical)" type="linear">
-                <linearitem itemname="groupBox"/>
-                <linearitem itemname="container"/>
-                <linearitem itemname="listView"/>
-                <linearitem itemname="toolBar"/>
-            </layout>
+        <widget name="lineEdit" type="HbLineEdit">
+            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="33un"/>
         </widget>
         <widget name="icon" type="HbLabel">
             <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
         </widget>
-        <widget name="lineEdit" type="HbLineEdit">
-            <sizehint type="PREFERRED" width="29.25373un"/>
-        </widget>
-        <widget name="combobox" type="HbComboBox">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="31.34328un"/>
-        </widget>
-    </section>
-    <section name="landscape">
         <widget name="container" type="HbWidget">
             <layout type="anchor">
                 <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
@@ -185,15 +170,6 @@
                 <anchoritem dst="pushButton" dstEdge="LEFT" spacing="2un" src="lineEdit" srcEdge="RIGHT"/>
                 <anchoritem dst="pushButton" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="" srcEdge="TOP"/>
             </layout>
-        </widget>
-        <widget name="icon" type="HbLabel">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
-        </widget>
-        <widget name="lineEdit" type="HbLineEdit">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="33un"/>
-        </widget>
-        <widget name="combobox" type="HbComboBox">
-            <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="34.92537un"/>
         </widget>
     </section>
     <metadata activeUIState="Common ui state" display="NHD-3.2-inch_portrait" unit="un">

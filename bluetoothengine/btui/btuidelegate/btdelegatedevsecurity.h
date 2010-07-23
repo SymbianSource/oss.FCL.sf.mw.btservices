@@ -21,7 +21,6 @@
 #include <e32base.h>
 #include <btengconnman.h>
 #include <btengdevman.h>
-#include <btengconnman.h>
 #include "btabstractdelegate.h"
 
 class BtuiModel;

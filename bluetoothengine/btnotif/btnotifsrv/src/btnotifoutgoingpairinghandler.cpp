@@ -20,9 +20,20 @@
 #include <btservices/btdevextension.h>
 #include "btnotifsecuritymanager.h"
 #include "bluetoothtrace.h"
+#include "bluetoothnotification.h"
+#include "btnotifserver.h"
+#include "btnotifconnectiontracker.h"
+#include "btnotificationmanager.h"
 
 /**  Length of the default PIN. */
 const TInt KDefaultHeadsetPinLength = 4;
+
+/** Maximum repeated outgoing pairing attempt.
+ *  if the pairing fails the UI specs says
+ *  we can ask twice the user if he/she want 
+ *  to retry pairing. 
+ */
+const TInt KMaxRepeatedPairingAttempt = 2;
 
 enum TPairingStageId
     {
@@ -84,6 +95,7 @@ void CBTNotifOutgoingPairingHandler::ConstructL()
     {
     BaseConstructL();
     User::LeaveIfError( iTimer.CreateLocal() );
+    iPairingAttempt = KMaxRepeatedPairingAttempt;
     }
 
 // ---------------------------------------------------------------------------
@@ -113,14 +125,22 @@ CBTNotifOutgoingPairingHandler::~CBTNotifOutgoingPairingHandler()
     iBondingSession.Close();
     iSocket.Close();
     iTimer.Close();
+    if( iNotification )
+        {
+        // Clear the notification callback, we cannot receive them anymore.
+        iNotification->RemoveObserver();
+        iNotification->Close(); // Also dequeues the notification from the queue.
+        iNotification = NULL;
+        }
     }
 
 // ---------------------------------------------------------------------------
 // Simply deny the request as this is handing outgoing pairing
 // ---------------------------------------------------------------------------
 //
-TInt CBTNotifOutgoingPairingHandler::ObserveIncomingPair( const TBTDevAddr& /*aAddr*/ )
+TInt CBTNotifOutgoingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAddr )
     {
+    (void)aAddr;
     return KErrServerBusy;
     }
 
@@ -136,7 +156,6 @@ void CBTNotifOutgoingPairingHandler::HandleOutgoingPairL( const TBTDevAddr& aAdd
         // we don't allow another pairing request.
         User::Leave( KErrServerBusy );
         }
-    
     iAddr = aAddr;
     iCod = TBTDeviceClass( aCod );
     UnSetPairResult();
@@ -161,6 +180,14 @@ void CBTNotifOutgoingPairingHandler::CancelOutgoingPair()
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
     iParent.RenewPairingHandler( NULL );
+    if( iNotification )
+        {
+        // Cancel the user query
+        // This will also unregister us from the notification.
+        TInt err = iNotification->Close();
+        NOTIF_NOTHANDLED( !err )
+        iNotification = NULL;
+        }
     }
 
 
@@ -185,7 +212,7 @@ void CBTNotifOutgoingPairingHandler::GetPinCode(
         const TUint8 KZeroPinValue = '0';
         for (TInt i = 0; i < KDefaultHeadsetPinLength; ++i)
             {
-            aPin().iPIN[i] = KZeroPinValue;
+                aPin().iPIN[i] = KZeroPinValue;
             }
         aPin().iLength = KDefaultHeadsetPinLength;
         }
@@ -202,6 +229,14 @@ void CBTNotifOutgoingPairingHandler::StopPairHandling( const TBTDevAddr& aAddr )
         {
         iParent.OutgoingPairCompleted( KErrCancel );
         iParent.RenewPairingHandler( NULL );
+        if( iNotification )
+            {
+            // Cancel the user query
+            // This will also unregister us from the notification.
+            TInt err = iNotification->Close();
+            NOTIF_NOTHANDLED( !err )
+            iNotification = NULL;
+            }
         }
     }
 
@@ -296,8 +331,23 @@ void CBTNotifOutgoingPairingHandler::RequestCompletedL(
             }
         if ( aStatus )
             {
-            iParent.OutgoingPairCompleted( aStatus );
-            }
+            // retry pairing
+            if(aStatus && iPairingAttempt > 0)
+                {
+                if(aActive->RequestId() == EGeneralBondingRetry && iPairMode == EBTOutgoingHeadsetManualPairing)
+                    {
+                    // Headset pairing failed, reset and try again from auto pairing
+                    iActive->SetRequestId(EGeneralBonding);
+                    }
+                iPairingAttempt --;
+                ShowPairingRetryDialog();
+                }
+            else
+                {
+                iPairingAttempt --;
+                ShowPairingFailureDialog();
+                }
+             }
         }
     }
 
@@ -344,6 +394,14 @@ void CBTNotifOutgoingPairingHandler::HandleError(
     (void) aActive;
     iParent.OutgoingPairCompleted( aError );
     iParent.RenewPairingHandler( NULL );
+    if( iNotification )
+        {
+        // Cancel the user query
+        // This will also unregister us from the notification.
+        TInt err = iNotification->Close();
+        NOTIF_NOTHANDLED( !err )
+        iNotification = NULL;
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -389,4 +447,107 @@ void CBTNotifOutgoingPairingHandler::DoPairingL()
     iActive->GoActive();
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
+
+// ---------------------------------------------------------------------------
+// From class MBTNotificationResult.
+// Handle a result from a user query.
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::MBRDataReceived( CHbSymbianVariantMap& aData )
+    {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    (void) aData;
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
+    }
+
+// ---------------------------------------------------------------------------
+// From class MBTNotificationResult.
+// The notification is finished.
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::MBRNotificationClosed( TInt aError, const TDesC8& aData )
+    {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aError );
+    // First unregister from the notification, so we can already get the next one.
+    iNotification->RemoveObserver();
+    iNotification = NULL;
+    TRAP_IGNORE( NotificationClosedL( aError, aData ) );
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    }
+
+// ---------------------------------------------------------------------------
+// Get and configure a notification.
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::PrepareNotificationL( TBluetoothDialogParams::TBTDialogType aType,
+    TBTDialogResourceId aResourceId )
+    {
+    BOstraceFunctionEntry0( DUMMY_DEVLIST );
+    iNotification = 
+            iParent.ConnectionTracker().NotificationManager()->GetNotification();
+    User::LeaveIfNull( iNotification ); // For OOM exception, leaves with KErrNoMemory
+    iNotification->SetObserver( this );
+    iNotification->SetNotificationType( aType, aResourceId );
+    const CBtDevExtension* dev = iParent.BTDevRepository().Device(iAddr);
+    if(dev)
+        {
+        User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EDeviceName, dev->Alias()));
+        }
+    else
+        {
+        TBTDeviceName name;
+        iAddr.GetReadable(name);
+        User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EDeviceName, name));
+        NOTIF_NOTHANDLED( !err )            
+        }
+    iParent.ConnectionTracker().NotificationManager()->QueueNotificationL( iNotification);
+    NOTIF_NOTHANDLED( !err )
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
+    }
+
+// ---------------------------------------------------------------------------
+// The notification is finished, handle the result.
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::NotificationClosedL( TInt aError, const TDesC8& aData )
+    {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aError );
+    // Read the result.
+    TPckgC<TBool> result( EFalse );
+    result.Set( aData.Ptr(), result.Length() ); // Read the part containing the result
+    // Set a pointer descriptor to capture the remaining data, if any.
+    TPtrC8 dataPtr( aData.Mid( result.Length() ) );
+
+    if(result() && iPairingAttempt >= 0)
+        {
+            HandleOutgoingPairL(iAddr,iCod.DeviceClass());
+        }
+    else
+        {
+            iPairingAttempt = KMaxRepeatedPairingAttempt; // reset the counter
+            iParent.OutgoingPairCompleted( KErrCancel );
+            iParent.RenewPairingHandler( NULL );
+        }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    }
+
+// ---------------------------------------------------------------------------
+// Show a dialog to ask the user to retry the pairing
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::ShowPairingRetryDialog()
+    {
+    PrepareNotificationL( TBluetoothDialogParams::EQuery, EPairingFailureRetry);
+    }
+
+// ---------------------------------------------------------------------------
+// Show a dialog to tell the user pairing retry attempt failed
+// ---------------------------------------------------------------------------
+//
+void CBTNotifOutgoingPairingHandler::ShowPairingFailureDialog()
+    {
+    PrepareNotificationL( TBluetoothDialogParams::EQuery, EPairingFailureOk );
+    }
+
+
 

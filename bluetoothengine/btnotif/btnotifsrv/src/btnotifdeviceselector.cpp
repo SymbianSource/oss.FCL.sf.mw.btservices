@@ -20,7 +20,6 @@
 #include <btservices/advancedevdiscoverer.h>
 #include <btservices/btdevextension.h>
 #include <hb/hbcore/hbdevicedialogsymbian.h>
-#include <hb/hbcore/hbsymbianvariant.h>
 #include "btnotifdeviceselector.h"
 
 #include "btnotifserver.h"
@@ -174,7 +173,7 @@ void CBTNotifDeviceSelector::CancelNotifierMessageL( const RMessage2& aMessage )
 void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
     {
     TInt err = KErrCancel;
-    if(aData.Keys().MdcaPoint(0).Compare(_L("selectedindex"))==KErrNone)
+    if(aData.Keys().MdcaPoint(aData.Keys().MdcaCount()-1).Compare(_L("selectedindex"))==KErrNone)
         {
         TInt val = *(static_cast<TInt*>(aData.Get(_L("selectedindex"))->Data()));
         BOstrace1( TRACE_DEBUG, TNAME_DEVLIST_2, "MBRDataReceived, val %d", val );
@@ -185,10 +184,11 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
             TBTDeviceResponseParamsPckg devParams;    
             if (  val > -1 && val < iDevices.Count() )
                 {
-                devParams().SetDeviceAddress( iDevices[val]->Addr() );
+                TRAP(err,SendSelectedDeviceL(aData));
+             /*   devParams().SetDeviceAddress( iDevices[val]->Addr() );
                 devParams().SetDeviceClass(iDevices[val]->Device().DeviceClass());
                 devParams().SetDeviceName(iDevices[val]->Alias());
-                err = iMessage.Write( EBTNotifSrvReplySlot, devParams );
+                err = iMessage.Write( EBTNotifSrvReplySlot, devParams );*/
                 iNotification->RemoveObserver();
                 iNotification->Close(); // Also dequeues the notification from the queue.
                 iNotification = NULL;                
@@ -242,22 +242,61 @@ void CBTNotifDeviceSelector::HandleNextDiscoveryResultL(
         const TInquirySockAddr& aAddr, const TDesC& aName )
     {
     // Todo: look for this device in repository before creating it.
-    CBtDevExtension* devext = CBtDevExtension::NewLC( aAddr, aName );
+    TBuf<KBTDevAddrSize * 2> addr; 
+    
+    
+    
+    CBtDevExtension* devext = GetDeviceFromRepositoryL(aAddr.BTAddr());
+    
+    if(!devext)
+        {
+        devext = CBtDevExtension::NewLC( aAddr, aName );
+        }
+    else
+        {
+        CleanupStack::PushL(devext);
+        }
     iDevices.AppendL( devext );
-    CleanupStack::Pop( devext );
+    CleanupStack::Pop( devext );    
     
     if(iNotification)
         {// conditional check required as CAdvanceDevDiscoverer sends discovered devices at times
          // even after canceldiscovery is issued and notification is set to NULL
          // this causes EExcDataAbort
     CHbSymbianVariantMap* map = iNotification->Data();
-        TBuf<KMaxKeyDesCLength> keyStr;
+/*    TBuf<KMaxKeyDesCLength> keyStr;
     CHbSymbianVariant* devEntry;
 
     keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );
     devEntry = CHbSymbianVariant::NewL( (TAny*) &(devext->Alias()), 
             CHbSymbianVariant::EDes );
-    map->Add( keyStr, devEntry );
+    map->Add( keyStr, devEntry );*/
+    
+    User::LeaveIfError(iNotification->SetData(TBluetoothDeviceDialog::EDeviceName,
+            devext->Alias()));
+    
+    devext->Addr().GetReadable(addr);
+    User::LeaveIfError(iNotification->SetData(TBluetoothDialogParams::EAddress,addr));
+    
+    TInt classOfDevice;
+    classOfDevice =  devext->Device().DeviceClass().DeviceClass();
+    User::LeaveIfError(iNotification->SetData(TBluetoothDeviceDialog::EDeviceClass,classOfDevice));
+
+    TBool status;
+    status = isBonded( devext->Device());
+    
+ //   setMajorProperty(majorProperty, _L("Bonded"), isBonded( devArray[i]->Device() ));
+    AddDataL(map,_L("Bonded"),&status,CHbSymbianVariant::EBool);
+    status = devext->Device().GlobalSecurity().Banned();
+    AddDataL(map,_L("Blocked"),&status,
+            CHbSymbianVariant::EBool);
+    status = devext->Device().GlobalSecurity().NoAuthorise();
+    AddDataL(map,_L("Trusted"),&status,
+            CHbSymbianVariant::EBool);
+    status = devext->ServiceConnectionStatus() == EBTEngConnected;
+    AddDataL(map,_L("Connected"),&status,
+            CHbSymbianVariant::EBool);
+ 
     iNotification->Update();
         }
     }
@@ -371,6 +410,7 @@ void CBTNotifDeviceSelector::PrepareNotificationL(
 void CBTNotifDeviceSelector::LoadUsedDevicesL()
     {
     const RDevExtensionArray& devArray= iServer.DevRepository().AllDevices();
+    TBuf<KBTDevAddrSize * 2> addr; 
     for(TInt i=0; i< devArray.Count(); i++ )
         {
       const TTime& usedTime = devArray[i]->Device().Used();
@@ -381,14 +421,118 @@ void CBTNotifDeviceSelector::LoadUsedDevicesL()
             {
             iDevices.AppendL( devArray[i]->CopyL() );
             CHbSymbianVariantMap* map = iNotification->Data();
-            TBuf<KMaxKeyDesCLength> keyStr;
-            CHbSymbianVariant* devEntry;
+ //           TBuf<KMaxKeyDesCLength> keyStr;
+ //           CHbSymbianVariant* devEntry;
 
-            keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );
-            devEntry = CHbSymbianVariant::NewL( (TAny*) &(devArray[i]->Alias()), 
-                    CHbSymbianVariant::EDes );
-            map->Add( keyStr, devEntry );
+  //          keyStr.Num( TBluetoothDialogParams::EDialogExt + iDevices.Count() - 1 );
+//            devEntry = CHbSymbianVariant::NewL( (TAny*) &(devArray[i]->Alias()), 
+  //                  CHbSymbianVariant::EDes );
+  //          map->Add( keyStr, devEntry, );
+            User::LeaveIfError(iNotification->SetData(TBluetoothDeviceDialog::EDeviceName,
+                    devArray[i]->Alias()));
+//            AddDataL(map,keyStr,&(devArray[i]->Alias()),CHbSymbianVariant::EDes);
+            devArray[i]->Addr().GetReadable(addr);
+            User::LeaveIfError(iNotification->SetData(TBluetoothDialogParams::EAddress,addr));
+            addr.Zero();
+            TInt classOfDevice;
+            classOfDevice =  devArray[i]->Device().DeviceClass().DeviceClass();
+            User::LeaveIfError(iNotification->SetData(TBluetoothDeviceDialog::EDeviceClass,classOfDevice));
+            
+            TBool status;
+            status = isBonded( devArray[i]->Device());
+            
+         //   setMajorProperty(majorProperty, _L("Bonded"), isBonded( devArray[i]->Device() ));
+            AddDataL(map,_L("Bonded"),&status,CHbSymbianVariant::EBool);
+            status = devArray[i]->Device().GlobalSecurity().Banned();
+            AddDataL(map,_L("Blocked"),&status,
+                    CHbSymbianVariant::EBool);
+            status = devArray[i]->Device().GlobalSecurity().NoAuthorise();
+            AddDataL(map,_L("Trusted"),&status,
+                    CHbSymbianVariant::EBool);
+            status = devArray[i]->ServiceConnectionStatus() == EBTEngConnected;
+            AddDataL(map,_L("Connected"),&status,
+                    CHbSymbianVariant::EBool);
+             // set blocked status:
+/*             setMajorProperty(majorProperty, BtuiDevProperty::Blocked, 
+                     devArray[i]->Device().GlobalSecurity().Banned() );
+             // set trusted status:
+             setMajorProperty(majorProperty, BtuiDevProperty::Trusted, 
+                     devArray[i]->Device().GlobalSecurity().NoAuthorise() );
+             // set connected status:
+             // EBTEngConnecting is an intermediate state between connected and not-connected, 
+             // we do not treat it as connected:         
+             setMajorProperty(majorProperty, BtuiDevProperty::Connected, devArray[i]->ServiceConnectionStatus() == EBTEngConnected);
+
+  */          
+
+ //           AddDataL(map,keyStr,&(devArray[i]->Alias()),CHbSymbianVariant::EDes);
             iNotification->Update();
             }
         }
     }
+
+
+
+/*!
+  Tells if the given device is bonded.
+*/
+TBool CBTNotifDeviceSelector::isBonded( const CBTDevice &dev )
+{
+    // todo: this has not addresses Just Works pairing mode yet.
+    return dev.IsValidPaired() && dev.IsPaired() &&
+        dev.LinkKeyType() != ELinkKeyUnauthenticatedUpgradable;
+}
+
+void CBTNotifDeviceSelector::AddDataL(CHbSymbianVariantMap* aMap, const TDesC& aKey, 
+    const TAny* aData, CHbSymbianVariant::TType aDataType)
+    {
+    CHbSymbianVariant* value = CHbSymbianVariant::NewL(aData, aDataType);
+    CleanupStack::PushL( value );
+    User::LeaveIfError( aMap->Add( aKey, value ) ); // aMap takes the ownership of value
+    CleanupStack::Pop( value );
+    }
+
+// ---------------------------------------------------------------------------
+// Tells if these two instances are for the same remote device
+// ---------------------------------------------------------------------------
+//
+TBool MatchDeviceAddress(const TBTDevAddr* aAddr, const CBtDevExtension& aDev)
+    {
+    return *aAddr == aDev.Device().BDAddr();
+    }
+
+
+CBtDevExtension* CBTNotifDeviceSelector::GetDeviceFromRepositoryL( const TBTDevAddr& aAddr ) 
+{
+    const RDevExtensionArray& devArray= iServer.DevRepository().AllDevices();
+    
+    TInt pos = devArray.Find( aAddr, MatchDeviceAddress);
+    if(pos > -1)
+        {
+        return devArray[pos]->CopyL();
+        }
+    return NULL;
+/*    addrSymbianToReadbleString( addrStr, addr );
+    for (int i = 0; i < mData.count(); ++i ) {
+        if ( mData.at( i ).value( BtDeviceModel::ReadableBdaddrRole ) 
+                == addrStr ) {
+            return i;
+        }
+    }
+    return -1;*/
+}
+
+
+void CBTNotifDeviceSelector::SendSelectedDeviceL( CHbSymbianVariantMap& aData )
+    {
+    TInt err; 
+    TBTDeviceResponseParamsPckg devParams;
+    TBTDevAddr address; 
+    User::LeaveIfError(address.SetReadable(
+                                    *(static_cast<TDesC*>(aData.Get(_L("deviceaddress"))->Data()))));
+    devParams().SetDeviceAddress( address );
+    devParams().SetDeviceClass(*(static_cast<TUint32*>(aData.Get(_L("deviceclass"))->Data())));
+    devParams().SetDeviceName(*(static_cast<TDesC*>(aData.Get(_L("devicename"))->Data())));
+    User::LeaveIfError(iMessage.Write( EBTNotifSrvReplySlot, devParams ));
+    }
+

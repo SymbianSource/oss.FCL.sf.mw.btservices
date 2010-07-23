@@ -165,6 +165,9 @@ private: // Data
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
     TInt                        iFileCount;
+    TBool                       iReceivingFailed;
+    CHbDeviceDialogSymbian*     iRecvDoneDialog;
+    TBool                       iShowRecvCompleteDialog;
     };
     
 _LIT(KBipPanicCategory, "BIP");

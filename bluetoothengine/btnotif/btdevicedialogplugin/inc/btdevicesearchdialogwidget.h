@@ -30,14 +30,17 @@
 #include <hblistwidget.h>
 #include <hblabel.h>
 #include <hbaction.h>
+#include <hbselectiondialog.h>
+#include "btdevicedialogutils.h"
 
 
-struct device
+
+/*struct device
     {
     QString mDeviceName;
     QString mDeviceType;
     int     mDeviceIdx;
-    };
+    };*/
 
 
 class BTDeviceSearchDialogWidget : public QObject,
@@ -67,11 +70,15 @@ public slots:
     
 private:
     bool constructDialog(const QVariantMap &parameters);
-    void hideEvent(QHideEvent *event);
-    void showEvent(QShowEvent *event);
-    void appendToDeviceList(const QString deviceName);
-    bool appendToDeviceTypeList(const QString deviceType);
-    QIcon icon();
+    
+private:
+    enum devTypeSelectionList {
+        BtUiDevAudioDevice = 0,
+        BtUiDevComputer,
+        BtUiDevInputDevice,
+        BtUiDevPhone,
+        BtUiDevOtherDevice
+    };    
     
 signals:
     void deviceDialogClosed();
@@ -86,24 +93,29 @@ private:
      */
     
     QStandardItemModel* mContentItemModel;
-    HbDialog*           mViewByDialog;
-    HbRadioButtonList*  mRbl;
-    QList<QString>      mDeviceTypeList;
-    QList<device>       mDeviceList;
+    
+    HbSelectionDialog *mQuery;
+//    QList<QString>      mDeviceTypeList;
+    QStringList mDevTypeList;
+//    QList<device>       mDeviceList;
     HbListView*         mListView;
     HbLabel*            mSearchLabel; 
     HbLabel*            mSearchIconLabel;
     HbLabel*            mSearchDoneLabel;
-    bool                mViewByChosen;
-    QList<device>       mDeviceLstOfType;
-    int                 mDeviceLstIdx;
-    int                 mSelectedType;
-    int                 mDeviceDialogData;
+//    bool                mViewByChosen;
+//    QList<device>       mDeviceLstOfType;
+//    int                 mDeviceLstIdx;
+    int                 mSelectedDeviceType;
+//    int                 mDeviceDialogData;
     HbDialog *mSearchDevicesDialog;
     HbAction *mStopRetryAction;
-    HbAction *mViewByAction;
+    HbAction *mShowAction;
+    HbAction *mCancelAction;
 
     int mStopRetryFlag;
+    
+    BtSendDataSource mData;
+    BtSendDataSource mSelectedData;
     
     Q_DISABLE_COPY(BTDeviceSearchDialogWidget)
     };

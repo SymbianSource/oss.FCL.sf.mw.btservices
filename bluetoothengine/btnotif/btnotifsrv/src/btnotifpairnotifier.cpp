@@ -196,7 +196,7 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
                 // in pairing manager for this device:
                 iParent.GetPinCode( pinCode, iRemote, iMinPinLength );
                 }
-            if ( pinCode().iLength != 0 )        
+            if ( pinCode().iLength > 0 )        
                 {
                 // a pin is ready for this pairing.
                 // write it back to client (stack)

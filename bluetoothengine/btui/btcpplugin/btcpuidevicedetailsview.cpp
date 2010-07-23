@@ -14,6 +14,7 @@
 * Description:  BtCpUiDeviceDetailsView implementation
 *
 */
+#include "btcpuidevicedetailsview.h"
 #include <QtGlobal>
 #include <QGraphicsLinearLayout>
 #include <HbInstance>
@@ -23,7 +24,6 @@
 #include <hbcombobox.h>
 #include <hbgroupbox.h>
 #include <bluetoothuitrace.h>
-#include "btcpuidevicedetailsview.h"
 
 // docml to load
 const char* BTUI_DEVICEDETAILSVIEW_DOCML = ":/docml/bt-device-details-view.docml";

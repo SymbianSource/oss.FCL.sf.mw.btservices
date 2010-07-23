@@ -35,7 +35,8 @@ HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btsenddialogwidget.h \
     inc/btdevicedialogplugintrace.h \
     inc/btdevicedialogrecvquerywidget.h \
-    inc/btrecvprgrsdialogwidget.h
+    inc/btrecvprgrsdialogwidget.h \
+    inc/btrecvcompleteddialogwidget.h
 
     
 SOURCES += src/btdevicedialogplugin.cpp \
@@ -46,7 +47,8 @@ SOURCES += src/btdevicedialogplugin.cpp \
     src/btmoredevicesdialogwidget.cpp \
     src/btsenddialogwidget.cpp \
     src/btdevicedialogrecvquerywidget.cpp \
-    src/btrecvprgrsdialogwidget.cpp
+    src/btrecvprgrsdialogwidget.cpp \
+    src/btrecvcompleteddialogwidget.cpp
 
 RESOURCES += btdevicedialogplugin.qrc
     
@@ -56,7 +58,10 @@ symbian: {
     TARGET.CAPABILITY = CAP_GENERAL_DLL
     TARGET.UID3 = 0x2002E6DF
     
-    LIBS += -lbtdevice
+    LIBS += -lbtdevice \
+    		-lhbcore \
+	       	-lxqservice \
+    		-lxqserviceutil \
     
     hblib.sources = Hb.dll
     hblib.path = \sys\bin

@@ -32,6 +32,7 @@ class HbGridView;
 class BtAbstractDelegate;
 class HbListView;
 class HbGroupBox;
+class HbDataForm;
 
 class BtCpUiMainView : public BtCpUiBaseView
 {
@@ -118,6 +119,9 @@ private:
     
     HbAction *mAllAction;
     HbAction *mPairAction;
-    HbGroupBox *mGroupBox;
+    HbDataForm *mDataForm;
+    HbAction* mRemovePairedDevices;
+    HbAction* mRemoveDevices;
+    HbMenu* mSubMenu;
 };
 #endif // BTCPUIMAINVIEW_H 

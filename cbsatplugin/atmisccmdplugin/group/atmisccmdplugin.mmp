@@ -56,6 +56,9 @@ SOURCE          cmgwcommandhandler.cpp
 SOURCE          cgmicommandhandler.cpp
 SOURCE			cmgdcommandhandler.cpp
 SOURCE			telephonywrapper.cpp
+SOURCE			cgmmcommandhandler.cpp 
+SOURCE			scpbrcommandhandler.cpp
+SOURCE			scpbwcommandhandler.cpp
 #endif
 
 USERINCLUDE     ../inc
@@ -85,6 +88,10 @@ LIBRARY         StarterClient.lib
 
 LIBRARY			etel3rdparty.lib
 LIBRARY			sysutil.lib 
+
+#ifdef PROTOCOL_TDSCDMA
+LIBRARY			customapi.lib
+#endif
 
 DEBUGLIBRARY	flogger.lib
 

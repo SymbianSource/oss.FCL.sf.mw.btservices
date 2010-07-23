@@ -342,11 +342,13 @@ void TObexUtilsMessageHandler::RecogniseObjectsL(
     TPtrC mimeType16(buf16->Des());
     CleanupStack::PopAndDestroy();   //   buf16
     
-    CUpdateMusicCollection* updateMusicCollection = CUpdateMusicCollection::NewL() ;
+    CUpdateMusicCollection* updateMusicCollection = CUpdateMusicCollection::NewL();
+    CleanupStack::PushL(updateMusicCollection);    
     if (updateMusicCollection->isSupported(mimeType16))
         {
         updateMusicCollection->addToCollectionL(aFileName);
         }
+    CleanupStack::PopAndDestroy();  // updateMusicCollection
     
     aAttachInfo->SetMimeTypeL( mimeType );
     

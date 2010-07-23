@@ -25,7 +25,6 @@
 #include "bluetoothnotification.h"
 #include "btnotifconnectiontracker.h"
 #include "btnotificationmanager.h"
-#include "bluetoothnotification.h"
 #include "btnotifserver.h"
 #include "btnotifutil.h"
 

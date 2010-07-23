@@ -19,6 +19,8 @@
 #ifndef __OBEX_IBY__
 #define __OBEX_IBY__
 
+#include <obexprotocol.iby>
+
 #ifdef SYMBIAN_EXCLUDE_OBEX
 REM Messaging OBEX MTM is not included in this ROM, because it depends on excluded OBEX
 #else

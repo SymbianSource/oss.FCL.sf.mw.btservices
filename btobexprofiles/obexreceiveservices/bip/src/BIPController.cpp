@@ -110,6 +110,7 @@ CBIPController::~CBIPController()
     iFs.Close();
     delete iDialog;
     delete iProgressDialog;
+    delete iRecvDoneDialog;
     TRACE_FUNC_EXIT    
     }
 
@@ -139,7 +140,8 @@ void CBIPController::AbortIndication()
 void CBIPController::HandleError(TBool aAbort)
     {
     TRACE_FUNC_ENTRY
-    
+    iReceivingFailed = ETrue;
+    iShowRecvCompleteDialog = EFalse;
     if( iBTTransferState == ETransferPut || (!aAbort && iBTTransferState == ETransferPutDiskError) )
         {
         if(iBTObject)
@@ -188,6 +190,7 @@ void CBIPController::CancelTransfer()
 void CBIPController::TransportUpIndication()
     {
     TRACE_FUNC
+    iReceivingFailed = EFalse;
     if (!iFs.Handle())
         {
         TRACE_INFO( (_L( "[bipreceiveservice] TransportUpIndication iFs.Connect()" )) ); 
@@ -247,7 +250,63 @@ void CBIPController::ObexDisconnectIndication(const TDesC8& aInfo)
 //
 void CBIPController::TransportDownIndication()
     {
-    TRACE_FUNC   
+    TRACE_FUNC  
+    if(!iReceivingFailed && iShowRecvCompleteDialog)
+        {
+        //Launch recevice completed dialog.
+        iRecvDoneDialog = CHbDeviceDialogSymbian::NewL();
+        iRecvDoneDialog->SetObserver(this);
+    
+        CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+        CleanupStack::PushL(variantMap);
+        
+        TInt dialogIdx = TBluetoothDialogParams::EReceiveDone;
+        CHbSymbianVariant* dialogType = CHbSymbianVariant::NewL( (TAny*) &(dialogIdx), 
+                                                            CHbSymbianVariant::EInt );
+        CleanupStack::PushL(dialogType);
+        TBuf16<6> dialogTypeKey;
+        dialogTypeKey.Num(TBluetoothDialogParams::EDialogType);
+        User::LeaveIfError(variantMap->Add(dialogTypeKey, dialogType));
+        CleanupStack::Pop(dialogType);
+        
+        CHbSymbianVariant* deviceName = CHbSymbianVariant::NewL( (TAny*) (&iRemoteDeviceName), 
+                                                            CHbSymbianVariant::EDes );
+        CleanupStack::PushL(deviceName);
+        TBuf16<6> deviceNameKey;
+        deviceNameKey.Num(TBluetoothDeviceDialog::EDeviceName);
+        User::LeaveIfError(variantMap->Add(deviceNameKey, deviceName));
+        CleanupStack::Pop(deviceName);
+        
+        CHbSymbianVariant* fileName = CHbSymbianVariant::NewL( (TAny*) (&iReceivingFileName), 
+                                                            CHbSymbianVariant::EDes );
+        CleanupStack::PushL(fileName);
+        TBuf16<6> fileNameKey;
+        fileNameKey.Num(TBluetoothDeviceDialog::EReceivingFileName);
+        User::LeaveIfError(variantMap->Add(fileNameKey, fileName));
+        CleanupStack::Pop(fileName);
+        
+        CHbSymbianVariant* fileSz = CHbSymbianVariant::NewL( (TAny*) &iTotalSizeByte, 
+                                                            CHbSymbianVariant::EInt );
+        CleanupStack::PushL(fileSz);
+        TBuf16<6> fileSzKey;
+        fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
+        User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
+        CleanupStack::Pop(fileSz);
+        
+        CHbSymbianVariant* fileCnt = CHbSymbianVariant::NewL( (TAny*) &iFileCount, 
+                                                            CHbSymbianVariant::EInt );
+        CleanupStack::PushL(fileCnt);
+        TBuf16<6> fileCntKey;
+        fileCntKey.Num(TBluetoothDeviceDialog::EReceivedFileCount);
+        User::LeaveIfError(variantMap->Add(fileCntKey, fileCnt));
+        CleanupStack::Pop(fileCnt);
+        
+        iRecvDoneDialog->Show( KBTDevDialogId(), *variantMap, this );
+        CleanupStack::PopAndDestroy(variantMap);
+        
+        iShowRecvCompleteDialog = EFalse;
+        }
+    
     // Remove receiving buffer and files used during file receiving.
     //
     delete iBTObject;
@@ -381,6 +440,7 @@ TInt CBIPController::PutCompleteIndication()  // Once receive has completed.
         iBTTransferState = ETransferIdle;
         CloseReceivingIndicator();
         iFileCount++;
+        iShowRecvCompleteDialog = ETrue;
         }
     TRACE_FUNC_EXIT
     return retVal;
@@ -1004,15 +1064,28 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
      if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult")) == 0)
          {
          TInt val = *(static_cast<TInt*>(aData.Get(_L("actionResult"))->Data()));
-         if(!val)
+         switch(val)
              {
-             //Cancel has been clicked
-             CancelTransfer();
-             }
-         else
-             {
-             //Hide has been clicked
-             CloseReceivingIndicator(EFalse);
+             case TBluetoothDialogParams::ECancelReceive:
+                 {
+                 //User choose to cancel receiving.
+                 CancelTransfer();
+                 }break;
+                 
+             case TBluetoothDialogParams::EHide:
+                 {
+                 //Use choose to hide the progress dialog.
+                 CloseReceivingIndicator(EFalse);
+                 }break;
+                 
+             case TBluetoothDialogParams::EShow:
+             case TBluetoothDialogParams::ECancelShow:
+                 {
+                 //In case of Show, the device dialog will handle the opening of conversation view.
+                 iRecvDoneDialog->Cancel();
+                 delete iRecvDoneDialog;
+                 iRecvDoneDialog = NULL;
+                 }break;
              }
          }
      }

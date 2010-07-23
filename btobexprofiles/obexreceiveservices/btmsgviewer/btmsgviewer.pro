@@ -30,7 +30,9 @@ LIBS += -lhbcore \
     -lbluetooth \
     -lmsgs \
     -lapmime \
-    -lefsrv
+    -lefsrv \
+    -lapgrfx \
+    -lxqutils
 	
 SERVICE.FILE = service_conf.xml
 libFiles.sources = xqservice.dll
@@ -39,7 +41,7 @@ SERVICE.OPTIONS = embeddable \
 libFiles.path = "!:\sys\bin"
 DEPLOYMENT += libFiles
 HEADERS += ./inc/btmsgviewer.h \
-		   ./inc/btmsgviewerutils.h
+		   ./inc/btmsgviewerutils.h 
 SOURCES += ./src/btmsgviewer.cpp \
     	   ./src/main.cpp \
     	   ./src/btmsgviewerutils.cpp

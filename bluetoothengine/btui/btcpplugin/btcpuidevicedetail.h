@@ -46,7 +46,9 @@ public:
     void loadDeviceDetailPlugins(QString deviceAddress, QString deviceName);
         
     void loadDeviceDetailsView();
-        
+    
+    void sendCloseEvent(); 
+    
 signals:
     void deviceSettingsChanged(bool settingAvailable);
     
@@ -66,6 +68,7 @@ private:
     void notifyDeviceDetailStatus();
     void createDeviceDetailsView(QString deviceName);
     void notifyViewStatusToPlugins(BtCpUiDeviceDetail::NotifyType type);
+    void checkDeviceDetailSettings();
     
 private:
     

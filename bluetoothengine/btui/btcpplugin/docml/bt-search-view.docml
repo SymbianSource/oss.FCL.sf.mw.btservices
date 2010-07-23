@@ -25,15 +25,9 @@
     <widget name="bt_search_view" type="HbView">
         <widget name="search_view_content" role="HbView:widget" type="HbWidget">
             <widget name="search_container" type="HbWidget">
-                <widget name="label_found_devices" type="HbLabel">
-                    <real name="z" value="3"/>
-                    <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="38.20896un"/>
-                    <bool name="visible" value="TRUE"/>
-                    <string locid="txt_bt_subhead_bluetooth_found_devices" name="plainText" value="Bluetooth - Found devices"/>
-                </widget>
                 <widget name="icon" type="HbLabel">
                     <enums name="alignment" value="AlignVCenter|AlignHCenter"/>
-                    <icon iconName="note_warning" name="icon"/>
+                    <icon iconName="qtg_anim_small_loading.axml" name="icon"/>
                     <real name="z" value="2"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="PREFERRED" width="var(hb-param-graphic-size-primary-large)"/>
                     <sizehint height="var(hb-param-graphic-size-primary-large)" type="MAXIMUM" width="var(hb-param-graphic-size-primary-large)"/>
@@ -45,20 +39,29 @@
                     <bool name="visible" value="TRUE"/>
                     <string locid="txt_bt_subhead_searching" name="plainText" value="Searching..."/>
                 </widget>
+                <widget name="dataForm" type="HbDataForm">
+                    <widget name="dataformviewItemPrototype" role="HbAbstractView:prototype" type="HbDataFormViewItem"/>
+                    <real name="z" value="4"/>
+                    <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Expanding" verticalStretch="0"/>
+                    <sizehint type="PREFERRED" width="25un"/>
+                    <string locid="txt_bt_subhead_bluetooth_found_devices" name="heading" value="Found devices"/>
+                </widget>
                 <real name="z" value="0"/>
-                <sizehint height="21un" type="PREFERRED" width="51.19403un"/>
+                <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Expanding" verticalStretch="0"/>
+                <sizehint height="12.784un" type="PREFERRED" width="51.19403un"/>
+                <sizehint height="14.784un" type="MAXIMUM"/>
                 <bool name="visible" value="TRUE"/>
                 <layout type="anchor">
-                    <anchoritem dst="label_found_devices" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                    <anchoritem dst="label_found_devices" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                    <anchoritem dst="label_found_devices" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                    <anchoritem dst="icon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="label_found_devices" srcEdge="BOTTOM"/>
-                    <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                    <anchoritem dst="icon" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                    <anchoritem dst="label_searching" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="label_found_devices" srcEdge="BOTTOM"/>
+                    <anchoritem dst="dataForm" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                    <anchoritem dst="dataForm" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                    <anchoritem dst="dataForm" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
                     <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
-                    <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
+                    <anchoritem dst="label_searching" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="dataForm" srcEdge="BOTTOM"/>
                     <anchoritem dst="label_searching" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+                    <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
+                    <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
+                    <anchoritem dst="icon" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="dataForm" srcEdge="BOTTOM"/>
+                    <anchoritem dst="icon" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
                 </layout>
             </widget>
             <widget name="toolBar" type="HbToolBar">
@@ -72,7 +75,8 @@
                 <enums name="horizontalScrollBarPolicy" value="ScrollBarAsNeeded"/>
             </widget>
             <real name="z" value="0"/>
-            <layout orientation="Vertical" type="linear">
+            <layout orientation="Vertical" spacing="0un" type="linear">
+                <contentsmargins bottom="0un" left="0un" right="0un" top="0un"/>
                 <linearitem itemname="search_container"/>
                 <linearitem itemname="deviceList"/>
                 <linearitem itemname="toolBar"/>
@@ -86,23 +90,37 @@
         <real name="z" value="1"/>
     </widget>
     <section name="landscape">
+        <widget name="label_searching" type="HbLabel">
+            <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
+        </widget>
+        <widget name="icon" type="HbLabel">
+            <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
+        </widget>
+        <widget name="dataForm" type="HbDataForm">
+            <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Expanding" verticalStretch="0"/>
+            <sizehint type="PREFERRED" width="51.19403un"/>
+        </widget>
         <widget name="search_container" type="HbWidget">
-            <sizehint height="10un" type="PREFERRED" width="51.19403un"/>
+            <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Ignored" verticalStretch="0"/>
+            <sizehint height="12un" type="PREFERRED" width="51.19403un"/>
+            <sizehint height="12.75un" type="MAXIMUM"/>
             <layout type="anchor">
-                <anchoritem dst="label_found_devices" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                <anchoritem dst="label_found_devices" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                <anchoritem dst="label_found_devices" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                <anchoritem dst="icon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                <anchoritem dst="icon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="label_found_devices" srcEdge="RIGHT"/>
-                <anchoritem dst="icon" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
-                <anchoritem dst="label_searching" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
-                <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
+                <anchoritem dst="icon" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="icon" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
                 <anchoritem dst="label_searching" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-bottom)" src="" srcEdge="BOTTOM"/>
                 <anchoritem dst="label_searching" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="label_searching" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="" srcEdge="TOP"/>
+                <anchoritem dst="label_searching" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="icon" srcEdge="RIGHT"/>
+                <anchoritem dst="icon" dstEdge="LEFT" spacing="0un" src="dataForm" srcEdge="RIGHT"/>
+                <anchoritem dst="icon" dstEdge="RIGHT" spacing="0un" src="label_searching" srcEdge="LEFT"/>
+                <anchoritem dst="dataForm" dstEdge="RIGHT" spacing="0un" src="icon" srcEdge="LEFT"/>
+                <anchoritem dst="dataForm" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="dataForm" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="dataForm" dstEdge="BOTTOM" spacing="0un" src="" srcEdge="BOTTOM"/>
             </layout>
         </widget>
     </section>
-    <metadata activeUIState="portrait_ui" display="NHD-3.2-inch_portrait" unit="un">
+    <metadata activeUIState="landscape_ui" display="NHD-3.2-inch_landscape" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="landscape_ui" sections="#common landscape"/>
         <uistate name="portrait_ui" sections="#common"/>

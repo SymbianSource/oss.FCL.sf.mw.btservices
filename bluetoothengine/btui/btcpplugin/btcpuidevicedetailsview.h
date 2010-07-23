@@ -14,8 +14,8 @@
 * Description:  BtCpUiDeviceDetailsView declaration
 */
 
-#ifndef BTCPUIDEVICEDETAILSVIEW_H_
-#define BTCPUIDEVICEDETAILSVIEW_H_
+#ifndef BTCPUIDEVICEDETAILSVIEW_H
+#define BTCPUIDEVICEDETAILSVIEW_H
 
 #include <hbview.h>
 #include <qglobal.h>
@@ -50,4 +50,4 @@ protected:
     Q_DISABLE_COPY(BtCpUiDeviceDetailsView)
 };
 
-#endif /* BTCPUIDEVICEDETAILSVIEW_H_ */
+#endif /* BTCPUIDEVICEDETAILSVIEW_H */

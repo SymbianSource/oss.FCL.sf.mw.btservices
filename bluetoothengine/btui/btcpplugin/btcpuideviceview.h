@@ -78,7 +78,10 @@ private:
     void setConnectionCombobox();
     void setTextAndVisibilityOfButtons();
     void updateStatusVariables(int majorRole);
-
+    void loadDeviceDetails();
+    void unloadDeviceDetails();
+    void setPrevBtDeviceName();
+    
 private:
     HbDocumentLoader *mLoader;
     //HbGroupBox *mGroupBox;
@@ -113,6 +116,7 @@ private:
     
     //true-> device is connected; false -> device is disconnected
     bool mConnectedStatus;
+    bool mPreviousConnectedStatus;
     bool mTrustedStatus;
     bool mBlockedStatus;
 

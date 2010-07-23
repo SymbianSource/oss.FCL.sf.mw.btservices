@@ -15,14 +15,17 @@
  *
  */
 
-
+#include "btmoredevicesdialogwidget.h"
 #include <hblabel.h>
 #include <hblistview.h>
 #include <hbtoolbar.h>
 #include <hbpushbutton.h>
 #include <hblistwidget.h>
 #include <qstandarditemmodel.h>
-#include "btmoredevicesdialogwidget.h"
+#include <btuidevtypemap.h>
+#include <btuiiconutil.h>
+#include <bluetoothdevicedialogs.h>
+
 
 
 const char* DOCML_BT_MORE_DEV_DIALOG = ":/docml/bt-more-devices-dialog.docml";
@@ -55,21 +58,46 @@ BTMoreDevicesDialogWidget::~BTMoreDevicesDialogWidget()
 
 bool BTMoreDevicesDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
     {
-    QStandardItem* listitem = new QStandardItem();
-    QStringList info;
-   // info.append(parameters.value("deviceName").toString());
-    //info.append(parameters.value("deviceType").toString());
-    info.append(parameters.value(parameters.keys().at(0)).toString());
+    double cod  = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass)).toDouble();
+    int uiMajorDevice;
+    int uiMinorDevice;
 
+    BtuiDevProperty::mapDeiveType(uiMajorDevice, uiMinorDevice, cod);
+    if ((uiMajorDevice & BtuiDevProperty::Phone)||(uiMajorDevice & BtuiDevProperty::Computer) )
+        {
+        BtSendDataItem devData;
+        devData[NameAliasRole] = QVariant(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+        devData[ReadableBdaddrRole] = QVariant(parameters.value(QString::number(TBluetoothDialogParams::EAddress)).toString());
+        devData[CoDRole] = QVariant(cod);
+        
+        setMajorProperty(devData,BtuiDevProperty::Bonded,
+                parameters.value("Bonded").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Blocked,
+                parameters.value("Blocked").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Trusted,
+                parameters.value("Trusted").toBool());
+        setMajorProperty(devData,BtuiDevProperty::Connected,
+                parameters.value("Connected").toBool());
+        mData.append(devData);
+        
+        QStandardItem* listitem = new QStandardItem();
+        QStringList info;
+        info.append(devData[NameAliasRole].toString());
 
-    listitem->setData(info, Qt::DisplayRole);
-    listitem->setIcon(icon());
- //   listitem->setIcon(icon(parameters.value("deviceType").toString()));
-    
-    mContentItemModel->appendRow(listitem);
-
+        listitem->setData(info, Qt::DisplayRole);
+        HbIcon icon =  getBadgedDeviceTypeIcon(devData[CoDRole].toDouble(),
+                devData[MajorPropertyRole].toInt(),
+                BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight);        
+        listitem->setIcon(icon.qicon());
+     //   listitem->setIcon(icon(parameters.value("deviceType").toString()));
+        
+        mContentItemModel->appendRow(listitem);        
+        }
     return true;
     }
+
+
+
 
 int BTMoreDevicesDialogWidget::deviceDialogError() const
     {
@@ -213,8 +241,12 @@ void BTMoreDevicesDialogWidget::deviceSelected(const QModelIndex& modelIndex)
     {
     int row = modelIndex.row();
     QVariantMap val;
-    QVariant index(row);
-    val.insert("selectedindex",index);
+//    QVariant index(row);
+    const BtSendDataItem& qtdev = mData.at(row);
+    val.insert("selectedindex",QVariant(row));
+    val.insert("devicename",QVariant(qtdev[NameAliasRole]));
+    val.insert("deviceaddress",QVariant(qtdev[ReadableBdaddrRole]));
+    val.insert("deviceclass",QVariant(qtdev[CoDRole]));
     emit deviceDialogData(val);
   //  mDeviceDialogData = 1;//flag is to say that device dialog data is emitted required when we cancel the dialog    
    // this->close();

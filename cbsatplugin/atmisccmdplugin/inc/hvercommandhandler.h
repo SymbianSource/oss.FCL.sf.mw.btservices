@@ -22,7 +22,7 @@
 #include "atcmdsyncbase.h"
 #include "debug.h"
 
-#include <Etel3rdParty.h>
+#include <etel3rdparty.h>
 
 /**
  *  AT^HVER command handler implementation class

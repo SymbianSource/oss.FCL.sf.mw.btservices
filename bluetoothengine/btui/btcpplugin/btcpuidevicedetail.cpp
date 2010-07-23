@@ -23,6 +23,7 @@
 #include <bluetoothuitrace.h>
 #include <HbInstance>
 
+
 BtCpUiDeviceDetail::BtCpUiDeviceDetail(QObject *parent) :
     QObject(parent), mDeviceDetailView(0)
 {
@@ -31,7 +32,6 @@ BtCpUiDeviceDetail::BtCpUiDeviceDetail(QObject *parent) :
 
 BtCpUiDeviceDetail::~BtCpUiDeviceDetail()
 {
-    notifyViewStatusToPlugins(AboutToClose);
     clearDeviceDetailList();
     delete mDeviceDetailView;
 }
@@ -57,8 +57,9 @@ void BtCpUiDeviceDetail::loadDeviceDetailPlugins(QString deviceAddress, QString 
         delete interfaces.at(i);
     }
     
-    notifyDeviceDetailStatus();
     createDeviceDetailsView(deviceName);
+    notifyDeviceDetailStatus();
+    
 }
 
 void BtCpUiDeviceDetail::appendDeviceToList(BtAbstractDevSetting *devSetting)
@@ -84,6 +85,7 @@ void BtCpUiDeviceDetail::appendDeviceToList(BtAbstractDevSetting *devSetting)
 void BtCpUiDeviceDetail::handleSettingChange(BtAbstractDevSetting *setting, bool available)
 {
     QList<BtDeviceDetails>::iterator i;
+       
     for (i = mDeviceDetailList.begin(); i != mDeviceDetailList.end(); ++i) {
         if((setting == (*i).mSetting) && mDeviceDetailView) {
             (*i).mSettingAvailable = available;
@@ -99,10 +101,9 @@ void BtCpUiDeviceDetail::handleSettingChange(BtAbstractDevSetting *setting, bool
             else {
                 if((*i).mSettingForm) {
                     //remove widget
-                    //todo: In case if no items are there close this view
-                    //and disable device settings button.
                     mDeviceDetailView->removeItem((*i).mSettingForm);
-                    (*i).mSettingForm = 0; 
+                    (*i).mSettingForm = 0;
+                    checkDeviceDetailSettings();
                 }
             }
             notifyDeviceDetailStatus();
@@ -110,6 +111,25 @@ void BtCpUiDeviceDetail::handleSettingChange(BtAbstractDevSetting *setting, bool
     }
 }
 
+
+void BtCpUiDeviceDetail::checkDeviceDetailSettings()
+{
+    QList<BtDeviceDetails>::const_iterator i;
+    bool devicedetail = false;
+    
+    for (i = mDeviceDetailList.constBegin(); i != mDeviceDetailList.constEnd(); ++i) {
+        if((*i).mSettingForm) {
+            devicedetail = true;
+            break;
+        }
+    }
+    //If no setting is available and current view is device detail 
+    //view move to previous view.
+    if((!devicedetail) && (mMainWindow->currentView() == mDeviceDetailView)) {
+        mMainWindow->removeView(mDeviceDetailView); 
+        mMainWindow->setCurrentView( mPreviousView );
+    }
+}
 
 void BtCpUiDeviceDetail::notifyDeviceDetailStatus()
 {
@@ -156,7 +176,6 @@ void BtCpUiDeviceDetail::createDeviceDetailsView(QString deviceName)
             mDeviceDetailView->addItem((*i).mSettingForm);
         }
     }
-
 }
 
 void BtCpUiDeviceDetail::loadDeviceDetailsView()
@@ -201,6 +220,11 @@ void BtCpUiDeviceDetail::notifyViewStatusToPlugins(BtCpUiDeviceDetail::NotifyTyp
         }
     }
 
+}
+
+void BtCpUiDeviceDetail::sendCloseEvent()
+{
+    notifyViewStatusToPlugins(AboutToClose);
 }
 
 

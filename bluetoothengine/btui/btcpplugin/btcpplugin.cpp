@@ -15,9 +15,8 @@
  *
  */
 
-
-#include <cpsettingformentryitemdataimpl.h>
 #include "btcpplugin.h"
+#include <cpsettingformentryitemdataimpl.h>
 #include "btcpuisettingitem.h"
 
 /*!

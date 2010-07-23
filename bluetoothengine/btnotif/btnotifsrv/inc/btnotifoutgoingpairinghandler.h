@@ -23,7 +23,11 @@
 #include <e32property.h>
 #include "btnotifclientserver.h"
 #include "btnotifBasePairingHandler.h"
+#include <hb/hbcore/hbsymbianvariant.h>
+#include "btnotificationresult.h"
+#include "bluetoothdevicedialogs.h"
 
+class CBluetoothNotification;
 
 enum TBTOutgoingPairMode
     {
@@ -53,7 +57,8 @@ enum TBTOutgoingPairMode
  *
  *  @since Symbian^4
  */
-NONSHARABLE_CLASS( CBTNotifOutgoingPairingHandler ) : public CBTNotifBasePairingHandler
+NONSHARABLE_CLASS( CBTNotifOutgoingPairingHandler ) : public CBTNotifBasePairingHandler,
+                                                      public MBTNotificationResult
     {
 
 public:
@@ -70,8 +75,36 @@ public:
      * Destructor
      */
     ~CBTNotifOutgoingPairingHandler();
+
     
-private: // From CBTEngPairBase
+    // from base class MBTNotificationResult
+
+    /**
+     * From MBTNotificationResult.
+     * Handle an intermediate result from a user query.
+     * This function is called if the user query passes information
+     * back before it has finished i.e. is dismissed. The final acceptance/
+     * denial of a query is passed back in MBRNotificationClosed.
+     *
+     * @since Symbian^4
+     * @param aData the returned data. The actual format 
+     *              is dependent on the actual notifier.
+     */
+    virtual void MBRDataReceived( CHbSymbianVariantMap& aData );
+
+    /**
+     * From MBTNotificationResult.
+     * The notification is finished. The resulting data (e.g. user input or
+     * acceptance/denial of the query) is passed back here.
+     *
+     * @since Symbian^4
+     * @param aErr KErrNone or one of the system-wide error codes.
+     * @param aData the returned data. The actual format 
+     *              is dependent on the actual notifier.
+     */
+    virtual void MBRNotificationClosed( TInt aError, const TDesC8& aData );
+    
+private:
     
     /**
      * Start observing the result of pairing which was originated from
@@ -153,6 +186,27 @@ private: // from base class MBtSimpleActiveObserver
     void HandleError( CBtSimpleActive* aActive, TInt aError );
 
 private:
+    /**
+     * Get a notification and configure it according to the current operation.
+     *
+     * @since Symbian^4
+     * @param aType The notification type.
+     * @param aResourceId Identifier for the resource to display.
+     */
+    void PrepareNotificationL( TBluetoothDialogParams::TBTDialogType aType,
+                TBTDialogResourceId aResourceId );
+
+    /**
+     * Handle the result from a notification that is finished.
+     *
+     * @since Symbian^4
+     * @param aErr KErrNone or one of the system-wide error codes.
+     * @param aData The returned data. The actual format 
+     *              is dependent on the actual notifier.
+     */
+    void NotificationClosedL( TInt aError, const TDesC8& aData );
+
+private:
 
     /**
      * C++ default constructor
@@ -168,6 +222,16 @@ private:
      * Starts an actual pair operation.
      */
     void DoPairingL();
+    
+    /**
+     * Ask the user to retry pairing.
+     */    
+    void ShowPairingRetryDialog();
+    
+    /**
+     * Tell the user the pairing failed.
+     */    
+    void ShowPairingFailureDialog();
     
 private: // data
 	
@@ -200,6 +264,17 @@ private: // data
      * the current pairing mode this class is in
      */
     TBTOutgoingPairMode iPairMode;
+
+    /**
+     * Pointer to an outstanding user interaction.
+     * Not own.
+     */
+    CBluetoothNotification* iNotification;
+
+    /**
+     * Number of pairing attempt
+     */
+    TInt iPairingAttempt;
     
     };
 

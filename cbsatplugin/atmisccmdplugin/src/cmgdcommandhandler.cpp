@@ -136,6 +136,9 @@ void CCMGDCommandHandler::RunL()
     {
     TRACE_FUNC_ENTRY
     
+    Trace(_L("Error = %d"), iStatus.Int());
+    Trace(_L("State = %d"), iHandlerState);
+    
     iReply.Zero();
     
     TInt err = iStatus.Int();
@@ -193,6 +196,13 @@ void CCMGDCommandHandler::RunL()
                 iHandlerState = ECMGDStateIdle;
                 iReply.Format(KCMGDSupportedCmdsList, &KNullDesC8);
                 iCallback->CreateReplyAndComplete(EReplyTypeOk, iReply);
+                break;
+                }
+            case ECMGDStateDeleteFilteredEntries:
+                {
+                iMobileSmsStore.DeleteAll(iStatus);
+                iHandlerState = ECMGDStateDeleteAllEntries;
+                SetActive();
                 break;
                 }
             default:

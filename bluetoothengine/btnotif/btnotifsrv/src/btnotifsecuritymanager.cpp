@@ -445,6 +445,7 @@ void CBTNotifSecurityManager::GetPinCode(
         {
         // make sure not to leave any text as PIN.
         aPin.Zero();
+        aPin().iLength = 0;
         }
     }
 

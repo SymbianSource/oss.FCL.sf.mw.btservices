@@ -19,6 +19,7 @@
 #ifndef BTMOREDEVICESDIALOGWIDGET_H
 #define BTMOREDEVICESDIALOGWIDGET_H
 
+#include "btdevicedialogutils.h"
 #include <QObject>
 #include <QVariantMap>
 #include <hbdialog.h>
@@ -54,6 +55,8 @@ private:
  //   void hideEvent(QHideEvent *event);
  //   void showEvent(QShowEvent *event);
     QIcon icon(/*QString deviceType*/);
+ //   void setMajorProperty(
+//           BtSendDataItem& qtdev, int prop, bool addto);
     
 signals:
     void deviceDialogClosed();
@@ -72,6 +75,8 @@ private:
      */
     
     QStandardItemModel* mContentItemModel;
+    
+    BtSendDataSource mData;
     
     Q_DISABLE_COPY(BTMoreDevicesDialogWidget)
     };

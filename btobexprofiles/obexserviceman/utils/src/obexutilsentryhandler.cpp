@@ -81,7 +81,8 @@ TInt CObexutilsEntryhandler::AddEntryAttachment(
     
     iStatus = KRequestPending;
   
-    TRAPD(error, DoAddEntryAttachmentL(aFilePath, anAttachInfo, aStore));
+    TRAPD(error, aStore->AttachmentManagerL().AddLinkedAttachmentL(aFilePath,anAttachInfo, iStatus););
+    
     if (error != KErrNone )
         {        
         //Complete request
@@ -96,76 +97,6 @@ TInt CObexutilsEntryhandler::AddEntryAttachment(
     return iStatus.Int();
     }
 
-
-// ---------------------------------------------------------------------------
-// DoAddLinkAttachmentL()
-// ---------------------------------------------------------------------------
-//
-void CObexutilsEntryhandler::DoAddEntryAttachmentL(
-    const TDesC &aFilePath, 
-    CMsvAttachment* anAttachInfo, 
-    CMsvStore* aStore)
-    {
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::DoAddEntryAttachmentL()"));   
-        
-    aStore->AttachmentManagerL().AddLinkedAttachmentL(aFilePath,anAttachInfo, iStatus);
-    
-    //Complete request
-    TRequestStatus* status = &iStatus;
-    User::RequestComplete(status, KErrNone);
-        
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::DoAddEntryAttachmentL() completed"));  
-    }
-
-// ---------------------------------------------------------------------------
-// UpdateLinkAttachment()
-// ---------------------------------------------------------------------------
-//
-TInt CObexutilsEntryhandler::UpdateEntryAttachment(
-    TFileName& aFileName,
-    CMsvAttachment* anOldAttachInfo,
-    CMsvAttachment* aNewAttachInfo,
-    CMsvStore* aStore)
-    {
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::UpdateEntryAttachment()"));       
-    
-    iStatus = KRequestPending;
-  
-    TRAPD(error, DoUpdateEntryAttachmentL(aFileName,anOldAttachInfo, aNewAttachInfo, aStore));
-    if (error != KErrNone )
-        {        
-        //Complete request
-        TRequestStatus* status = &iStatus;
-        User::RequestComplete(status, error);
-        }
-       
-    SetActive();
-    iSyncWaiter.Start();
-          
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::UpdateEntryAttachment() Done"));
-    return iStatus.Int();
-    }
-
-// ---------------------------------------------------------------------------
-// DoUpdateEntryAttachmentL()
-// ---------------------------------------------------------------------------
-//
-void CObexutilsEntryhandler::DoUpdateEntryAttachmentL(
-    TFileName& aFileName,
-    CMsvAttachment* anOldAttachInfo,
-    CMsvAttachment* aNewAttachInfo,
-    CMsvStore* aStore)
-    {
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::DoUpdateEntryAttachmentL()"));   
-    aStore->AttachmentManagerL().RemoveAttachmentL(anOldAttachInfo->Id(), iStatus);
-    aStore->AttachmentManagerL().AddLinkedAttachmentL(aFileName,aNewAttachInfo, iStatus);
-   
-    //Complete request
-    TRequestStatus* status = &iStatus;
-    User::RequestComplete(status, KErrNone);
-        
-    FLOG(_L("[OBEXUTILS]\t CObexutilsEntryhandler::DoUpdateEntryAttachmentL() completed"));  
-    }
 
 // ---------------------------------------------------------------------------
 // From class CActive.

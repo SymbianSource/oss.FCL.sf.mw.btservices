@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <hbdocument version="1.1">
     <object name="hideaction" type="HbAction">
+        <bool name="enabled" value="FALSE"/>
         <string locid="txt_common_button_hide" name="text"/>
     </object>
     <object name="cancelaction" type="HbAction">
@@ -12,8 +13,8 @@
             <real name="z" value="1"/>
             <string name="plainText" value="Sending File x/y to Device"/>
         </widget>
-        <ref object="cancelaction" role="HbWidget:addAction"/>
         <ref object="hideaction" role="HbWidget:addAction"/>
+        <ref object="cancelaction" role="HbWidget:addAction"/>
         <widget name="container" role="HbDialog:contentWidget" type="HbWidget">
             <widget name="filecontainer" type="HbWidget">
                 <widget name="fileiconlabel" type="HbLabel">

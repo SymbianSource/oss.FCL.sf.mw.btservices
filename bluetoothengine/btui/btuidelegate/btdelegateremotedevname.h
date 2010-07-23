@@ -72,6 +72,8 @@ private:
     
     TBTDevAddr mSymaddr;
     
+    bool mRegistryOpened;
+    
 
 private:
 

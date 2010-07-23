@@ -195,6 +195,9 @@ private:
     CATCmdSyncBase* iCGMIHandler;
     CATCmdAsyncBase* iCMGWHandler;
     CATCmdAsyncBase* iCMGDHandler;
+    CATCmdSyncBase* iCGMMHandler;
+	CATCmdAsyncBase* iSCPBRHandler;
+    CATCmdAsyncBase* iSCPBWHandler;
  
     /**
      * Buffer for handle command's command

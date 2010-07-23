@@ -15,8 +15,8 @@
 *
 */
 
-#ifndef BTDEVICEMODE_P_H
-#define BTDEVICEMODE_P_H
+#ifndef BTDEVICEMODELPRIVATE_H
+#define BTDEVICEMODELPRIVATE_H
 
 #include "btuimodeltypes.h"
 #include <btdevicemodel.h>
@@ -137,4 +137,4 @@ private:
 
 };
 
-#endif // BTLOCALSETTING_H
+#endif // BTDEVICEMODELPRIVATE_H

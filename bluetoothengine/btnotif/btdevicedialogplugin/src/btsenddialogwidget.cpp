@@ -15,14 +15,13 @@
  *
  */
 
-
+#include "btsenddialogwidget.h"
 #include <hblabel.h>
 #include <hblistview.h>
 #include <hbtoolbar.h>
 #include <hblistwidget.h>
 #include <qstandarditemmodel.h>
 #include <hbaction.h>
-#include "btsenddialogwidget.h"
 
 
 #define LOC_SENDING_FILES_TO_DEVICE hbTrId("txt_bt_title_sending_file_l1l2_to_3")

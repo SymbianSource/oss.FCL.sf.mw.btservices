@@ -26,7 +26,7 @@
 
 BtDelegateRemoteDevName::BtDelegateRemoteDevName(BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel,QObject *parent )
-    :BtAbstractDelegate( settingModel, deviceModel, parent ), mRegistryActive(0)
+    :BtAbstractDelegate( settingModel, deviceModel, parent ), mRegistryActive(0), mRegistryOpened(false)
 {
     
 }
@@ -35,7 +35,8 @@ BtDelegateRemoteDevName::~BtDelegateRemoteDevName()
 {
     delete mRegistryActive;
     mSymName.Close();
-    mBtRegistry.Close();
+    if (mRegistryOpened)
+        mBtRegistry.Close();//there is crash is close the btregistry without opening it first
     mBtRegServ.Close();
 }
 
@@ -70,11 +71,20 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
     QVariant nameVariant = paramList.at(1); 
     QString btRemoteDevName = nameVariant.toString();
     
-    int error = KErrNone;
-            
-    validateName(btRemoteDevName);
+    if (!validateName(btRemoteDevName)){
+            emit commandCompleted(KErrBadName);
+            return;
+    }
     mNewName = btRemoteDevName;
-    
+    /*
+    QModelIndex start = getDeviceModel()->index(0,0);
+    QModelIndexList indexList = getDeviceModel()->match(start,BtDeviceModel::NameAliasRole, mNewName);
+    if (indexList.size() > 1){
+        emit commandCompleted(KErrBadName, mNewName);
+        return;
+    }
+    */
+    int error = KErrNone;
     TPtrC ptrName(reinterpret_cast<const TText*>(btRemoteDevName.constData()));
   
     error = mSymName.Create(ptrName.Length());
@@ -105,6 +115,8 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
         emit commandCompleted(error,mNewName);
         return;
     }
+    mRegistryOpened = true;
+    
     if (!mRegistryActive){
         RequestIdentifiers requestId = Unknown;
         TRAP(error, mRegistryActive = CBtSimpleActive::NewL(
