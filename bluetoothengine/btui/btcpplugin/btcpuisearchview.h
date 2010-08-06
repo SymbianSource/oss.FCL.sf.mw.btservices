@@ -88,8 +88,6 @@ private:
     HbAction*               mViewBy;
     HbAction*               mStop;
     HbAction*               mRetry;
-    HbAction*               mExit;
-    HbAction*               mConnect;
 
     //pointer to abstract delegate, and it is instantiated at runtime
     BtAbstractDelegate*     mAbstractDelegate;

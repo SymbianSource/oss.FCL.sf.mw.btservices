@@ -13,12 +13,6 @@
         <icon iconName="qtg_mono_search" name="icon"/>
         <string name="text"/>
     </object>
-    <object name="exitAction" type="HbAction">
-        <string locid="txt_common_opt_exit" name="text" value="Exit"/>
-    </object>
-    <object name="connectAction" type="HbAction">
-        <string locid="txt_bt_menu_connect" name="text" value="Connect"/>
-    </object>
     <object name="disconnectAction" type="HbAction">
         <string name="text" value="Disconnect"/>
     </object>
@@ -82,23 +76,20 @@
                 <linearitem itemname="toolBar"/>
             </layout>
         </widget>
-        <widget name="viewMenu" role="HbView:menu" type="HbMenu">
-            <ref object="exitAction" role="HbWidget:addAction"/>
-            <ref object="connectAction" role="HbWidget:addAction"/>
-        </widget>
+        <widget name="viewMenu" role="HbView:menu" type="HbMenu"/>
         <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
         <real name="z" value="1"/>
     </widget>
     <section name="landscape">
-        <widget name="label_searching" type="HbLabel">
-            <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
-        </widget>
         <widget name="icon" type="HbLabel">
             <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
         </widget>
         <widget name="dataForm" type="HbDataForm">
             <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Expanding" verticalStretch="0"/>
             <sizehint type="PREFERRED" width="51.19403un"/>
+        </widget>
+        <widget name="label_searching" type="HbLabel">
+            <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
         </widget>
         <widget name="search_container" type="HbWidget">
             <sizepolicy horizontalPolicy="Preferred" horizontalStretch="0" verticalPolicy="Ignored" verticalStretch="0"/>

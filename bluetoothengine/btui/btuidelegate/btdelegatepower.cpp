@@ -91,7 +91,7 @@ void BtDelegatePower::switchBTOn()
         if (btEnabledInOffline){
             // BT is allowed to be enabled in offline mode, show query.
             HbMessageBox::question( hbTrId("txt_bt_info_trun_bluetooth_on_ini_offline_mode" ),this, 
-				SLOT(btOnQuestionClose(HbAction*)));
+							SLOT(btOnQuestionClose(int)), HbMessageBox::Yes | HbMessageBox::No );
 
         }
         else{
@@ -113,11 +113,10 @@ void BtDelegatePower::switchBTOn()
     
 }
 
-void BtDelegatePower::btOnQuestionClose(HbAction *action)
+void BtDelegatePower::btOnQuestionClose(int action)
 {
-    HbMessageBox *dlg = static_cast<HbMessageBox*>(sender());
     int err = 0;
-    if(action == dlg->actions().at(0)) 
+    if(action == HbMessageBox::Yes) 
     {
         //user chooses "yes" for using BT in offline 
         mActiveHandling = true;

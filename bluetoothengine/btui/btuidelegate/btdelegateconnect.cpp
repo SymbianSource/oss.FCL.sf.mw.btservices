@@ -162,8 +162,8 @@ void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
             QString questionText(hbTrId("txt_bt_info_to_connect_1_2_needs_to_be_disconnec")
                     .arg(mDeviceName).arg(conflictDevName));
             
-            HbMessageBox::question( questionText, this, SLOT(handleUserAnswer(HbAction*)), 
-                    hbTrId("txt_common_button_continue"), hbTrId("txt_common_button_cancel") );        
+            HbMessageBox::question( questionText, this, SLOT(handleUserAnswer(int)), 
+                    HbMessageBox::Continue | HbMessageBox::Cancel );       
         }
     }
     else {
@@ -175,10 +175,9 @@ void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
 /*!
  * handle user response to query about disconnecting conflict device
  */
-void BtDelegateConnect::handleUserAnswer( HbAction* answer )
+void BtDelegateConnect::handleUserAnswer( int answer )
 {
-    HbMessageBox* dlg = static_cast<HbMessageBox*>( sender() );
-    if( dlg->actions().first() == answer ) { 
+    if( answer == HbMessageBox::Continue ) { 
         // Continue, ie. disconnect conflict device and then try reconnecting again
         if (!mAbstractDelegate) //if there is no other delegate running
         { 

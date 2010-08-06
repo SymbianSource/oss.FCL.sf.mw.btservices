@@ -54,7 +54,7 @@ protected:
     virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );
   
 private slots:
-    void handleUserAnswer( HbAction* answer );
+    void handleUserAnswer( int answer );
     void powerDelegateCompleted(int status);
     void disconnectDelegateCompleted(int status);
     

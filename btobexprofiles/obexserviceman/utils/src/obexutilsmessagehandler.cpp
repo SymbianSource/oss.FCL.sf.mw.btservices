@@ -54,6 +54,8 @@ const TUid KUidMsgTypeBt = {0x10009ED5};
 
 const TInt KObexUtilsMaxCharToFromField = 256;
 
+const TInt32 KUidMsgTypeBtTInt32 = 0x10009ED5;
+
 // ============================= LOCAL FUNCTIONS ===============================
 
 // -----------------------------------------------------------------------------
@@ -303,6 +305,7 @@ void TObexUtilsMessageHandler::StoreAndUpdateBioMessageL(
     parentTEntry.iMtm = KUidBIOMessageTypeMtm;
     parentTEntry.iServiceId = KMsvLocalServiceIndexEntryId;  
     parentTEntry.iBioType = aBioMsgId.iUid;
+    parentTEntry.iMtmData1 = KUidMsgTypeBtTInt32;
     parentTEntry.iDescription.Set(aBioDB->BifReader(index).Description());
     parentEntry->ChangeL(parentTEntry);
     

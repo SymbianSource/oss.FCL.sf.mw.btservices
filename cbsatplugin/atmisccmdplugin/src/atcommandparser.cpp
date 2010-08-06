@@ -268,12 +268,14 @@ TPtrC8 TAtCommandParser::NextParam()
     // Extract the token at this point            
     TPtrC8 retVal = iCmd.MarkedToken();
     
-    // Skip comma, space and control chars
-    while(!iCmd.Eos() && (chr == ',' || chr.IsSpace() || chr.IsControl()))
-        {
-        iCmd.Inc();
-        chr = iCmd.Peek();
-        }
+    // Skip the first delimiter and any further space and control chars
+    do
+      {
+      iCmd.Inc();
+      chr = iCmd.Peek();
+      }
+    while(!iCmd.Eos() && (chr.IsSpace() || chr.IsControl()));
+    
     TRACE_FUNC_EXIT
     return retVal;
     }

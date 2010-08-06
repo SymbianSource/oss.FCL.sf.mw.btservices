@@ -53,7 +53,7 @@ public:
     virtual void VisibilityModeChanged( TBTVisibilityMode aState );
     
 public slots:
-    void btOnQuestionClose(HbAction *action);
+    void btOnQuestionClose(int action);
     
     void btOnWarningClose();
     

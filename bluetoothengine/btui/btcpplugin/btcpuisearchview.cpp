@@ -146,14 +146,6 @@ BtCpUiSearchView::BtCpUiSearchView(
     BTUI_ASSERT_X( optionsMenu != 0, "BtCpUiSearchView::BtCpUiSearchView", "Options menu not found" );   
     this->setMenu(optionsMenu);      
     
-    mExit = static_cast<HbAction*>( mLoader->findObject( "exitAction" ) );
-    BTUI_ASSERT_X( mExit, "BtCpUiSearchView::BtCpUiSearchView", "exitAction missing" ); 
-    mExit->setText(hbTrId("txt_common_opt_exit"));
-    
-    mConnect = static_cast<HbAction*>( mLoader->findObject( "connectAction" ) );
-    BTUI_ASSERT_X( mConnect, "BtCpUiSearchView::BtCpUiSearchView", "connectAction missing" ); 
-    mConnect->setText(hbTrId("txt_bt_menu_connect"));
-    
     ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
     BTUI_ASSERT_X( ret, "BtCpUiSearchView::BtCpUiSearchView", "deviceSelected can't connect" ); 
     
