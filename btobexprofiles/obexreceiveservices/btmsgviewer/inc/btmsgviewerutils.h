@@ -19,6 +19,8 @@
 #define BTMSGVIEWERUTILS_H_
 
 #include <msvapi.h>
+#include <bluetoothdevicedialogs.h>
+#include <hbdevicedialogsymbian.h>
 
 
 class CBtMsgViewerUtils: public CBase, public MMsvSessionObserver
@@ -26,7 +28,7 @@ class CBtMsgViewerUtils: public CBase, public MMsvSessionObserver
 public:
     static CBtMsgViewerUtils* NewL();
     ~CBtMsgViewerUtils();
-    HBufC* GetMessagePath(TInt aMessageId, TInt aError);
+    HBufC* GetMessagePath(TInt aMessageId, TInt& aError);
     HBufC8* GetMimeType();
 
 private: // From MMsvSessionObserver
@@ -35,6 +37,7 @@ private: // From MMsvSessionObserver
 private:
     void GetMessagePathL(TPtr aMsgPath, const TInt aMessageId);
     void StoreMessageMimeTypeL(TPtr aMsgPath);
+    void LaunchFailureDialogL(TInt aDialogTitle);
        
 private:
     CBtMsgViewerUtils();

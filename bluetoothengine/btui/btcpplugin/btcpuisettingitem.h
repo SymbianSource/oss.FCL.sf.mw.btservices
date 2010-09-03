@@ -19,31 +19,40 @@
 #define BTCPUISETTINGITEM_H
 
 #include <cpsettingformentryitemdata.h>
-#include <btsettingmodel.h>
-#include <btdevicemodel.h>
 
-#include "btcpuimainview.h"
 
+class BtSettingModel;
+class BtDeviceModel;
+class BtcpuiBaseView;
 class HbTranslator;
+class HbMainWindow;
+class HbView;
 
-class BtCpUiSettingItem : public CpSettingFormEntryItemData
+class BtcpuiSettingItem : public CpSettingFormEntryItemData
 {
 	Q_OBJECT
 public:
-	explicit BtCpUiSettingItem(CpItemDataHelper &itemDataHelper);	 
-	virtual ~BtCpUiSettingItem();
+	explicit BtcpuiSettingItem(CpItemDataHelper &itemDataHelper);	 
+	virtual ~BtcpuiSettingItem();
+	
 private slots:
 	void onLaunchView();
-	void handleCloseView();
+	void handleCloseMainView();
 	void handleDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
-private:
+	
+private: 
+	// From CpSettingFormEntryItemData
 	virtual CpBaseSettingView *createSettingView() const;
+    
+private:
+	
 	void updateStatus();
 	void loadTranslators();
+	
 private:
 	HbMainWindow* mMainWindow;
 	
-	BtCpUiMainView *mBtMainView;
+	BtcpuiBaseView *mMainView;
 	
 	//Owns this model.
 	BtSettingModel *mSettingModel;

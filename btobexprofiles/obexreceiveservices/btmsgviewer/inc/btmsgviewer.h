@@ -25,6 +25,8 @@
 
 #include "btmsgviewerutils.h"
 
+class HbDeviceDialog;
+
 
 class BTMsgViewer : public XQServiceProvider
 {
@@ -36,14 +38,20 @@ public:
     
 public slots:
     void displaymsg(int messageId);
+    
+private slots:
+    void handledialogClosed();
 
 private:
-    bool isError(int aError);
+    bool isError(int err);
     QString copyVCardToTemp(const QString& filepath);
     void deleteVCardFromTemp(const QString& filepath);
-    
+    void launchErrordDialog(int dialogTitle);
+        
 private:
     int mCurrentRequestIndex;
+    HbDeviceDialog* mDialog;
+    int mError;
 };
 
 #endif // BTMSGVIEWER_H

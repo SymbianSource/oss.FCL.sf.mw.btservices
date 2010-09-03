@@ -18,7 +18,6 @@
 #ifndef	BTCPUIDEVICEVIEW_H
 #define	BTCPUIDEVICEVIEW_H
 
-#include <cpbasesettingview.h>
 #include <hbaction.h>
 #include <hbtoolbar.h>
 #include "btcpuibaseview.h"
@@ -32,97 +31,81 @@ class HbDocumentLoader;
 class HbDataForm;
 
 class HbDataFormModel;
-//class HbDataFormModelItem;
+class HbDataFormModelItem;
 class CpSettingFormItemData;
 class BtAbstractDelegate;
 class BtCpUiDeviceDetail;
 
-class BtCpUiDeviceView : public BtCpUiBaseView
+class BtcpuiDeviceView : public BtcpuiBaseView
 {
     Q_OBJECT
     
 public:
-    explicit BtCpUiDeviceView(
-            BtSettingModel &settingModel, 
+    explicit BtcpuiDeviceView(BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel,            
             QGraphicsItem *parent = 0);
-    virtual ~BtCpUiDeviceView();
-    virtual void activateView( const QVariant& value, bool fromBackButton );
+    
+    virtual ~BtcpuiDeviceView();
+    virtual void activateView( const QVariant& value, bool backNavi);
     virtual void deactivateView();
-    virtual void setSoftkeyBack();
         
 public slots:
     
-    virtual void switchToPreviousView();
+    void backToPreviousView();
     void changeOrientation( Qt::Orientation orientation );
     void updateDeviceData();
     void changeBtDeviceName();
-    void pairUnpair();
-    void connectDisconnect();
-    void pairDelegateCompleted(int status);
-    void unpairDelegateCompleted(int status);
-    void connectDelegateCompleted(int status);
-    void disconnectDelegateCompleted(int status);
-    void changeDevNameDelegateCompleted(int status, QVariant param);
-    void handleDeviceSetting();
-    void handleDeviceSettingsChange(bool status);
-    
-private:
-    void clearViewData();
     void pairDevice();
     void unpairDevice();
     void connectDevice();
     void disconnectDevice();
+    void pairDelegateCompleted(int status);
+    void unpairDelegateCompleted(int status);
+    void connectDelegateCompleted(int status);
+    void disconnectDelegateCompleted(int status);
+    void changeDevNameDelegateCompleted(int status);
+    void handleDeviceSetting();
+    void handleDeviceSettingsChange(bool status);
+    void connectionPreferenceChanged(int index);
+    
+private:
+    enum connectionSelection {
+        ConnectionAutomatic = 0,
+        ConnectionAlwaysAsk, 
+        ConnectionBlocked
+    };
+    void clearViewData();
     void setDeviceCategory(int cod, int majorRole);//cod:class of device
     void setDeviceStatus(int majorRole);
     void setConnectionCombobox();
-    void setTextAndVisibilityOfButtons();
-    void updateStatusVariables(int majorRole);
+    void setTextAndVisibilityOfButtons(int majorProperty);
     void loadDeviceDetails();
     void unloadDeviceDetails();
     void setPrevBtDeviceName();
+    void setDeviceAuthorised();
+    void setDeviceAlwaysAsk();
+    void setDeviceBlocked();
+    void updateButton(HbPushButton *button, const QString &iconName, const QString &text);
     
 private:
     HbDocumentLoader *mLoader;
-    //HbGroupBox *mGroupBox;
     HbLabel *mDeviceIcon;
     HbLineEdit *mDeviceName;
     HbLabel *mDeviceCategory;
     HbLabel *mDeviceStatus;
     
-    HbDataForm *mConnectionCombobox;
+    HbDataForm *mConnectionDataForm;
     HbDataFormModel *mConnectionComboboxModel;
+    HbDataFormModelItem *mCombobox;
     
     HbPushButton *mPair_Unpair;
     HbPushButton *mConnect_Disconnect;
     HbPushButton *mDeviceSetting;
     
-    
-    // data structures for switching between views
-    bool mEventFilterInstalled;
-    int mAutoCmdId;
-    Qt::Orientation mOrientation;
-    
-    HbMainWindow* mMainWindow;
-    BtCpUiBaseView* mMainView;
-    //BtCpUiBaseView* mDeviceView;
-    HbAction *mSoftKeyBackAction;
-    
     QModelIndex mDeviceIndex;
     QVariant mDeviceBdAddr;
-    
-    //true -> device is paired; false -> device is unpaired
-    bool mPairedStatus;
-    
-    //true-> device is connected; false -> device is disconnected
-    bool mConnectedStatus;
-    bool mPreviousConnectedStatus;
-    bool mTrustedStatus;
-    bool mBlockedStatus;
 
-    //true -> device is connectable
-    //e.g. not possible to connect to a phone, but possible to connect to a headset
-    bool mConnectable;
+    int mComboboxIndex;
     
     BtAbstractDelegate* mAbstractDelegate;
 

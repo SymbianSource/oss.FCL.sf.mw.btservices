@@ -52,11 +52,6 @@ public slots:
     
 private:
     bool constructDialog(const QVariantMap &parameters);
- //   void hideEvent(QHideEvent *event);
- //   void showEvent(QShowEvent *event);
-    QIcon icon(/*QString deviceType*/);
- //   void setMajorProperty(
-//           BtSendDataItem& qtdev, int prop, bool addto);
     
 signals:
     void deviceDialogClosed();
@@ -64,18 +59,10 @@ signals:
     
 private:
     HbDocumentLoader *mLoader;
-    int              mDeviceDialogData;
-    HbDialog *mMoreDeviceDialog;
+    HbDialog *mLastUsedDeviceDialog;
     HbAction *mMoreAction;
     HbAction *mCancelAction;
-    
-    /**
-     * 
-     * item model for content list view.
-     */
-    
     QStandardItemModel* mContentItemModel;
-    
     BtSendDataSource mData;
     
     Q_DISABLE_COPY(BTMoreDevicesDialogWidget)

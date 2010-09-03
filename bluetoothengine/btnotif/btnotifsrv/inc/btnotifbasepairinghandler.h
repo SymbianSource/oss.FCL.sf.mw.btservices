@@ -23,6 +23,7 @@
 #include <btnotif.h>
 #include <btengconstants.h>
 #include <btservices/btsimpleactive.h>
+#include "bluetoothnotification.h"
 
 class CBTNotifSecurityManager;
 
@@ -100,6 +101,16 @@ public:
      * @param aResult The result of the pairing
      */
     void ShowPairingResultNoteL(TInt aResult);
+
+    /**
+     * Set pairing cancelled by the user
+     */
+    void PairingCancelledByUser();
+
+    /**
+     * Set device as trusted
+     */
+    void SetTrusted();
     
 protected:
     
@@ -174,6 +185,22 @@ protected:
      * Own.
      */
     CBtSimpleActive* iActive;
+
+    /**
+     * Pairing cancelled by user.
+     */
+    TBool iPairingCancelledByUser;
+
+    /**
+     * Did the user checks the trusted checkbox?
+     */    
+    TBool iTrustDevice;
+
+    /**
+     * Pointer to a notification
+     */ 
+    CBluetoothNotification* iNotification;
+    
     };
 
 #endif /*BTNOTIFBASEPAIRINGHANDLER_H*/

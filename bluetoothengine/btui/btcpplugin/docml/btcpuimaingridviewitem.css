@@ -1,0 +1,50 @@
+BtCpUiMainGridViewItem:portrait
+ {
+   layout:portrait;
+ }
+
+BtCpUiMainGridViewItem:landscape
+ {
+   layout:landscape;
+ }
+
+BtCpUiMainGridViewItem::deviceIcon
+ {
+ 	top: -0un;
+ 	left: -var(hb-param-margin-gene-left);
+  	fixed-height: 10.0un;
+  	fixed-width: 8.0un;
+ }
+
+BtCpUiMainGridViewItem::deviceIcon:landscape
+ {
+ 	top: -0un;
+ 	left: -var(hb-param-margin-gene-left);
+  	fixed-height: 10.0un;
+  	fixed-width: 20.0un;
+ }
+
+BtCpUiMainGridViewItem::deviceName
+ {
+ 	 top: -1un;
+ 	 text-height: var(hb-param-text-height-primary);
+	 fixed-width: 40.0un;
+ }
+
+BtCpUiMainGridViewItem::deviceName:landscape
+ {
+ 	 text-height: var(hb-param-text-height-secondary);
+	 fixed-width: 12.0un;
+ }
+
+BtCpUiMainGridViewItem::deviceType
+ {
+ 	 text-height: var(hb-param-text-height-secondary);
+	 fixed-width: 40.0un;
+ }
+
+BtCpUiMainGridViewItem::deviceType:landscape
+ {
+	fixed-width: 0un;
+ }
+ 

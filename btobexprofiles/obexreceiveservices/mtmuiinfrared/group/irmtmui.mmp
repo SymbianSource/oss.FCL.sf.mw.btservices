@@ -37,7 +37,6 @@ END
 
 SOURCEPATH      ../src
 USERINCLUDE     ../inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc  
 MW_LAYER_SYSTEMINCLUDE
 
 SOURCE          irmtmui.cpp 

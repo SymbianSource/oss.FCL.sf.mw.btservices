@@ -20,7 +20,7 @@
 #define BTNOTIFINCOMINGPAIRINGHANDLER_H
 
 #include <bt_sock.h>
-#include "btnotifBasePairingHandler.h"
+#include "btnotifbasepairinghandler.h"
 
 /**
  *  Class CBTNotifIncomingPairingHandler

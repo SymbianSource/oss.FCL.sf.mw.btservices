@@ -30,10 +30,8 @@
     \class BtDeviceDialogNotifWidget
     \brief Widget class with properties setting. 
 
-    BtDeviceDialogQueryWidget, inherited from HbNotificationDialog, 
-    implements interface HbDeviceDialogInterface. The Q_Properties
-    here are interfaces for caller of HbDeviceDialog to configue
-    what to be shown in the widget. 
+    BtDeviceDialogNotifWidget, inherited from HbDeviceDialogInterface, 
+    uses HbNotificationDialog. 
     
  */
 class BtDeviceDialogNotifWidget :

@@ -20,23 +20,21 @@
 #include "btdevicemodel.h"
 #include "btuiiconutil.h"
 #include <QGraphicsGridLayout>
+#include <hbstyle.h>
 
 BtCpUiSearchListViewItem::BtCpUiSearchListViewItem(QGraphicsItem * parent) :
-    HbListViewItem(parent), mParent(parent)
+    HbListViewItem(parent)
 {
     mDeviceNameLabel = 0;
     mDevTypeIconLabel = 0;
-    mDevTypeTextLabel = 0;
-    mBtuiModelSortFilter = ((BtCpUiSearchListViewItem *)parent)->mBtuiModelSortFilter;
     
-    mRow = 0;   
+    mBtuiModelSortFilter = ((BtCpUiSearchListViewItem *)parent)->mBtuiModelSortFilter;
+      
 }
 
 BtCpUiSearchListViewItem::~BtCpUiSearchListViewItem()
 {
-//    delete mDeviceNameLabel;
-//    delete mDevTypeIconLabel;
-//    delete mDevTypeTextLabel;
+
 }
 
 /*
@@ -68,40 +66,21 @@ void BtCpUiSearchListViewItem::updateChildItems()
 
     // create new icon label if needed
     if (!mDevTypeIconLabel) {
-        mDevTypeIconLabel = new HbLabel();
-        mDevTypeIconLabel->setPreferredSize(53.5260, 53.5260); //8un x 8un
-        mDevTypeIconLabel->setMinimumWidth(53.5260);
+        mDevTypeIconLabel = new HbLabel(this);
+        HbStyle::setItemName(mDevTypeIconLabel, "btDeviceIcon");
     }
     // create new label if needed
     if (!mDeviceNameLabel) {
-        mDeviceNameLabel = new HbLabel();
-        mDeviceNameLabel->setPreferredSize(250, 26.763);
-    }
-    // create new label if needed
-    if (!mDevTypeTextLabel) {
-        mDevTypeTextLabel = new HbLabel();
-        mDevTypeTextLabel->setPreferredSize(250, 26.763);
-    }
-    // create layout if needed
-    if ( !mRow ) {
-        // Still need to create the actual layout
-        mRow = new QGraphicsGridLayout();
-        mRow->addItem(mDevTypeIconLabel,0,0,2,1);
-        mRow->addItem(mDeviceNameLabel,0,1,1,1);
-        mRow->addItem(mDevTypeTextLabel,1,1,1,1);
-        setLayout(mRow);
+        mDeviceNameLabel = new HbLabel(this);
+        HbStyle::setItemName(mDeviceNameLabel, "btDeviceName");
     }
         
     QString data = index.data(Qt::DisplayRole).toString();
     int cod = (index.data(BtDeviceModel::CoDRole)).toInt();
     int majorProperty = (index.data(BtDeviceModel::MajorPropertyRole)).toInt();
     
-    // ToDo:  remove clear() once Orbit bug is fixed
-    mDeviceNameLabel->clear();
     mDeviceNameLabel->setPlainText(data);
-    mDevTypeIconLabel->clear();
-    mDevTypeTextLabel->clear();
-    mDevTypeTextLabel->setPlainText( getDeviceTypeString( cod ));
+
     HbIcon icon = 
     getBadgedDeviceTypeIcon(cod, majorProperty,
             BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight );

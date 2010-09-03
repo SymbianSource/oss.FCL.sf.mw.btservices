@@ -43,7 +43,7 @@ SOURCE        SrcsMessage.cpp
 
 
 USERINCLUDE   ../obexservicemanserver/inc
-SYSTEMINCLUDE  ../../inc ../../../inc  /epoc32/include/ecom
+SYSTEMINCLUDE  /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 

@@ -108,7 +108,8 @@ void CBasrvAccStateAttach::RequestCompletedL(CBasrvActive& aActive)
         {
         Parent().AccMan().ListenAudioRequestL();        	
         Parent().AccMan().PluginMan().AccInUse();
-        Parent().ChangeStateL(CBasrvAccStateAttached::NewL(Parent(), !iConnecting));
+        // we always show connect/disconnect notes regardless of the initiator
+        Parent().ChangeStateL(CBasrvAccStateAttached::NewL(Parent(), ETrue));
         }
     else
         {

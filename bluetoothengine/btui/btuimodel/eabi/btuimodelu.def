@@ -74,4 +74,6 @@ EXPORTS
 	_ZTV19BtuiModelSortFilter @ 73 NONAME
 	_ZN14BtSettingModel19connectModelSignalsEv @ 74 NONAME
 	_ZN13BtDeviceModel19connectModelSignalsEv @ 75 NONAME
+	_ZNK13BtDeviceModel5matchERK11QModelIndexiRK8QVarianti6QFlagsIN2Qt9MatchFlagEE @ 76 NONAME
+	_ZN13BtDeviceModel11deviceCountEi @ 77 NONAME
 

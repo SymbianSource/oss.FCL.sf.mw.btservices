@@ -32,7 +32,7 @@ SOURCES += src/main.cpp \
     src/btsendserviceprovider.cpp
 
     
-INCLUDEPATH += . ../../inc
+INCLUDEPATH += . ../obexservicesendutils/inc
 
 SERVICE.FILE = xml/obexhighway_conf.xml
 SERVICE.OPTIONS = embeddable \

@@ -36,7 +36,8 @@ HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btdevicedialogplugintrace.h \
     inc/btdevicedialogrecvquerywidget.h \
     inc/btrecvprgrsdialogwidget.h \
-    inc/btrecvcompleteddialogwidget.h
+    inc/btrecvcompleteddialogwidget.h \
+    inc/btdeviceinfowidget.h
 
     
 SOURCES += src/btdevicedialogplugin.cpp \
@@ -48,7 +49,8 @@ SOURCES += src/btdevicedialogplugin.cpp \
     src/btsenddialogwidget.cpp \
     src/btdevicedialogrecvquerywidget.cpp \
     src/btrecvprgrsdialogwidget.cpp \
-    src/btrecvcompleteddialogwidget.cpp
+    src/btrecvcompleteddialogwidget.cpp \
+    src/btdeviceinfowidget.cpp
 
 RESOURCES += btdevicedialogplugin.qrc
     
@@ -64,7 +66,7 @@ symbian: {
     		-lxqserviceutil \
     
     hblib.sources = Hb.dll
-    hblib.path = \sys\bin
+    hblib.path = /sys/bin
     hblib.depends = "(0xEEF9EA38), 1, 0, 0, {\"Hb\"}"
     pluginstub.sources = $${TARGET}.dll
     pluginstub.path = /resource/plugins/devicedialogs

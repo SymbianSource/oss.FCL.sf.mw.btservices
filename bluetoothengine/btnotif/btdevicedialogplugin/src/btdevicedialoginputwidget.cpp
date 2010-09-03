@@ -138,7 +138,7 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
         // Numeric value only
         mInputDialog->setInputMode(HbInputDialog::RealInput);
         title = QString(hbTrId("txt_bt_title_pairing_with_1"));
-        // todo: Fixe the multiline problem
+        // todo: Fix the multiline problem
         prompt = QString( hbTrId( "txt_bt_dialog_please_enter_the_passcode_for_1" ) );
     }
     else {
@@ -165,7 +165,7 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
                         QRegExp(regExp, Qt::CaseInsensitive), validator ),"");
         mInputDialog->setValidator(validator);
     }else{
-    // Minimum requirement is to have at least 1 digit
+        // Minimum requirement is to have at least 1 digit
         regExp = tr("^\\d{1,}$");
         HbValidator* validator = new HbValidator(mInputDialog->lineEdit());
         validator->addField(
@@ -173,7 +173,7 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
                         QRegExp(regExp, Qt::CaseInsensitive), validator ),"");
         mInputDialog->setValidator(validator);    
     }
-    // replace % with the miniLength and device name
+    // replace % with the minimum length and device name
     int repls = prompt.count( QString( "%" ) );
     if ( repls > 1 ) {
         prompt = prompt.arg( param.toString() );

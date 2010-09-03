@@ -85,7 +85,7 @@ LIBRARY     hciproxy.lib            // for getting encryption key length
 #ifdef _DUMMY_CUSTOM_API
 LIBRARY     DummyCustomAPI.lib      // Dummy Custom API
 #else
-LIBRARY     CustomAPI.lib           // Custom API
+LIBRARY     customapi.lib           // Custom API
 #endif
 
 DEBUGLIBRARY     flogger.lib        // File logging

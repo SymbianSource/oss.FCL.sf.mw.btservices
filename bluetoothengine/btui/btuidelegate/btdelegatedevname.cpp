@@ -34,6 +34,15 @@ BtDelegateDevName::~BtDelegateDevName()
 }
 
 /*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegateDevName::supportedEditorTypes() const
+{
+    return BtDelegate::ChangeLocalName;
+}
+
+/*!
     Validate the bluetooth device name given by the user:
     Extra spaces (' ', '\n', '\t' and '\r') from the beginning, 
     middle and the end of the name are always removed;
@@ -70,7 +79,7 @@ void BtDelegateDevName::exec( const QVariant &params )
         btName.Close();
     }
     
-    emit commandCompleted(error, btDevName);
+    emit delegateCompleted(error, this);
 }
 
 

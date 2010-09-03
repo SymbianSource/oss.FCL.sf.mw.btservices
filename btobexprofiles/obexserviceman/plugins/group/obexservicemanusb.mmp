@@ -39,7 +39,7 @@ START RESOURCE 101F9693.rss
 END
 
 USERINCLUDE ../inc/usb ../../obexservicemanserver/inc ../../utils/inc ../../inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc  /epoc32/include/ecom
+SYSTEMINCLUDE  /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 

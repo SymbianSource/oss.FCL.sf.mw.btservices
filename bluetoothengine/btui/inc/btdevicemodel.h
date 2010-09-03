@@ -86,6 +86,8 @@ public:
     
     void removeTransientDevices();
     
+    int deviceCount(int majorProperty);
+    
     // from QAbstractItemModel
     virtual QModelIndex index( int row, int column, const QModelIndex &parent = QModelIndex() ) const;
     
@@ -98,6 +100,10 @@ public:
     virtual QVariant data( const QModelIndex &index, int role = Qt::DisplayRole ) const;
 
     virtual QMap<int, QVariant> itemData( const QModelIndex & index ) const;
+    
+    virtual QModelIndexList match(const QModelIndex & start, int role,
+            const QVariant & value, int hits = 1, Qt::MatchFlags flags =
+                    Qt::MatchFlags(Qt::MatchStartsWith | Qt::MatchWrap)) const;
     
 signals:
 
@@ -120,7 +126,7 @@ private slots:
 private:
     
     void connectModelSignals();
-    
+       
 private:
     QSharedPointer<BtDeviceModelPrivate> d;
 };

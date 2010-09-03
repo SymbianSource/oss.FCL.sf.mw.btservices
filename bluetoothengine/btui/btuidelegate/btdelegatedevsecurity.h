@@ -19,7 +19,6 @@
 #define BTDELEGATEDEVSECURITY_H
 
 #include <e32base.h>
-#include <btengconnman.h>
 #include <btengdevman.h>
 #include "btabstractdelegate.h"
 
@@ -30,7 +29,7 @@ class BtuiModel;
     \brief the base class for Unpairing Bluetooth Connection.
  */
 class BtDelegateDevSecurity : public BtAbstractDelegate,
-        public MBTEngDevManObserver, public MBTEngConnObserver 
+        public MBTEngDevManObserver
 {
     Q_OBJECT
 
@@ -42,6 +41,8 @@ public:
     
     virtual ~BtDelegateDevSecurity();
 
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     
     virtual void cancel();
@@ -53,20 +54,27 @@ protected:
     //From MBTEngDevManObserver
     virtual void HandleDevManComplete( TInt aErr );
     virtual void HandleGetDevicesComplete( TInt aErr, CBTDeviceArray* aDeviceArray );
-    //From MBTEngConnObserver
-    virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
-                                   RBTDevAddrArray* aConflicts );
-    virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );    
 
     void emitCommandComplete(int error);
+ 
+private:
+    void unpair();
+    void authorizeOrBlock();
     
 private:
 
     CBTEngDevMan *mBtEngDevMan;
-    QString mdeviceName;
-    CBTEngConnMan *mBtengConnMan;
     BtAbstractDelegate* mDisconnectDelegate;
-    
+    TBTDevAddr mBtEngAddr;  // Symbian BT address for target device
+    QString mStrBtAddr;     // QT BT address for target device
+    TBTRegistrySearch mSearchPattern; 
+    CBTDeviceArray *mRegDevArray;
+    int mOperation;
+    CBTDevice *mDevice;
+    CBTDevice *mNewDev;
+    int mActiveHandling;
+    QModelIndex mIndex;
+    bool mAddingBlockedDev;
     Q_DISABLE_COPY(BtDelegateDevSecurity)
 
 };

@@ -22,5 +22,9 @@
         <file>docml/bt-search-view.docml</file>
         <file>docml/bt-device-view.docml</file>
         <file>docml/bt-device-details-view.docml</file>
+        <file>docml/btcpuimaingridviewitem.css</file>
+        <file>docml/btcpuimaingridviewitem.widgetml</file>
+        <file>docml/btcpuisearchlistviewitem.css</file>
+        <file>docml/btcpuisearchlistviewitem.widgetml</file>
     </qresource>
 </RCC>

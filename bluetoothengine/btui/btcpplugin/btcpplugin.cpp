@@ -39,7 +39,7 @@ BtCpPlugin::~BtCpPlugin()
 QList<CpSettingFormItemData*> BtCpPlugin::createSettingFormItemData(CpItemDataHelper &itemDataHelper) const
 {
     
-    return QList<CpSettingFormItemData*> () << new BtCpUiSettingItem(
+    return QList<CpSettingFormItemData*> () << new BtcpuiSettingItem(
             itemDataHelper);
 
 }

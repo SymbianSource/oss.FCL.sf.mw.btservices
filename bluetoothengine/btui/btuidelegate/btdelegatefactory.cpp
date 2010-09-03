@@ -28,35 +28,45 @@
 #include "btdelegatepair.h"
 #include "btdelegatedisconnect.h"
 #include "btdelegatedevsecurity.h"
+#include "btdelegatedevremove.h"
 
 /*!
     Constructor.
  */
-BtAbstractDelegate * BtDelegateFactory::newDelegate(
-        BtDelegate::Command cmd,             
+BtAbstractDelegate *BtDelegateFactory::newDelegate(
+        BtDelegate::EditorType editor,             
         BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel, 
         QObject *parent )
 {
-    switch ( cmd ) {
+    switch ( editor ) {
         case BtDelegate::ManagePower:
             return new BtDelegatePower( settingModel, deviceModel, parent );
-        case BtDelegate::DeviceName:
+        case BtDelegate::ChangeLocalName:
             return new BtDelegateDevName( parent );
-        case BtDelegate::Visibility:
+        case BtDelegate::ChangeVisibility:
             return new BtDelegateVisibility( parent );
         case BtDelegate::Inquiry:
             return new BtDelegateInquiry( settingModel, deviceModel, parent );
-        case BtDelegate::Connect:
+        case BtDelegate::ConnectService:
             return new BtDelegateConnect( settingModel, deviceModel, parent );
-        case BtDelegate::Pair:
-            return new BtDelegatePair( settingModel, deviceModel, parent );
-        case BtDelegate::Disconnect:
+        case BtDelegate::DisconnectService:
+        case BtDelegate::DisconnectAllConnections:
             return new BtDelegateDisconnect( settingModel, deviceModel, parent );
-        case BtDelegate::Unpair:
+        case BtDelegate::PairDevice:
+            return new BtDelegatePair( settingModel, deviceModel, parent );
+        case BtDelegate::UnpairDevice:
+        case BtDelegate::BlockDevice:
+        case BtDelegate::UnblockDevice:
+        case BtDelegate::TrustDevice:
+        case BtDelegate::UntrustDevice:
             return new BtDelegateDevSecurity( settingModel, deviceModel, parent );
-        case BtDelegate::RemoteDevName:
+        case BtDelegate::ChangeDeviceFriendlyName:
             return new BtDelegateRemoteDevName( settingModel, deviceModel, parent );
+        case BtDelegate::RemoveAllRegistryDevices:
+        case BtDelegate::RemovePairedDevices:
+        case BtDelegate::RemoveBlockedDevices:
+            return new BtDelegateDevRemove( settingModel, deviceModel, parent );
     }
     return 0;
 }

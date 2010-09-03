@@ -39,7 +39,7 @@ START RESOURCE 101f7c9d.rss
 END
 
 USERINCLUDE ../inc/bt ../../obexservicemanserver/inc ../../utils/inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc  /epoc32/include/ecom
+SYSTEMINCLUDE  /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY euser.lib           // Base library

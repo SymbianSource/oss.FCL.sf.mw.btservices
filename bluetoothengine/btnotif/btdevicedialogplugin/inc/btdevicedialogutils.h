@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef BTDEVICESDIALOGUTILS_H
-#define BTDEVICESDIALOGUTILS_H
+#ifndef BTDEVICEDIALOGUTILS_H
+#define BTDEVICEDIALOGUTILS_H
 
 #include <QMap>
 #include <QList>
@@ -57,4 +57,4 @@ inline void setMajorProperty(
 }
 
 
-#endif /*BTDEVICESDIALOGUTILS_H*/
+#endif /* BTDEVICEDIALOGUTILS_H */

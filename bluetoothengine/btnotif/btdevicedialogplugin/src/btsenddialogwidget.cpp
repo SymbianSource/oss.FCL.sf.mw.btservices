@@ -29,25 +29,25 @@
 const char* DOCML_BT_SEND_DIALOG = ":/docml/bt-send-dialog.docml";
 
 BTSendDialogWidget::BTSendDialogWidget(const QVariantMap &parameters)
-    {
+{
     mLoader = 0;
     constructDialog(parameters);
-    }
+}
 
 BTSendDialogWidget::~BTSendDialogWidget()
-    {
+{
     delete mLoader;
  /*   if(mContentItemModel)
         {
         delete mContentItemModel;
         mContentItemModel = NULL;
         }*/
-    }
+}
 
 bool BTSendDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
-    {
+{
     if(mFileIndex != parameters.value("currentFileIdx").toString().toInt() )
-        {
+    {
         mDialogHeading->setTextWrapping(Hb::TextWordWrap);
         mDialogHeading->setAlignment(Qt::AlignHCenter);
         //Todo - replace this with the actual text from parameters
@@ -89,31 +89,31 @@ bool BTSendDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters
         mProgressBar->setProgressValue(0);
         mProgressBar->setMaximum(parameters.value("fileSz").toInt());
         mFileIndex = parameters.value("currentFileIdx").toString().toInt();
-        }
-    else
-        {
-        mProgressBar->setProgressValue(parameters.value("progressValue").toInt());
-        }
-    return true;
     }
+    else
+    {
+        mProgressBar->setProgressValue(parameters.value("progressValue").toInt());
+    }
+    return true;
+}
 
 int BTSendDialogWidget::deviceDialogError() const
-    {
+{
     return 0;
-    }
+}
 
 void BTSendDialogWidget::closeDeviceDialog(bool byClient)
-    {
+{
     Q_UNUSED(byClient);
     mSendDialog->close();
 // below redundant call is required because of the api documentation. 
     emit deviceDialogClosed();
-    }
+}
 
 HbPopup* BTSendDialogWidget::deviceDialogWidget() const
-    {
+{
     return mSendDialog;
-    }
+}
 
 QObject *BTSendDialogWidget::signalSender() const
 {
@@ -121,18 +121,18 @@ QObject *BTSendDialogWidget::signalSender() const
 }  
 
 bool BTSendDialogWidget::constructDialog(const QVariantMap&/*parameters*/)
-    {
+{
     mLoader = new HbDocumentLoader();
     bool ok = false;
     
     mLoader->load(DOCML_BT_SEND_DIALOG, &ok);
     if(ok)
-        {
-        mSendDialog = qobject_cast<HbDialog*>(mLoader->findWidget("senddialog"));
-        mDialogHeading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
-        mFileIconLabel = qobject_cast<HbLabel*>(mLoader->findWidget("fileiconlabel"));
-        mFileNameLabel = qobject_cast<HbLabel*>(mLoader->findWidget("filenamelabel"));
-        mFileSizeLabel = qobject_cast<HbLabel*>(mLoader->findWidget("filesizelabel"));
+    {
+        mSendDialog = qobject_cast<HbDialog*>(mLoader->findWidget("sendProgressDialog"));
+        mDialogHeading = qobject_cast<HbLabel*>(mLoader->findWidget("sendDialogHeading"));
+        mFileIconLabel = qobject_cast<HbLabel*>(mLoader->findWidget("fileIcon"));
+        mFileNameLabel = qobject_cast<HbLabel*>(mLoader->findWidget("fileName"));
+        mFileSizeLabel = qobject_cast<HbLabel*>(mLoader->findWidget("fileSize"));
  //       mSendDialog->setHeadingWidget(mLabel);
    /*     mListView = qobject_cast<HbListView*>(mLoader->findWidget("listView"));
         if(mListView)
@@ -141,7 +141,7 @@ bool BTSendDialogWidget::constructDialog(const QVariantMap&/*parameters*/)
             mListView->setModel(mContentItemModel);//, prototype);
             }*/
          
-        mProgressBar = qobject_cast<HbProgressBar*>(mLoader->findWidget("horizontalProgressBar"));
+        mProgressBar = qobject_cast<HbProgressBar*>(mLoader->findWidget("sendProgressBar"));
                 
    //     HbAction* hide = new HbAction("Hide");
      //   HbAction* cancel = new HbAction("Cancel");
@@ -151,23 +151,23 @@ bool BTSendDialogWidget::constructDialog(const QVariantMap&/*parameters*/)
         
   //      QGraphicsWidget *widget = mLoader->findWidget(QString("container"));
    //     this->setContentWidget(widget);
-        }
+    }
 
     mSendDialog->setBackgroundFaded(false);
     mSendDialog->setDismissPolicy(HbPopup::NoDismiss);
     mSendDialog->setTimeout(HbPopup::NoTimeout);
     mSendDialog->setAttribute(Qt::WA_DeleteOnClose);
     
-    mHideAction = static_cast<HbAction*>( mLoader->findObject( "hideaction" ) );
-    mHideAction->disconnect(mSendDialog);
+    mHideAction = static_cast<HbAction*>( mLoader->findObject( "hideAction" ) );
+    mHideAction->disconnect(mSendDialog);  // Todo:  needed?
     
-    mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelaction" ) );
-    mCancelAction->disconnect(mSendDialog);
+    mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelAction" ) );
+    mCancelAction->disconnect(mSendDialog); // Todo:  needed?
     
     connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
 
     return true;
-    }
+}
 
 /*void BTSendDialogWidget::hideEvent(QHideEvent *event)
     {
@@ -188,10 +188,10 @@ void BTSendDialogWidget::showEvent(QShowEvent *event)
     }*/
 
 void BTSendDialogWidget::cancelClicked()
-    {
+{
     mSendDialog->close();
     emit deviceDialogClosed();
-    }
+}
 
 /*void BTSendDialogWidget::inputClosed(HbAction* action)
     {

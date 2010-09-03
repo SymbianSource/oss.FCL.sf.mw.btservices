@@ -34,7 +34,6 @@ USERINCLUDE   ../../mouse/Sesame_client/inc
 USERINCLUDE   ../../bthidkbdsettings/inc
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE ../../../../inc 
 
 SOURCEPATH    ../../common/src
 SOURCE        genericserver.cpp

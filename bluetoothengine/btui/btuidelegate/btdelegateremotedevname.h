@@ -47,6 +47,8 @@ public:
     
     virtual ~BtDelegateRemoteDevName();
 
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
    
     // from MBtSimpleActiveObserver

@@ -41,11 +41,11 @@ public:
     
     virtual ~BtDelegateDisconnect();
 
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     
     virtual void cancel();
-    
-
 
 protected:
     //From MBTEngConnObserver
@@ -68,7 +68,7 @@ private:
     
     void disconnectAllConnections_physical();
     
-    void disconnectSeviceLevel();
+    void disconnectServiceLevel();
         
     void disconnectPhysicalLink();
     
@@ -79,22 +79,15 @@ private:
     
     
 private:
-
     CBTEngConnMan *mBtengConnMan;
-
     CBluetoothPhysicalLinks *mPhyLinks;
 
-    int mMajorRole;
     bool mActiveHandling;
-    
     int mAddrArrayIndex;
     DisconnectOption mDisconOpt;
 
     RBTDevAddrArray mDevAddrArray;
     TBTDevAddr mBtEngAddr;
-    
-    QString mDeviceName;
-    int mCod;
       
     RSocketServ mSocketServ;
        

@@ -39,7 +39,7 @@ END
 
 
 USERINCLUDE ../inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc
+SYSTEMINCLUDE	../../../obexserviceman/utils/inc
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets

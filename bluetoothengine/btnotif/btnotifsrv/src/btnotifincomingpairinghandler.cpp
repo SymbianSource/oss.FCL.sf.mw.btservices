@@ -22,6 +22,7 @@
 #include "bluetoothtrace.h"
 
 const TInt KBTNotifWaitingForPairingOkDelay = 500000; // 0.5s
+const TInt KBTNotif10SecondTimer = 10000000;
 
 enum TPairingStageId
     {
@@ -156,6 +157,11 @@ void CBTNotifIncomingPairingHandler::DoHandlePairServerResult( TInt aResult )
         {
         // Pair failure situation.
         SetPairResult( aResult );
+        TRAPD(err , ShowPairingResultNoteL(KErrGeneral));
+        if(!err && iNotification)
+            {
+            iNotification->SetCloseTimer(KBTNotif10SecondTimer);
+            }
         }
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
@@ -174,6 +180,11 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
         {
         iActivePairingOk->Cancel();
         UnSetPairResult();  // we might have set it before (if the link went down) so we want to reset it.   
+        }
+    // If the user checked the trusted checkbox then we trust the device
+    if(iTrustDevice)
+        {
+        iParent.TrustDevice(iAddr);
         }
     if (aDev.LinkKeyType() == ELinkKeyUnauthenticatedNonUpgradable && !iUserAwarePairing)
 		{
@@ -245,6 +256,11 @@ void CBTNotifIncomingPairingHandler::RequestCompletedL( CBtSimpleActive* aActive
                 // it has been reset. But we need to have it set to an error as we are notifying 
                 // the "unable to pair" message.
                 SetPairResult(KErrGeneral);
+                TRAPD(err , ShowPairingResultNoteL(KErrGeneral));
+                if(!err && iNotification)
+                    {
+                    iNotification->SetCloseTimer(KBTNotif10SecondTimer);
+                    }
                 }
             iParent.RenewPairingHandler( NULL );
             break;

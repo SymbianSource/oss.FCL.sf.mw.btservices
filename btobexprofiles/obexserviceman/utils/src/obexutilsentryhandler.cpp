@@ -17,11 +17,9 @@
 
 
 
-
+#include "obexutilsentryhandler.h"
 #include <msvstore.h>
 #include <mmsvattachmentmanager.h>
-
-#include "obexutilsentryhandler.h"
 #include "obexutilsdebug.h"
 
 

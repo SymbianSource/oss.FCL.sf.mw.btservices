@@ -41,6 +41,15 @@ BtDelegateRemoteDevName::~BtDelegateRemoteDevName()
 }
 
 /*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegateRemoteDevName::supportedEditorTypes() const
+{
+    return BtDelegate::ChangeDeviceFriendlyName;
+}
+
+/*!
     Validate the bluetooth device name given by the user:
     Extra spaces (' ', '\n', '\t' and '\r') from the beginning, 
     middle and the end of the name are always removed;
@@ -72,18 +81,11 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
     QString btRemoteDevName = nameVariant.toString();
     
     if (!validateName(btRemoteDevName)){
-            emit commandCompleted(KErrBadName);
+            emit delegateCompleted(KErrBadName, this);
             return;
     }
     mNewName = btRemoteDevName;
-    /*
-    QModelIndex start = getDeviceModel()->index(0,0);
-    QModelIndexList indexList = getDeviceModel()->match(start,BtDeviceModel::NameAliasRole, mNewName);
-    if (indexList.size() > 1){
-        emit commandCompleted(KErrBadName, mNewName);
-        return;
-    }
-    */
+
     int error = KErrNone;
     TPtrC ptrName(reinterpret_cast<const TText*>(btRemoteDevName.constData()));
   
@@ -94,11 +96,11 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
         mSymName.Copy(ptrName);
     }
     else{
-        emit commandCompleted(error,mNewName);
+        emit delegateCompleted(error,this);
         return;
     }
     
-    QString strBtAddr = getDeviceModel()->data(index,
+    QString strBtAddr = deviceModel()->data(index,
            BtDeviceModel::ReadableBdaddrRole).toString();
 
     TBuf<KBTDevAddrSize * 2> buffer(strBtAddr.utf16());
@@ -106,13 +108,13 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
      
     error = mBtRegServ.Connect();
     if ( error != KErrNone && error != KErrAlreadyExists) {
-        emit commandCompleted(error,mNewName);
+        emit delegateCompleted(error,this);
         return;
     }
 
     error = mBtRegistry.Open( mBtRegServ ) ;
     if ( error != KErrNone && error != KErrAlreadyExists) {
-        emit commandCompleted(error,mNewName);
+        emit delegateCompleted(error,this);
         return;
     }
     mRegistryOpened = true;
@@ -122,14 +124,14 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
         TRAP(error, mRegistryActive = CBtSimpleActive::NewL(
                        *this, requestId));
         if(error!=KErrNone) {
-            emit commandCompleted(KErrGeneral);
+            emit delegateCompleted(KErrGeneral, this);
             return;
         }
     }
     //first check if this device is already in the registry
     
-    int majorRole = (getDeviceModel()->data(index,BtDeviceModel::MajorPropertyRole)).toInt();
-    int cod = (getDeviceModel()->data(index,BtDeviceModel::CoDRole)).toInt();
+    int majorRole = (deviceModel()->data(index,BtDeviceModel::MajorPropertyRole)).toInt();
+    int cod = (deviceModel()->data(index,BtDeviceModel::CoDRole)).toInt();
     if (!(majorRole & BtuiDevProperty::InRegistry)) {
         CBTDevice *symBtDevice;
         TRAP( error, {
@@ -151,7 +153,7 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
         });
     }
     if ( error != KErrNone ) {
-        emit commandCompleted(error,mNewName);
+        emit delegateCompleted(error,this);
     }
   
 }
@@ -159,7 +161,7 @@ void BtDelegateRemoteDevName::exec( const QVariant &params )
 void BtDelegateRemoteDevName::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus ){
     
     if(aStatus != KErrNone){
-        emit commandCompleted(aStatus, mNewName);
+        emit delegateCompleted(aStatus, this);
         return;
     }
     int error = KErrNone;
@@ -171,11 +173,11 @@ void BtDelegateRemoteDevName::RequestCompletedL( CBtSimpleActive* aActive, TInt 
                 mRegistryActive->GoActive();
         });
         if(error != KErrNone){
-            emit commandCompleted(error, mNewName);
+            emit delegateCompleted(error, this);
         }
     }
     else if ( aActive->RequestId() == ModifyFriendlyName ){
-        emit commandCompleted(error, mNewName);
+        emit delegateCompleted(error, this);
     }
     
 }
@@ -183,7 +185,7 @@ void BtDelegateRemoteDevName::RequestCompletedL( CBtSimpleActive* aActive, TInt 
 void BtDelegateRemoteDevName::CancelRequest( TInt aRequestId ){
     if ( aRequestId == 1 ){
         mBtRegistry.CancelRequest(mRegistryActive->RequestStatus());
-        emit commandCompleted(KErrCancel, mNewName);
+        emit delegateCompleted(KErrCancel, this);
     }
     
 }
@@ -192,5 +194,5 @@ void BtDelegateRemoteDevName::HandleError( CBtSimpleActive* aActive, TInt aError
     //TODO: handle the error here
     Q_UNUSED( aActive );
     Q_UNUSED( aError );
-    emit commandCompleted(KErrGeneral,mNewName);
+    emit delegateCompleted(KErrGeneral,this);
 }

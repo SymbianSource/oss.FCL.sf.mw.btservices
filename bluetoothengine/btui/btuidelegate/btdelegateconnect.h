@@ -41,6 +41,9 @@ public:
             QObject *parent = 0 );
     
     virtual ~BtDelegateConnect();
+    
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     virtual void cancel();
     
@@ -65,7 +68,7 @@ private:
     
 private:
     QModelIndex mIndex;
-    QModelIndex mConflictDevIndex;
+    QString mConflictDevAddr;
     CBTEngConnMan *mBtengConnMan;
     QString mDeviceName;
     int mMajorProperty;

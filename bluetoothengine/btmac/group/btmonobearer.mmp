@@ -38,7 +38,7 @@ SOURCE		bmbcmdlistener.cpp
 SOURCE		playercontrolistener.cpp
 
 USERINCLUDE ../inc/btmonobearer ../common
-SYSTEMINCLUDE ../../inc ../../../inc  /epoc32/include/ecom
+SYSTEMINCLUDE ../../inc /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY         euser.lib 

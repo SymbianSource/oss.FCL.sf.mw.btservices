@@ -54,7 +54,7 @@ SOURCE      btmsdisconnect.cpp
 SOURCE      btmpagescanparametersmanager.cpp
 
 USERINCLUDE ../inc/btmac ../common
-SYSTEMINCLUDE ../../inc ../../../inc /epoc32/include/ecom
+SYSTEMINCLUDE ../../inc /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 LIBRARY	ecom.lib
 LIBRARY euser.lib
@@ -69,10 +69,10 @@ LIBRARY bteng_stub.lib
 LIBRARY bluetooth.lib
 LIBRARY BTMonoCmdHandler.lib
 #endif
-LIBRARY atcodec.lib
+LIBRARY ATCodec.lib
 
 LIBRARY btdevice.lib    // BT Device
-LIBRARY BAFL.lib        // Des array
+LIBRARY bafl.lib        // Des array
 LIBRARY btengdiscovery.lib
 
 #ifdef PRJ_FILE_TRACE

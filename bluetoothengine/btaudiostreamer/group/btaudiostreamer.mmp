@@ -30,11 +30,11 @@ SOURCE		btaudiostreamsender.cpp
 SOURCE		btaudiostreamsendersbc.cpp
 
 USERINCLUDE     ../inc
-SYSTEMINCLUDE   ../../inc ../../../inc
+SYSTEMINCLUDE   ../../inc
 MW_LAYER_SYSTEMINCLUDE
 
-LIBRARY		EUSER.LIB		// user library 
-LIBRARY		ESOCK.LIB		// socket services 
+LIBRARY		euser.lib		// user library 
+LIBRARY		esock.lib		// socket services 
 LIBRARY		rtp.lib			// RTP implementation 
 LIBRARY		efsrv.lib		// file server 
 LIBRARY		bluetooth.lib   // TBTSockAddr 

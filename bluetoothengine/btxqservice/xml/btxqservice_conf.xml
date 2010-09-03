@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<service name="btxqservice"  filepath="must-not-be-empty" >
+  <description>BT XQ services</description>
+  <interface name="com.nokia.symbian.IShowLocalDeviceAddress" version="1.0">
+    <description>Display the local Bluetooth device address</description>
+  </interface>
+  <interface name="com.nokia.symbian.ITogglePower" version="1.0">
+    <description>Toggle BT power state</description>
+  </interface>
+  <interface name="com.nokia.symbian.IActivateDutMode" version="1.0">
+  	<description>Activates the Device test mode (DUT)</description>
+  </interface>
+  <interface name="com.nokia.symbian.IToggleSspDebugMode" version="1.0">
+  	<description>Toggle the Bluetooth SSP debug mode</description>
+  </interface>
+</service>

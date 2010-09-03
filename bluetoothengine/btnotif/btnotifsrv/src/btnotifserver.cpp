@@ -23,8 +23,10 @@
 #include "btnotifsettingstracker.h"
 #include "btnotificationmanager.h"
 #include "btnotifdeviceselector.h"
+#include "btnotifgeninfonotifier.h"
 #include "btnotifserversecpolicy.h"
 #include "btnotifclientserver.h"
+#include "btnotifpowernotifier.h"
 
 /**  Panic category */
 _LIT( KBTNotifPanic, "BTNotif panic" );
@@ -121,6 +123,8 @@ void CBTNotifServer::AsyncConstructL()
     iNotificationMgr = CBTNotificationManager::NewL( this );
     iSettingsTracker = CBTNotifSettingsTracker::NewL( this );
     iConnectionTracker = CBTNotifConnectionTracker::NewL( this );
+    iGenInfoNotifier = CBTNotifGenInfoNotifier::NewL( this );
+    iBTPowerNotifier = CBTNotifPowerNotifier::NewL( this );
     iTimer = CDeltaTimer::NewL(CActive::EPriorityLow);
     TCallBack shutdownCb( ShutdownTimeout, this );
     iShutdownTimerEntry.Set( shutdownCb );
@@ -160,6 +164,8 @@ CBTNotifServer::~CBTNotifServer()
     delete iSettingsTracker;
     delete iConnectionTracker;
     delete iNotificationMgr;
+    delete iGenInfoNotifier;
+    delete iBTPowerNotifier;
     delete iAsyncCb;
     delete iTimer;
     delete iDevRep;

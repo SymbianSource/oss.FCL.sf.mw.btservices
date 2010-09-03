@@ -1,0 +1,28 @@
+<hbwidget version="0.1" type="BtCpUiMainGridViewItem">
+	<layout name="portrait" type="mesh">
+
+		<meshitem src="deviceIcon" srcEdge="TOP" dst="" dstEdge="TOP" />
+		<meshitem src="deviceIcon" srcEdge="LEFT" dst="" dstEdge="LEFT" />
+		<meshitem src="deviceIcon" srcEdge="BOTTOM" dst="" dstEdge="BOTTOM" />
+	
+		<meshitem src="deviceName" srcEdge="TOP" dst="deviceIcon" dstEdge="TOP" />
+		<meshitem src="deviceName" srcEdge="LEFT" dst="deviceIcon" dstEdge="RIGHT" />
+		
+		<meshitem src="deviceType" srcEdge="LEFT" dst="deviceName" dstEdge="LEFT" />
+		<meshitem src="deviceType" srcEdge="TOP" dst="deviceName" dstEdge="BOTTOM" />
+
+	</layout>
+	
+	<layout name="landscape" type="mesh">
+	
+		<meshitem src="deviceIcon" srcEdge="TOP" dst="" dstEdge="TOP" />
+		<meshitem src="deviceIcon" srcEdge="LEFT" dst="" dstEdge="LEFT" />
+	
+		<meshitem src="deviceName" srcEdge="LEFT" dst="deviceIcon" dstEdge="LEFT"/>
+		<meshitem src="deviceName" srcEdge="TOP" dst="deviceIcon" dstEdge="BOTTOM" spacing="-var(hb-param-margin-gene-middle-vertical)" />
+		<meshitem src="deviceName" srcEdge="BOTTOM" dst="" dstEdge="BOTTOM"/>
+	
+		<meshitem src="deviceType" srcEdge="LEFT" dst="deviceIcon" dstEdge="LEFT"/>
+	</layout>
+	
+</hbwidget>

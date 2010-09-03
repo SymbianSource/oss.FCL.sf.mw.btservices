@@ -38,12 +38,16 @@ SERVICE.FILE = service_conf.xml
 libFiles.sources = xqservice.dll
 SERVICE.OPTIONS = embeddable \
     hidden
-libFiles.path = "!:\sys\bin"
+libFiles.path = "!:/sys/bin"
 DEPLOYMENT += libFiles
 HEADERS += ./inc/btmsgviewer.h \
 		   ./inc/btmsgviewerutils.h 
 SOURCES += ./src/btmsgviewer.cpp \
     	   ./src/main.cpp \
     	   ./src/btmsgviewerutils.cpp
+INCLUDEPATH += $$MW_LAYER_SYSTEMINCLUDE \
+       ../inc \
+       /epoc32/include/platform/mw/btservices
+   
 BLD_INF_RULES.prj_exports += "$${LITERAL_HASH}include <platform_paths.hrh>" \
     "./rom/btmsgviewer.iby CORE_APP_LAYER_IBY_EXPORT_PATH(btmsgviewer.iby)"

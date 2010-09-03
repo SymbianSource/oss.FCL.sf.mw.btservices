@@ -17,7 +17,7 @@
 
 
 #include "btsendserviceprovider.h"
-#include <btserviceapi.h>
+#include <BTServiceAPI.h>
 #include "btsssendlisthandler.h"
 #include <btfeaturescfg.h>  // For Enterprise security settings
 #include <btnotif.h>    // For Enterprise security notifier

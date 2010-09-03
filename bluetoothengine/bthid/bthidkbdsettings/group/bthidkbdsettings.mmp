@@ -53,7 +53,7 @@ APP_LAYER_SYSTEMINCLUDE
 #ifdef __SERIES60_HELP
 SYSTEMINCLUDE   /epoc32/include/cshelp
 #endif
-SYSTEMINCLUDE ../../../../inc ../../../inc
+SYSTEMINCLUDE ../../../inc
 
 //***********ECOM resource definition******************
 //--Ecom resource TARGET name must be same as DLL name,

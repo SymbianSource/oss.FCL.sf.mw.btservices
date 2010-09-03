@@ -5,7 +5,7 @@
     </object>
     <widget name="bt_device_view" type="HbView">
         <widget name="content" role="HbView:widget" type="HbWidget">
-            <widget name="dataForm_deviceView" type="HbDataForm">
+            <widget name="deviceViewHeading" type="HbDataForm">
                 <real name="z" value="1"/>
                 <sizepolicy horizontalPolicy="Expanding" horizontalStretch="0" verticalPolicy="Preferred" verticalStretch="0"/>
                 <sizehint height="7.8806un" type="PREFERRED" width="53.73134un"/>
@@ -44,35 +44,29 @@
                 <string name="description"/>
                 <string name="heading"/>
             </widget>
-            <widget name="pushButton_0" type="HbPushButton">
-                <icon iconName="qtg_mono_bt_unpair" name="icon"/>
+            <widget name="devicePairUnpair" type="HbPushButton">
                 <real name="z" value="5"/>
                 <sizehint height="9un" type="PREFERRED"/>
                 <enums name="orientation" value="Horizontal"/>
-                <string name="text" value="Unpair"/>
             </widget>
-            <widget name="pushButton_1" type="HbPushButton">
-                <icon iconName="qtg_mono_disconnect" name="icon"/>
+            <widget name="deviceConnectDisconnect" type="HbPushButton">
                 <real name="z" value="6"/>
                 <sizehint height="9un" type="PREFERRED"/>
                 <enums name="orientation" value="Horizontal"/>
-                <string name="text" value="Disconnect"/>
             </widget>
-            <widget name="pushButton_2" type="HbPushButton">
-                <icon iconName="qtg_mono_settings" name="icon"/>
+            <widget name="deviceSettings" type="HbPushButton">
                 <real name="z" value="7"/>
                 <sizehint height="9un" type="PREFERRED"/>
                 <enums name="orientation" value="Horizontal"/>
-                <string name="text" value="Settings"/>
             </widget>
             <layout type="anchor">
-                <anchoritem dst="dataForm_deviceView" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceIcon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="deviceViewHeading" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceName" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceName" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceName" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="deviceViewHeading" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceName" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceStatus" dstEdge="LEFT" spacing="12un" src="" srcEdge="LEFT"/>
                 <anchoritem dst="deviceStatus" dstEdge="TOP" spacing="var(hb-param-margin-gene-bottom)" src="deviceCategory" srcEdge="BOTTOM"/>
@@ -80,18 +74,18 @@
                 <anchoritem dst="deviceCategory" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceCategory" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="deviceName" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceCategory" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_2" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_2" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom) )" src="pushButton_1" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_2" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceSettings" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom) )" src="deviceConnectDisconnect" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceSettings" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="connectionCombobox" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
                 <anchoritem dst="connectionCombobox" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="deviceStatus" srcEdge="BOTTOM"/>
                 <anchoritem dst="connectionCombobox" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_1" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_1" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="pushButton_0" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_1" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_0" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_0" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_0" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="devicePairUnpair" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
             </layout>
         </widget>
         <widget name="viewMenu" role="HbView:menu" type="HbMenu">
@@ -100,46 +94,77 @@
         <string locid="txt_cp_title_control_panel" name="title" value="Control Panel"/>
     </widget>
     <section name="landscape">
+        <widget name="deviceConnectDisconnect" type="HbPushButton">
+            <sizehint height="8un" type="PREFERRED"/>
+            <string name="text"/>
+        </widget>
         <widget name="content" role="HbView:widget" type="HbWidget">
             <layout type="anchor">
-                <anchoritem dst="dataForm_deviceView" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceIcon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
-                <anchoritem dst="deviceName" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceName" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
-                <anchoritem dst="deviceName" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceCategory" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceCategory" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="deviceName" srcEdge="BOTTOM"/>
-                <anchoritem dst="deviceStatus" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceCategory" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceStatus" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceName" srcEdge="BOTTOM"/>
-                <anchoritem dst="deviceStatus" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="connectionCombobox" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
                 <anchoritem dst="connectionCombobox" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom)  )" src="deviceStatus" srcEdge="BOTTOM"/>
                 <anchoritem dst="connectionCombobox" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_0" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_0" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_0" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="CENTERH"/>
-                <anchoritem dst="pushButton_1" dstEdge="LEFT" spacing="var(hb-param-margin-gene-middle-horizontal)" src="pushButton_0" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_1" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_1" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_2" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_2" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="pushButton_1" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_2" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceStatus" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceName" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceStatus" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceCategory" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceStatus" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical)  )" src="connectionCombobox" srcEdge="BOTTOM"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="CENTERH"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="LEFT" spacing="var(hb-param-margin-gene-middle-horizontal)" src="devicePairUnpair" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="connectionCombobox" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceSettings" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="deviceConnectDisconnect" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceSettings" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="BOTTOM" spacing="expr(-var(hb-param-margin-gene-middle-vertical)  )" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceIcon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceName" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceIcon" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceName" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceCategory" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceName" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceCategory" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
             </layout>
+        </widget>
+        <widget name="devicePairUnpair" type="HbPushButton">
+            <sizehint height="8un" type="PREFERRED"/>
+            <string name="text"/>
+        </widget>
+        <widget name="deviceViewHeading" type="HbDataForm">
+            <sizehint height="6un" type="PREFERRED" width="53.73134un"/>
+        </widget>
+        <widget name="deviceName" type="HbLineEdit">
+            <sizehint height="6.25un" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="deviceStatus" type="HbLabel">
+            <sizehint height="expr(var(hb-param-text-height-tiny) )" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="deviceCategory" type="HbLabel">
+            <sizehint height="expr(var(hb-param-text-height-tiny) )" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="connectionCombobox" type="HbDataForm">
+            <sizehint height="4.02985un" type="PREFERRED" width="95.52239un"/>
+        </widget>
+        <widget name="deviceSettings" type="HbPushButton">
+            <sizehint height="8un" type="PREFERRED"/>
+            <string locid="txt_bt_button_device_settings" name="text"/>
+            <icon iconName="qtg_mono_details" name="icon"/>
         </widget>
     </section>
     <section name="portrait">
+        <widget name="deviceConnectDisconnect" type="HbPushButton">
+            <string name="text"/>
+        </widget>
         <widget name="content" role="HbView:widget" type="HbWidget">
             <layout type="anchor">
-                <anchoritem dst="dataForm_deviceView" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
-                <anchoritem dst="dataForm_deviceView" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceIcon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
-                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="deviceViewHeading" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceName" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
-                <anchoritem dst="deviceName" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="dataForm_deviceView" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceName" dstEdge="TOP" spacing="var(hb-param-margin-gene-top)" src="deviceViewHeading" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceName" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceStatus" dstEdge="LEFT" spacing="12un" src="" srcEdge="LEFT"/>
                 <anchoritem dst="deviceStatus" dstEdge="TOP" spacing="var(hb-param-margin-gene-bottom)" src="deviceCategory" srcEdge="BOTTOM"/>
@@ -147,24 +172,93 @@
                 <anchoritem dst="deviceCategory" dstEdge="LEFT" spacing="2un" src="deviceIcon" srcEdge="RIGHT"/>
                 <anchoritem dst="deviceCategory" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="deviceName" srcEdge="BOTTOM"/>
                 <anchoritem dst="deviceCategory" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_2" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_2" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom) )" src="pushButton_1" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_2" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceSettings" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom) )" src="deviceConnectDisconnect" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceSettings" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="devicePairUnpair" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
                 <anchoritem dst="connectionCombobox" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
-                <anchoritem dst="connectionCombobox" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="deviceStatus" srcEdge="BOTTOM"/>
+                <anchoritem dst="connectionCombobox" dstEdge="TOP" spacing="29un" src="" srcEdge="TOP"/>
                 <anchoritem dst="connectionCombobox" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_1" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_1" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="pushButton_0" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_1" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
-                <anchoritem dst="pushButton_0" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
-                <anchoritem dst="pushButton_0" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-top) )" src="connectionCombobox" srcEdge="BOTTOM"/>
-                <anchoritem dst="pushButton_0" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
             </layout>
         </widget>
+        <widget name="devicePairUnpair" type="HbPushButton">
+            <string name="text"/>
+        </widget>
+        <widget name="deviceSettings" type="HbPushButton">
+            <string locid="txt_bt_button_device_settings" name="text" value="Device Details"/>
+            <icon iconName="qtg_mono_details" name="icon"/>
+        </widget>
     </section>
-    <metadata activeUIState="Common ui state" display="NHD-3.2-inch_portrait" unit="un">
+    <section name="landscape2">
+        <widget name="deviceConnectDisconnect" type="HbPushButton">
+            <sizehint height="0un" type="PREFERRED"/>
+            <sizehint height="0un" type="MINIMUM"/>
+            <sizehint height="0un" type="MAXIMUM"/>
+            <string name="text"/>
+        </widget>
+        <widget name="content" role="HbView:widget" type="HbWidget">
+            <layout type="anchor">
+                <anchoritem dst="deviceViewHeading" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="TOP" spacing="0un" src="" srcEdge="TOP"/>
+                <anchoritem dst="deviceViewHeading" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="connectionCombobox" dstEdge="LEFT" spacing="0un" src="" srcEdge="LEFT"/>
+                <anchoritem dst="connectionCombobox" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-bottom)  )" src="deviceStatus" srcEdge="BOTTOM"/>
+                <anchoritem dst="connectionCombobox" dstEdge="RIGHT" spacing="0un" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceStatus" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceName" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceStatus" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceCategory" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceStatus" dstEdge="RIGHT" spacing="-var(hb-param-margin-gene-right)" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="devicePairUnpair" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceConnectDisconnect" dstEdge="RIGHT" spacing="-expr(var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceSettings" dstEdge="TOP" spacing="var(hb-param-margin-gene-middle-vertical)" src="devicePairUnpair" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceSettings" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceSettings" dstEdge="BOTTOM" spacing="expr(-var(hb-param-margin-gene-middle-vertical)  )" src="" srcEdge="BOTTOM"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-left) )" src="" srcEdge="LEFT"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical)  )" src="connectionCombobox" srcEdge="BOTTOM"/>
+                <anchoritem dst="devicePairUnpair" dstEdge="RIGHT" spacing="expr(-var(hb-param-margin-gene-right) )" src="" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceIcon" dstEdge="LEFT" spacing="var(hb-param-margin-gene-left)" src="" srcEdge="LEFT"/>
+                <anchoritem dst="deviceIcon" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceName" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceIcon" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceName" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
+                <anchoritem dst="deviceCategory" dstEdge="LEFT" spacing="expr(var(hb-param-margin-gene-middle-horizontal) )" src="deviceName" srcEdge="RIGHT"/>
+                <anchoritem dst="deviceCategory" dstEdge="TOP" spacing="expr(var(hb-param-margin-gene-middle-vertical) )" src="deviceViewHeading" srcEdge="BOTTOM"/>
+            </layout>
+        </widget>
+        <widget name="devicePairUnpair" type="HbPushButton">
+            <sizehint height="8un" type="PREFERRED"/>
+            <string name="text"/>
+        </widget>
+        <widget name="deviceViewHeading" type="HbDataForm">
+            <sizehint height="6un" type="PREFERRED" width="53.73134un"/>
+        </widget>
+        <widget name="deviceName" type="HbLineEdit">
+            <sizehint height="6.25un" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="deviceStatus" type="HbLabel">
+            <sizehint height="expr(var(hb-param-text-height-tiny) )" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="deviceCategory" type="HbLabel">
+            <sizehint height="expr(var(hb-param-text-height-tiny) )" type="PREFERRED" width="39.70149un"/>
+        </widget>
+        <widget name="connectionCombobox" type="HbDataForm">
+            <sizehint height="4.02985un" type="PREFERRED" width="95.52239un"/>
+        </widget>
+        <widget name="deviceSettings" type="HbPushButton">
+            <sizehint height="8un" type="PREFERRED"/>
+            <string locid="txt_bt_button_device_settings" name="text"/>
+            <icon iconName="qtg_mono_details" name="icon"/>
+        </widget>
+    </section>
+    <metadata activeUIState="portrait" display="NHD-3.2-inch_portrait" unit="un">
         <uistate name="Common ui state" sections="#common"/>
         <uistate name="landscape" sections="#common landscape"/>
         <uistate name="portrait" sections="#common portrait"/>
+        <uistate name="landscape2" sections="#common landscape2"/>
     </metadata>
 </hbdocument>

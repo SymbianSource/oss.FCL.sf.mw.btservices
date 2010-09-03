@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2006 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -70,7 +70,7 @@ void CBtmSyncSock::AcceptL(TBool aAllowEsco)
     TRACE_FUNC_ENTRY
     iScoAcceptor = TScoAcceptor(this);
     iSco->SetNotifier(iScoAcceptor);
-    iSco->AcceptConnection(TBTSyncPackets(KScoPacketTypeSpec));
+    User::LeaveIfError(iSco->AcceptConnection(TBTSyncPackets(KScoPacketTypeSpec)));
     if (aAllowEsco)
         {
         iESco_Acceptor = TScoAcceptor(this);

@@ -16,22 +16,23 @@
 */
 
 
-#ifndef BTCPUIMAINLISTVIEWITEM_H
-#define BTCPUIMAINLISTVIEWITEM_H
+#ifndef BTCPUIMAINGRIDVIEWITEM_H
+#define BTCPUIMAINGRIDVIEWITEM_H
 
-#include <hblistviewitem.h>
+//#include <hblistviewitem.h>
+#include <hbgridviewitem.h>
 #include <hblabel.h>
 #include <hbpushbutton.h>
 #include <QtGui/QGraphicsGridLayout>
 #include "btuimodelsortfilter.h"
 
-class BtCpUiMainListViewItem : public HbListViewItem
+class BtCpUiMainGridViewItem : public HbGridViewItem
 {
     Q_OBJECT
     
 public:
-    BtCpUiMainListViewItem(QGraphicsItem * parent = 0);
-    ~BtCpUiMainListViewItem();
+    BtCpUiMainGridViewItem(QGraphicsItem * parent = 0);
+    ~BtCpUiMainGridViewItem();
     
     HbAbstractViewItem * createItem();
     void updateChildItems();
@@ -39,13 +40,12 @@ public:
     void setModelSortFilter(BtuiModelSortFilter *filter);
     
 private:
-    QGraphicsItem *mParent;
+
     HbLabel *mDevTypeIconLabel;
     HbLabel *mDeviceNameLabel;
     HbLabel *mDevTypeTextLabel;
     BtuiModelSortFilter*    mBtuiModelSortFilter;
     
-    QGraphicsGridLayout *mRow;
 };
 
-#endif /* BTCPUIMAINLISTVIEWITEM_H */
+#endif /* BTCPUIMAINGRIDVIEWITEM_H */

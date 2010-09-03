@@ -37,7 +37,8 @@ END
 
 SOURCEPATH      ../src
 USERINCLUDE     ../inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc  
+SYSTEMINCLUDE	../../../obexserviceman/utils/inc
+
 SYSTEMINCLUDE /epoc32/include/mw/hb/hbwidgets
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 

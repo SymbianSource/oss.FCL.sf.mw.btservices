@@ -23,8 +23,7 @@ PRJ_PLATFORMS
 
 
 PRJ_EXPORTS
-../obexservicesendutils/inc/BTServiceAPI.h           |../../inc/btserviceapi.h
-../obexservicesendutils/inc/BTServiceParameterList.h |../../inc/BTServiceParameterList.h
+
 ../rom/obexservicesendutils.iby                      CORE_MW_LAYER_IBY_EXPORT_PATH(obexservicesendutils.iby)
 
 PRJ_MMPFILES

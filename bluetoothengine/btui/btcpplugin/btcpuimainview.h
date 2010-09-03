@@ -20,7 +20,8 @@
 
 #include "btcpuibaseview.h"
 #include <btqtconstants.h>
-#include <btuimodelsortfilter.h>
+#include <btdelegateconsts.h>
+#include "btcpuiviewmgr.h"
 
 class HbLabel;
 class HbLineEdit;
@@ -34,48 +35,60 @@ class HbListView;
 class HbGroupBox;
 class HbDataForm;
 
-class BtCpUiMainView : public BtCpUiBaseView
+class BtcpuiMainView : public BtcpuiBaseView, public BtcpuiViewMgr
 {
     Q_OBJECT
 
 public:
-    explicit BtCpUiMainView(
-            BtSettingModel &settingModel, 
+    
+    explicit BtcpuiMainView(QGraphicsItem *parent = 0 );    
+    
+    explicit BtcpuiMainView(BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
             QGraphicsItem *parent = 0 );
-    ~BtCpUiMainView();
-    // from view manager
-    void createViews();
+    
+    ~BtcpuiMainView();
 
-    Qt::Orientation  orientation();
-
-    // from base class BtCpUiBaseView
-    virtual void setSoftkeyBack();
-    virtual void activateView( const QVariant& value, bool fromBackButton );
+    // from base class BtcpuiBaseView
+    virtual void activateView( const QVariant& value, bool backNavi);
+    
     virtual void deactivateView();
 
+    virtual void createContextMenuActions(int majorRole);
+    
 public slots: 
     void changeOrientation( Qt::Orientation orientation );
     void changePowerState();
-    void visibilityChanged (int index);
+    void changeVisibility(int index);
     void changeBtLocalName();
     
     void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
-    void deviceSelected(const QModelIndex& modelIndex);
-    void goToDiscoveryView();
-    void goToDeviceView(const QModelIndex& modelIndex);
-    virtual void switchToPreviousView();
+
+    void launchDeviceDiscovery();
+    
+    void goToSearchView();
 
     //from delegate classes
-    void powerDelegateCompleted(int status);
     void visibilityDelegateCompleted(int status);
-    void btNameDelegateCompleted(int status, QVariant param);
+    void btNameDelegateCompleted(int status);
     void allActionTriggered();
-    void pairActionTriggered();
+    void pairActionTriggered(); 
+    void menuActionTriggered(HbAction *action);
+    virtual void viewByDialogClosed(HbAction* action);
     
-private slots:
-    void changeView(int targetViewId, bool fromBackButton, const QVariant& value = 0 );    
-
+    void disconnectAllDelegateCompleted(int status);
+    void onRemoveQuestionDialogClosed(int action);
+    void aboutToShowOptionsMenu();
+    
+    // returns the search view instance.
+    BtcpuiBaseView *searchView();
+    
+    // From BtcpuiViewMgr
+    BtcpuiBaseView *deviceView();
+    
+    void switchView(BtcpuiBaseView *from, BtcpuiBaseView *destination,
+            const QVariant &init, bool backNavi);
+    
 private:
     enum filterType {
         BtuiAll = 0,
@@ -83,39 +96,36 @@ private:
     };
     
 private:
+    
+    void loadDocument();
+    
     VisibilityMode indexToVisibilityMode(int index);
     int visibilityModeToIndex(VisibilityMode mode);
-    BtCpUiBaseView * idToView(int targetViewId);
     
     //Functions to set the Previous Local settings in case of error
     void setPrevBtLocalName();
     void setPrevVisibilityMode();
+    void removeRegistryDevices(BtDelegate::EditorType type);
     
-    void updateDeviceListFilter(BtCpUiMainView::filterType filter);
+    void updateDeviceListFilter(BtcpuiMainView::filterType filter);
+    
+    void updateOptionsMenu();
     
 private:
 
+    // search view. Owned
+    BtcpuiBaseView *mSearchView;
+    // device view. Owned.
+    BtcpuiBaseView *mDeviceView;
+    
     HbDocumentLoader *mLoader;
 
     HbLineEdit *mDeviceNameEdit;
     HbPushButton *mPowerButton;
     HbComboBox *mVisibilityMode;
-    HbListView *mDeviceList;
+    HbGridView *mDeviceList;
 
     Qt::Orientation mOrientation;
-    
-    // from view manager
-    HbMainWindow* mMainWindow;
-    BtCpUiBaseView* mMainView;
-    BtCpUiBaseView* mDeviceView;
-    BtCpUiBaseView* mSearchView;
-    BtCpUiBaseView* mCurrentView;
-    int mCurrentViewId;
-    QList<int> mPreviousViewIds;
-    
-    //poiter to abstract delegate, and it is instantiated at runtime
-    BtAbstractDelegate* mAbstractDelegate;
-    BtuiModelSortFilter *mMainFilterModel;
     
     HbAction *mAllAction;
     HbAction *mPairAction;
@@ -123,5 +133,7 @@ private:
     HbAction* mRemovePairedDevices;
     HbAction* mRemoveDevices;
     HbMenu* mSubMenu;
+    BtDelegate::EditorType mRemoveDevDelegateType;
+    
 };
 #endif // BTCPUIMAINVIEW_H 

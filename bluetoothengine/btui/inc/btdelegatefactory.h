@@ -42,7 +42,7 @@ class BTUIDELEGATE_IMEXPORT BtDelegateFactory
 
 public:
     static BtAbstractDelegate *newDelegate( 
-            BtDelegate::Command cmd, 
+            BtDelegate::EditorType editor, 
             BtSettingModel* settingModel, 
             BtDeviceModel* deviceModel, 
             QObject *parent = 0 );

@@ -22,7 +22,6 @@
 #include "obexutilsdebug.h"
 #include <hbdevicenotificationdialogsymbian.h>
 #include <btservices/bluetoothdevicedialogs.h>
-#include <hbtextresolversymbian.h>
 
 _LIT(KSendingDialog, "com.nokia.hb.btdevicedialog/1.0");
 _LIT(KCurrentFileIndex,"currentFileIdx" );
@@ -33,15 +32,11 @@ _LIT(KFileSizeTxt,"fileSzTxt");
 _LIT(KFileSize,"fileSz");
 _LIT(KProgressValue,"progressValue");
 
-_LIT(KSendingCancelledText, "txt_bt_dpophead_sending_cancelled");
-_LIT(KDeviceText,"txt_bt_dpopinfo_sent_to_1");
 
 const TInt KMaxDescriptionLength = 256;
 const TInt KMinStringSize = 10;
-const TInt KMinFileSize = 1024;
+const TInt KMaxDisplayFileName = 20; 
 
-_LIT(KLocFileName, "btdialogs_");     
-_LIT(KPath, "z:/resource/qt/translations/"); 
 
 // ============================ MEMBER FUNCTIONS ===============================
 
@@ -174,24 +169,54 @@ EXPORT_C void CObexUtilsDialog::UpdateProgressNoteL( TInt aFileSize,TInt aFileIn
     AddDataL( map, *key, &iDeviceName, CHbSymbianVariant::EDes );
     
     key->Des().Copy(KFileName());
-    AddDataL( map, *key, &aFileName, CHbSymbianVariant::EDes );
+    TFileName shortname;
+    if ( aFileName.Length() > KMaxDisplayFileName ) 
+        {
+        // Filename is too long, 
+        // We make it shorter. Hiding the chars in the middle part of filename. 
+        shortname = aFileName.Mid(0,KMaxDisplayFileName/2);
+        shortname.Append(_L("..."));
+        shortname.Append(aFileName.Mid(aFileName.Length() - KMaxDisplayFileName/2, KMaxDisplayFileName/2));
+        }
+    else
+        {
+        shortname.Copy(aFileName);
+        }
+    
+    AddDataL( map, *key, &shortname, CHbSymbianVariant::EDes );
     
     // todo: localiation is needed for code below:
     HBufC* value = HBufC::NewL(KMaxDescriptionLength);
     CleanupStack::PushL(value);
     key->Des().Copy(KFileSizeTxt());
     value->Des().Zero();
-    if(aFileSize < KMinFileSize)
+
+    //Format the file size into a more readable format
+    if ( aFileSize >> 20 )    // size in MB
+        {       
+        TReal32 sizeInMB = 0;
+        sizeInMB = ((TReal32)aFileSize ) / (1024*1024);
+        value->Des().AppendNum(sizeInMB);
+        //TODO - check for localization
+        value->Des().Append(_L(" Mb"));
+        }
+    
+    else if( aFileSize >> 10 )        // size in KB
+        {
+        TInt64 sizeInKB = 0;
+        sizeInKB = aFileSize >> 10;
+        value->Des().AppendNum(sizeInKB);
+        //TODO - check for localization
+        value->Des().Append(_L(" Kb"));
+        }
+
+    else                              // size is unknown or less than 1K
         {
         value->Des().AppendNum(aFileSize);
         value->Des().Append(_L(" Bytes"));
         }
-    else
-        {
-        TInt filesize =  aFileSize/KMinFileSize;
-        value->Des().AppendNum(filesize);
-        value->Des().Append(_L(" KB"));
-        }
+
+    
     AddDataL( map, *key, value, CHbSymbianVariant::EDes );
     CleanupStack::PopAndDestroy( value );
     
@@ -415,32 +440,14 @@ void CObexUtilsDialog::DeviceDialogClosed(TInt aCompletionCode)
     FLOG(_L("[BTSU]\t CObexUtilsDialog::DeviceDialogClosed()"));   
     (void) aCompletionCode;
 
-    delete iObexDialogTimer;
-    iObexDialogTimer = NULL;
-    delete iProgressDialog;
-    iProgressDialog = NULL;  
-    
-    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
-    if(ok)
-        {
-        TRAP_IGNORE(
-                 HBufC* deviceName = HbTextResolverSymbian::LoadLC(KDeviceText,iDeviceName);
-                 HBufC* sendText = HbTextResolverSymbian::LoadLC(KSendingCancelledText);
-                 CHbDeviceNotificationDialogSymbian::NotificationL(
-                         KNullDesC, deviceName->Des(), sendText->Des());
-                 CleanupStack::PopAndDestroy( sendText );		 
-                 CleanupStack::PopAndDestroy( deviceName );
-                );
-        }
-    else
-        {
-        CHbDeviceNotificationDialogSymbian::NotificationL(
-                KNullDesC, KDeviceText(), KSendingCancelledText());
-        }
     if ( iDialogObserverPtr )
         {
         iDialogObserverPtr->DialogDismissed(ECancelButton);
         }
+    delete iObexDialogTimer;
+    iObexDialogTimer = NULL;
+    delete iProgressDialog;
+    iProgressDialog = NULL;  
     }
 
 void CObexUtilsDialog::AddDataL(CHbSymbianVariantMap* aMap, const TDesC& aKey, 
@@ -464,6 +471,8 @@ CHbDeviceMessageBoxSymbian* CObexUtilsDialog::CreateAndShowMessageBoxL(
     messageBox->SetTextL(aText);
     messageBox->SetObserver(aObserver);
     messageBox->SetTimeout(aTimeout);
+    messageBox->SetButtonTextL(CHbDeviceMessageBoxSymbian::EAcceptButton,_L("Continue"));
+    messageBox->SetButtonTextL(CHbDeviceMessageBoxSymbian::ERejectButton,_L("Cancel"));
     messageBox->ShowL();
     CleanupStack::Pop(messageBox);
     return messageBox;

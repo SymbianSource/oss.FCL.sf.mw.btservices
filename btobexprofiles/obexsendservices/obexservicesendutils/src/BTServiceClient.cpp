@@ -25,9 +25,9 @@
 #include "BTConnectionTimer.h"
 #include "BTSUDebug.h"
 
-const TUint16 KMtuSizeReceiv    = 0xFFFF;	// 64kB - 1 (65535)
-const TUint16 KMtuSizeTrans     = 0x8000;	// 32kB
-const TInt    KBufferSize       = 0x8000;	// 32kB
+const TUint16 KMtuSizeReceiv    = 0xFFFF;   // 64kB - 1 (65535)
+const TUint16 KMtuSizeTrans     = 0x7200;   // 29kB 
+const TInt    KBufferSize       = 0x7200;   // 29kB
 
 const TInt KBTConnectionTimeout = 20 * 1000 * 1000;	// 20 seconds
 const TInt KBTAbortTimeout      = 2 * 1000 * 1000;	// 2 seconds

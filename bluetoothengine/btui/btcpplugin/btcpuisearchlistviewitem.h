@@ -39,13 +39,12 @@ public:
     void setModelSortFilter(BtuiModelSortFilter *filter);
     
 private:
-    QGraphicsItem *mParent;
+
     HbLabel *mDevTypeIconLabel;
     HbLabel *mDeviceNameLabel;
-    HbLabel *mDevTypeTextLabel;
+
     BtuiModelSortFilter*    mBtuiModelSortFilter;
     
-    QGraphicsGridLayout *mRow;
 };
 
 #endif /* BTCPUISEARCHLISTVIEWITEM_H */

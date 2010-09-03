@@ -27,6 +27,8 @@ VENDORID 		VID_DEFAULT
 
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE /epoc32/include/ecom
+SYSTEMINCLUDE /epoc32/include/mw/hb/hbwidgets
+SYSTEMINCLUDE /epoc32/include/mw/hb/hbcore
 
 USERINCLUDE 	../inc 
 
@@ -42,5 +44,7 @@ SOURCE btctrldcmoadapter.cpp
 LIBRARY euser.lib 
 LIBRARY	ecom.lib 
 LIBRARY	efsrv.lib
-LIBRARY commonengine.lib
+LIBRARY CommonEngine.lib
 LIBRARY btfeatures.lib
+LIBRARY HbCore.lib 
+LIBRARY HbWidgets.lib

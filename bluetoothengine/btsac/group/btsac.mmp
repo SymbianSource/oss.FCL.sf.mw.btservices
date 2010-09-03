@@ -60,16 +60,16 @@ TARGET btsac.rsc
 END
 
 USERINCLUDE     ../inc ../common
-SYSTEMINCLUDE   ../../inc ../../../inc /epoc32/include/ecom
+SYSTEMINCLUDE   ../../inc /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 
 LIBRARY			euser.lib		// Kernel API includes symbian basic class and type definitions and error codes
 LIBRARY			esock.lib		// RSocketServ is used to open Gavdp 
 LIBRARY			bluetooth.lib		// Bluetooth library is used to access bluetooth types and API's
-LIBRARY			bluetoothAV.lib		// A2DP type definitions are needed to use Gavdp
+LIBRARY			bluetoothav.lib		// A2DP type definitions are needed to use Gavdp
 LIBRARY			gavdp.lib		// Bluetooth Generic Audio/Video Distribution Profile (GAVDP) API 
-LIBRARY			ECom.lib		// Symbian E-Com Plugin definitions and types
+LIBRARY			ecom.lib		// Symbian E-Com Plugin definitions and types
 LIBRARY			sdpdatabase.lib		// SDP registeration for Advanced Audio Distribution Profile (A2DP)
 LIBRARY			btaudiostreamer.lib	// Series 60 Bluetooth Audio Streamer component's API 
 LIBRARY			btengdiscovery.lib		// Register A2DP SDP service record

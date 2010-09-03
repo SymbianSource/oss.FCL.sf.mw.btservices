@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -16,27 +16,28 @@
 */
 
 
-#include "btcpuimainlistviewitem.h"
+#include "btcpuimaingridviewitem.h"
 #include "btdevicemodel.h"
 #include "btuiiconutil.h"
 #include <QGraphicsGridLayout>
+#include <hbstyle.h>
+#include <bluetoothuitrace.h>
 
-BtCpUiMainListViewItem::BtCpUiMainListViewItem(QGraphicsItem * parent) :
-    HbListViewItem(parent), mParent(parent)
+BtCpUiMainGridViewItem::BtCpUiMainGridViewItem(QGraphicsItem * parent) :
+    HbGridViewItem(parent)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mDeviceNameLabel = 0;
     mDevTypeIconLabel = 0;
     mDevTypeTextLabel = 0;
-    mBtuiModelSortFilter = ((BtCpUiMainListViewItem *)parent)->mBtuiModelSortFilter;
-    
-    mRow = 0;   
+    mBtuiModelSortFilter = ((BtCpUiMainGridViewItem *)parent)->mBtuiModelSortFilter;
+    BOstraceFunctionExit0(DUMMY_DEVLIST); 
 }
 
-BtCpUiMainListViewItem::~BtCpUiMainListViewItem()
+BtCpUiMainGridViewItem::~BtCpUiMainGridViewItem()
 {
-//    delete mDeviceNameLabel;
-//    delete mDevTypeIconLabel;
-//    delete mDevTypeTextLabel;
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 /*
@@ -44,9 +45,12 @@ BtCpUiMainListViewItem::~BtCpUiMainListViewItem()
  * view item element.
  *
  */
-HbAbstractViewItem * BtCpUiMainListViewItem::createItem()
+HbAbstractViewItem * BtCpUiMainGridViewItem::createItem()
 {
-    return new BtCpUiMainListViewItem(*this); 
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    HbAbstractViewItem *item = new BtCpUiMainGridViewItem(*this); 
+    BOstraceFunctionExitExt(DUMMY_DEVLIST, this, item);
+    return item;
 }
 
 /*!
@@ -55,8 +59,9 @@ HbAbstractViewItem * BtCpUiMainListViewItem::createItem()
    consumption of the application, however, this is deemed inconsequential.  There might be a small 
    performance improvement with current style.
  */
-void BtCpUiMainListViewItem::updateChildItems()
+void BtCpUiMainGridViewItem::updateChildItems()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QModelIndex index;
     
     // Get device name from model
@@ -67,48 +72,38 @@ void BtCpUiMainListViewItem::updateChildItems()
 
     // create new icon label if needed
     if (!mDevTypeIconLabel) {
-        mDevTypeIconLabel = new HbLabel();
-        mDevTypeIconLabel->setPreferredSize(53.5260, 53.5260); //8un x 8un
-        mDevTypeIconLabel->setMinimumWidth(53.5260);
+        mDevTypeIconLabel = new HbLabel(this);
+        HbStyle::setItemName(mDevTypeIconLabel, "deviceIcon");
     }
+   
     // create new label if needed
     if (!mDeviceNameLabel) {
-        mDeviceNameLabel = new HbLabel();
-        mDeviceNameLabel->setPreferredSize(250, 26.763);
+        mDeviceNameLabel = new HbLabel(this);
+        HbStyle::setItemName(mDeviceNameLabel, "deviceName");
     }
+    
     // create new label if needed
     if (!mDevTypeTextLabel) {
-        mDevTypeTextLabel = new HbLabel();
-        mDevTypeTextLabel->setPreferredSize(250, 26.763);
-    }
-    // create layout if needed
-    if ( !mRow ) {
-        // Still need to create the actual layout
-        mRow = new QGraphicsGridLayout();
-        mRow->addItem(mDevTypeIconLabel,0,0,2,1);
-        mRow->addItem(mDeviceNameLabel,0,1,1,1);
-        mRow->addItem(mDevTypeTextLabel,1,1,1,1);
-        setLayout(mRow);
+        mDevTypeTextLabel = new HbLabel(this);
+        HbStyle::setItemName(mDevTypeTextLabel, "deviceType");
     }
         
     QString data = index.data(Qt::DisplayRole).toString();
     int cod = (index.data(BtDeviceModel::CoDRole)).toInt();
     int majorProperty = (index.data(BtDeviceModel::MajorPropertyRole)).toInt();
     
-    // ToDo:  remove clear() once Orbit bug is fixed
-    mDeviceNameLabel->clear();
     mDeviceNameLabel->setPlainText(data);
-    mDevTypeIconLabel->clear();
-    mDevTypeTextLabel->clear();
     mDevTypeTextLabel->setPlainText( getDeviceTypeString( cod ));
+    
     HbIcon icon = 
     getBadgedDeviceTypeIcon( cod, majorProperty, 
             BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight );
     mDevTypeIconLabel->setIcon(icon);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 
-void BtCpUiMainListViewItem::setModelSortFilter(BtuiModelSortFilter *filter)
+void BtCpUiMainGridViewItem::setModelSortFilter(BtuiModelSortFilter *filter)
 {
     mBtuiModelSortFilter = filter;
 }

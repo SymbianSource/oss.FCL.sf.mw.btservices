@@ -37,7 +37,8 @@ SOURCE                  btnotifconnectiontracker.cpp
 SOURCE                  btnotifsettingstracker.cpp
 SOURCE                  btnotificationmanager.cpp
 SOURCE                  bluetoothnotification.cpp 
-SOURCE                  btnotifdeviceselector.cpp 
+SOURCE                  btnotifdeviceselector.cpp
+SOURCE			btnotifgeninfonotifier.cpp 
 SOURCE                  btnotifpairnotifier.cpp 
 SOURCE                  btnotifbasepairinghandler.cpp 
 SOURCE                  btnotifincomingpairinghandler.cpp 
@@ -45,13 +46,13 @@ SOURCE                  btnotifoutgoingpairinghandler.cpp
 SOURCE                  btnotifsecuritymanager.cpp
 SOURCE                  btnotifserviceauthorizer.cpp
 SOURCE                  btnotifutil.cpp
+SOURCE                  btnotifpowernotifier.cpp
 
 USERINCLUDE             ../btnotifsrv/inc ../inc
 
 MW_LAYER_SYSTEMINCLUDE
 
 SYSTEMINCLUDE           ../../inc
-SYSTEMINCLUDE           ../../../inc
 
 LIBRARY                 euser.lib
 LIBRARY                 esock.lib
@@ -64,7 +65,7 @@ LIBRARY                 btengconnman.lib
 LIBRARY                 btengdevman.lib
 LIBRARY                 btserviceutil.lib
 LIBRARY                 HbCore.lib
-LIBRARY                 commonengine.lib
+LIBRARY                 CommonEngine.lib
 LIBRARY					flogger.lib
 LIBRARY					charconv.lib
 

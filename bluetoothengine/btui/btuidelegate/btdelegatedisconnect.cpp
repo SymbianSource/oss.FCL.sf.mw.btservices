@@ -22,134 +22,175 @@
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
 #include <hbnotificationdialog.h>
+#include <bluetoothuitrace.h>
 
 BtDelegateDisconnect::BtDelegateDisconnect(            
         BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel, QObject *parent) :
     BtAbstractDelegate(settingModel, deviceModel, parent), mBtengConnMan(0), mPhyLinks(0),
-	 mMajorRole(0), mActiveHandling(false), mAddrArrayIndex(0), mDisconOpt(DisconUnknown)
+	 mActiveHandling(false), mAddrArrayIndex(0), mDisconOpt(DisconUnknown)
 {
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 BtDelegateDisconnect::~BtDelegateDisconnect()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
     delete mBtengConnMan;
     delete mPhyLinks;
     mSocketServ.Close();
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
+
+/*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegateDisconnect::supportedEditorTypes() const
+{
+    return BtDelegate::DisconnectService
+           | BtDelegate::DisconnectAllConnections;
+}
+
+/*!
+ * disconnects remote device(s) from local device
+ * params of type QList<QVariant>: 
+ *         1) DisconnectOption (either ServiceLevel, PhysicalLink or AllOngoingConnections)
+ *         2) remote device address (QString, not needed for AllOngoingConnections)
+ */
 void BtDelegateDisconnect::exec( const QVariant &params )
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
     int err;
+    
+    // check if in use already
+    if ( mActiveHandling ) {
+        emit delegateCompleted(KErrInUse, this);
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrInUse);
+        return;
+    }
+    
+    // check parameters
+    QList<QVariant> paramList = params.value< QList<QVariant> >(); 
+    if (!((paramList.count() == 1) || (paramList.count() == 2))) {
+        // wrong parameter count
+        emit delegateCompleted( KErrArgument, this ); 
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrArgument );
+        return;
+    }
+    
+    // create btengconnman
     if ( ! mBtengConnMan ){
         TRAP( err, mBtengConnMan = CBTEngConnMan::NewL(this) );
     }
-    if(err) {
-        emit commandCompleted(err);
+    if( err ) {
+        emit delegateCompleted(err, this);
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, err );
         return;
     }
-    if (params.canConvert<int>()){
-        mDisconOpt = (DisconnectOption)params.toInt();
+    
+    mDisconOpt = (DisconnectOption)paramList.at(0).toInt();    // DisconnectOption
+    
+    if ( (mDisconOpt == ServiceLevel) || (mDisconOpt == PhysicalLink) ) {
+        // check 2nd parameter is ok
+        if ((paramList.count() != 2) || !paramList.at(1).canConvert<QString>()) {
+            emit delegateCompleted( KErrArgument, this ); 
+            BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrArgument );
+            return;
+        }
+        QString strBtAddr = paramList.at(1).toString();  // remote device to operate on
+        BtTraceQString1( TRACE_DEBUG, DUMMY_DEVLIST, "device addr=", strBtAddr);
+        addrReadbleStringToSymbian( strBtAddr, mBtEngAddr );
+        
+        mActiveHandling = true;
+
+        if (mDisconOpt == ServiceLevel){
+            disconnectServiceLevel();
+        }
+        else if (mDisconOpt == PhysicalLink){
+            disconnectPhysicalLink();       
+        }
+    } 
+    else if ( mDisconOpt == AllOngoingConnections ) {
+        err = mBtengConnMan->GetConnectedAddresses(mDevAddrArray);
+        //Added this condition because GetConnectedAddresses returns 0 even if no addresses
+        //are returned.
+        if(err || !(mDevAddrArray.Count())) {
+            emit delegateCompleted(err, this);
+            BOstraceFunctionExitExt( DUMMY_DEVLIST, this, err );
+            return;
+        }
+        
         mActiveHandling = true;
         
-        if (mDisconOpt == AllOngoingConnections){
-            err = mBtengConnMan->GetConnectedAddresses(mDevAddrArray);
-            disconnectAllConnections_service();
-        }
-        if(err) {
-            emit commandCompleted(err);
-        }
+        disconnectAllConnections_service();
+    } 
+    else {
+        BTUI_ASSERT_X( 0, "BtDelegateDisconnect::exec()", "incorrect parameter" );
     }
-    else{
-        QList<QVariant> paramList = params.value< QList<QVariant> >(); 
-        QVariant indexVariant = paramList.at(0); 
-        QModelIndex index = indexVariant.value<QModelIndex>();
-        QVariant optionVariant = paramList.at(1); 
-        mDisconOpt = (DisconnectOption)optionVariant.toInt();
-        int error = KErrNone;
-        
-        mActiveHandling = true;
-        mDeviceName = getDeviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
-        mMajorRole = (index.data(BtDeviceModel::MajorPropertyRole)).toInt();
-        
-        QString strBtAddr = getDeviceModel()->data(index,BtDeviceModel::ReadableBdaddrRole).toString();
-        
-        // todo: address converting should be simplified. check other delegates for example.
-        
-        TPtrC ptrName(reinterpret_cast<const TText*>(strBtAddr.constData()));
-            
-        RBuf16 btName;
-        error = btName.Create(ptrName.Length());
-        
-        if(error == KErrNone) {
-            btName.Copy(ptrName);
-            mBtEngAddr.SetReadable(btName);
-            if (mDisconOpt == ServiceLevel){
-                disconnectSeviceLevel();
-            }
-            else if (mDisconOpt == PhysicalLink){
-                disconnectPhysicalLink();       
-            }
-        }
-        btName.Close();
-        
-        if(error) {
-            emit commandCompleted(error);
-        }
-    }  
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 
-void BtDelegateDisconnect::disconnectAllConnections_service(){
+void BtDelegateDisconnect::disconnectAllConnections_service() 
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
+    QString btStringAddr;
+    addrSymbianToReadbleString( btStringAddr, mDevAddrArray[mAddrArrayIndex] );
+    QModelIndex start = deviceModel()->index(0,0);
+    QModelIndexList indexList = deviceModel()->match(start,BtDeviceModel::ReadableBdaddrRole, btStringAddr);
+    // ToDo:  what happens if device not found from the model?  error handling needed!
+    QModelIndex index = indexList.at(0);
     
-        TBuf<KBTDevAddrSize*3> addrBuf;
-        mDevAddrArray[mAddrArrayIndex].GetReadable(addrBuf);
-        QString btStringAddr= QString::fromUtf16( addrBuf.Ptr(), addrBuf.Length());
-        QModelIndex start = getDeviceModel()->index(0,0);
-        QModelIndexList indexList = getDeviceModel()->match(start,BtDeviceModel::ReadableBdaddrRole, btStringAddr);
-        QModelIndex index = indexList.at(0);
-        
-        mDeviceName = getDeviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
-        mBtEngAddr = mDevAddrArray[mAddrArrayIndex];
-        mMajorRole = (index.data(BtDeviceModel::MajorPropertyRole)).toInt();
-        
-        disconnectSeviceLevel();        
+    mBtEngAddr = mDevAddrArray[mAddrArrayIndex];
+    
+    disconnectServiceLevel(); 
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::disconnectAllConnections_physical(){
+void BtDelegateDisconnect::disconnectAllConnections_physical()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
+    QString btStringAddr;
+    addrSymbianToReadbleString( btStringAddr, mDevAddrArray[mAddrArrayIndex] );
+    QModelIndex start = deviceModel()->index(0,0);
+    QModelIndexList indexList = deviceModel()->match(start,BtDeviceModel::ReadableBdaddrRole, btStringAddr);
+    // ToDo:  what happens if device not found from the model?  error handling needed!
+    QModelIndex index = indexList.at(0);
     
-        TBuf<KBTDevAddrSize*3> addrBuf;
-        mDevAddrArray[mAddrArrayIndex].GetReadable(addrBuf);
-        QString btStringAddr= QString::fromUtf16( addrBuf.Ptr(), addrBuf.Length());
-        QModelIndex start = getDeviceModel()->index(0,0);
-        QModelIndexList indexList = getDeviceModel()->match(start,BtDeviceModel::ReadableBdaddrRole, btStringAddr);
-        QModelIndex index = indexList.at(0);
-        
-        mDeviceName = getDeviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
-        mBtEngAddr = mDevAddrArray[mAddrArrayIndex];
-        
-        disconnectPhysicalLink();
-        
+    mBtEngAddr = mDevAddrArray[mAddrArrayIndex];
+    
+    disconnectPhysicalLink();
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
-void BtDelegateDisconnect::disconnectSeviceLevel(){
+
+void BtDelegateDisconnect::disconnectServiceLevel()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
     int err;
     TBTEngConnectionStatus connStatus = EBTEngNotConnected;
+    BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "calling btengconnman->isConnected() with device addr=", mBtEngAddr );
     err = mBtengConnMan->IsConnected(mBtEngAddr, connStatus);
-    if (connStatus == EBTEngConnected){
-        err = mBtengConnMan->Disconnect(mBtEngAddr, EBTDiscGraceful);
+    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "isConnected() ret = %d, conn status (0/2) = %d",  err, connStatus);
+    
+    //if ( !err && (connStatus == EBTEngConnected) ) {
+        // asynchronous call, see callback DisconnectComplete()
+        BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "btengconnman->Disconnect() with param device addr=", mBtEngAddr );
+        err = mBtengConnMan->Disconnect(mBtEngAddr, EBTDiscGraceful);  
+        BOstraceExt1( TRACE_DEBUG, DUMMY_DEVLIST, "Disconnect() ret = %d",  err);
+    //}
+    if (err) {
+        // handle error
+        disconnectServiceLevelCompleted(err);
     }
-    if(err) {
-        if (mDisconOpt == AllOngoingConnections){
-            disconnectServiceLevelCompleted(err);
-        }
-        else{ 
-            emit commandCompleted(err);
-        }
-    }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
         
-void BtDelegateDisconnect::disconnectPhysicalLink(){
+void BtDelegateDisconnect::disconnectPhysicalLink()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );   
     int err;
     if ( !mSocketServ.Handle() ) {
         err = mSocketServ.Connect();
@@ -157,126 +198,138 @@ void BtDelegateDisconnect::disconnectPhysicalLink(){
     if ( !err && !mPhyLinks ) {
         TRAP( err, 
             mPhyLinks = CBluetoothPhysicalLinks::NewL( *this, mSocketServ ) );
-        Q_CHECK_PTR( mPhyLinks );
-    }
-    err = mPhyLinks->Disconnect( mBtEngAddr );
-    if(err) {
-        if (mDisconOpt == AllOngoingConnections){
-            disconnectPhysicalLinkCompleted(err);
-        }
-        else{ 
-            emit commandCompleted(err);
+        if (err) {
+            disconnectPhysicalLinkCompleted(err); // handle error
         }
     }
-    
+    // ToDo:  consider using DisconnectAll()
+    BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "phy->Disconnect() with param device addr=", mBtEngAddr );
+    err = mPhyLinks->Disconnect( mBtEngAddr );  // async call, see callback HandleDisconnectCompleteL()
+    BOstraceExt1( TRACE_DEBUG, DUMMY_DEVLIST, "Phy Disconnect() ret = %d",  err);
+    if (err) {
+        disconnectPhysicalLinkCompleted(err);  // handle error
+    }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::disconnectServiceLevelCompleted(int err){
+void BtDelegateDisconnect::disconnectServiceLevelCompleted(int err)
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );   
     if (mDisconOpt == ServiceLevel){
         mActiveHandling = false;
-        emit commandCompleted(err);
+        emit delegateCompleted(err, this);
     }
     else if (mDisconOpt == AllOngoingConnections){
         if (err){
             mActiveHandling = false;
-            emit commandCompleted(err);
+            emit delegateCompleted(err, this);
         }
         else{
             mAddrArrayIndex++;
-            if ( mAddrArrayIndex < mDevAddrArray.Count()){
-                disconnectAllConnections_service();
+            if ( mAddrArrayIndex < mDevAddrArray.Count()) {
+                disconnectAllConnections_service();  // recursive call
             }
-            else{
+            else {
                 mDevAddrArray.Reset();
+                mAddrArrayIndex = 0;
                 err = mBtengConnMan->GetConnectedAddresses(mDevAddrArray);
                 if(err) {
-                    emit commandCompleted(err);
+                    mActiveHandling = false;
+                    emit delegateCompleted(err, this);
+                    BOstraceFunctionExitExt( DUMMY_DEVLIST, this, err );
                     return;
                 }
-                mAddrArrayIndex = 0;
-                //connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectPhysicalLinkCompleted(int)) );         
                 disconnectAllConnections_physical();
             }
         }
     }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::disconnectPhysicalLinkCompleted(int err){
+void BtDelegateDisconnect::disconnectPhysicalLinkCompleted(int err)
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );   
     if (mDisconOpt == PhysicalLink){
-        //emitCommandComplete(err);
         mActiveHandling = false;
-        emit commandCompleted(err);
+        emit delegateCompleted(err, this);
     }
-    else if (mDisconOpt == AllOngoingConnections){
-        if (err){
+    else if (mDisconOpt == AllOngoingConnections) {
+        if (err) {
             mActiveHandling = false;
-            emit commandCompleted(err);
+            emit delegateCompleted(err, this);
         }
         else{
             mAddrArrayIndex++;
-            if ( mAddrArrayIndex < mDevAddrArray.Count()){
-                disconnectAllConnections_physical();
+            if ( mAddrArrayIndex < mDevAddrArray.Count()) {
+                disconnectAllConnections_physical();  // recursive call
             }
-            else{
-                //TODO: check if there is still ongoing connection from BTEngVonnMan. and close them again if there is any new 
+            else {  // DONE!
+                //TODO: check if there is still ongoing connection from BTEngConnMan. and close them again if there is any new 
                 mActiveHandling = false;
-                emit commandCompleted(err);
+                emit delegateCompleted(KErrNone, this);
             }
         }
-        
     }
-    
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
+
 void BtDelegateDisconnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
                                    RBTDevAddrArray* aConflicts )
 {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aErr );  
+    BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "device addr=", aAddr );
     Q_UNUSED(aAddr);
     Q_UNUSED(aConflicts);  
     Q_UNUSED(aErr);
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 void BtDelegateDisconnect::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
 {
-    if ( mBtEngAddr != aAddr || !mActiveHandling ) {  
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aErr );  
+    BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "device addr=", aAddr );
+    if ( mBtEngAddr != aAddr || !mActiveHandling ) { 
+        BOstraceFunctionExit1( DUMMY_DEVLIST, this );
         return;
     }
-    DisplayCommandCompleteNotif(aErr);
-    disconnectServiceLevelCompleted(aErr);    
+    disconnectServiceLevelCompleted(aErr);  
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 
 void BtDelegateDisconnect::cancel()
 {
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );  
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::HandleCreateConnectionCompleteL( TInt err ){
+void BtDelegateDisconnect::HandleCreateConnectionCompleteL( TInt err )
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );   
     Q_UNUSED( err );
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::HandleDisconnectCompleteL( TInt err ){
-    if ( !mActiveHandling ) {  
+// callback for CBluetoothPhysicalLinks::Disconnect()
+void BtDelegateDisconnect::HandleDisconnectCompleteL( TInt err )
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );  
+    if ( !mActiveHandling ) {
+        BOstraceFunctionExit1( DUMMY_DEVLIST, this );
         return;
     } 
     disconnectPhysicalLinkCompleted(err);
-          
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDisconnect::HandleDisconnectAllCompleteL( TInt err ){
-    Q_UNUSED( err );
-}
-
-void BtDelegateDisconnect::DisplayCommandCompleteNotif(int error)
+// callback for CBluetoothPhysicalLinks::DisconnectAll()
+void BtDelegateDisconnect::HandleDisconnectAllCompleteL( TInt err )
 {
-    
-    if(error == KErrNone) {
-        // success, show indicator with connection status
-        HbIcon icon = getBadgedDeviceTypeIcon( mCod, mMajorRole, 0 );  // no badging required, only icon
-        QString str( hbTrId("txt_bt_dpopinfo_disconnected_from_1") );
-        HbNotificationDialog::launchDialog( icon, hbTrId("txt_bt_dpophead_disconnected"), 
-            str.arg(mDeviceName) );  
-    }
-	
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );   
+    Q_UNUSED( err );
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
+
+
 
 

@@ -29,10 +29,8 @@
     \class BtDeviceDialogQueryWidget
     \brief Widget class with properties setting. 
 
-    BtDeviceDialogQueryWidget, inherited from HbMessageBox, 
-    implements interface HbDeviceDialogInterface. The Q_Properties
-    here are interfaces for caller of HbDeviceDialog to configue
-    what to be shown in the widget. 
+    BtDeviceDialogQueryWidget, inherited from HbDeviceDialogInterface, 
+    implemented using HbMessageBox. 
     
  */
 class BtDeviceDialogQueryWidget :
@@ -62,6 +60,7 @@ private:
     void processParam(const QVariantMap &parameters);
     bool constructQueryDialog(const QVariantMap &parameters);
     void resetProperties();
+    QString& GetPasskeyEntryStatusString(int aStatus);
         
 private:
     Q_DISABLE_COPY(BtDeviceDialogQueryWidget)
@@ -69,6 +68,9 @@ private:
     int mLastError;
     int mSendAction;
     bool mShowEventReceived;
+    QString mDisplayPasskeyStatus;
+    bool mSendPasskeyEntryCompletedAction;
+    int mDispPassKeyNumDigit;
     
     HbMessageBox *mMessageBox;
 };

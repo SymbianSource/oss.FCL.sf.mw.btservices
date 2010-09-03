@@ -34,15 +34,14 @@
 #include    <msvids.h>
 #include    "debug.h"
 #include    <bluetoothdevicedialogs.h>
-#include <hbtextresolversymbian.h>
         
 // CONSTANTS
 _LIT8(KBipCapabilityType, "x-bt/img-capabilities\0");
 const TInt KFileManagerUID3 = 0x101F84EB; /// File Manager application UID3
 const TInt    KBufferSize = 0x10000;  // 64 kB
 _LIT( KBTDevDialogId, "com.nokia.hb.btdevicedialog/1.0" );
-_LIT(KLocFileName, "btdialogs_");
-_LIT(KPath, "z:/resource/qt/translations/");  
+const TInt KMaxDisplayFileName = 20; 
+const TInt KMinStringSize = 11;
 
 
 // ================= MEMBER FUNCTIONS =======================
@@ -78,12 +77,6 @@ void CBIPController::ConstructL()
     iResultArray = new(ELeave) CBTDeviceArray(1);
     // Get default folder from CenRep 
     TObexUtilsMessageHandler::GetCenRepKeyStringValueL(KCRUidBluetoothEngine, KLCReceiveFolder, iCenRepFolder);
-    iDialog = CObexUtilsDialog::NewL(this);
-    TBool ok = HbTextResolverSymbian::Init(KLocFileName, KPath);
-    if (!ok) 
-        {
-        User::Leave( KErrNotFound );
-        }
     TRACE_FUNC_EXIT
     }
 
@@ -108,9 +101,12 @@ CBIPController::~CBIPController()
         delete iResultArray;
         }
     iFs.Close();
-    delete iDialog;
+    
     delete iProgressDialog;
+    delete iFailureDialog;
     delete iRecvDoneDialog;
+    delete iMemoryFullDailog;
+    
     TRACE_FUNC_EXIT    
     }
 
@@ -144,17 +140,16 @@ void CBIPController::HandleError(TBool aAbort)
     iShowRecvCompleteDialog = EFalse;
     if( iBTTransferState == ETransferPut || (!aAbort && iBTTransferState == ETransferPutDiskError) )
         {
+        CancelTransfer();
+
+        TRAP_IGNORE( 
+                    LaunchFailureDialogL();
+                );
+        
         if(iBTObject)
             {
             iBTObject->Reset();
             }
-        CancelTransfer();
-
-        TRAP_IGNORE( 
-                HBufC* note = HbTextResolverSymbian::LoadLC(_L("txt_bt_dpophead_receiving_failed"));
-                iDialog->ShowErrorNoteL(note->Des());
-                CleanupStack::PopAndDestroy(note); 
-                );
         } 
     delete iBuf;
     iBuf = NULL;
@@ -253,6 +248,20 @@ void CBIPController::TransportDownIndication()
     TRACE_FUNC  
     if(!iReceivingFailed && iShowRecvCompleteDialog)
         {
+        TFileName shortname;
+        if ( iReceivingFileName.Length() > KMaxDisplayFileName ) 
+            {
+            // Filename is too long, 
+            // We make it shorter. Hiding the chars in the middle part of filename. 
+            shortname = iReceivingFileName.Mid(0,KMaxDisplayFileName/2);
+            shortname.Append(_L("..."));
+            shortname.Append(iReceivingFileName.Mid(iReceivingFileName.Length() - KMaxDisplayFileName/2, KMaxDisplayFileName/2));
+            }
+        else
+            {
+            shortname.Copy(iReceivingFileName);
+            }
+
         //Launch recevice completed dialog.
         iRecvDoneDialog = CHbDeviceDialogSymbian::NewL();
         iRecvDoneDialog->SetObserver(this);
@@ -261,46 +270,28 @@ void CBIPController::TransportDownIndication()
         CleanupStack::PushL(variantMap);
         
         TInt dialogIdx = TBluetoothDialogParams::EReceiveDone;
-        CHbSymbianVariant* dialogType = CHbSymbianVariant::NewL( (TAny*) &(dialogIdx), 
-                                                            CHbSymbianVariant::EInt );
-        CleanupStack::PushL(dialogType);
-        TBuf16<6> dialogTypeKey;
-        dialogTypeKey.Num(TBluetoothDialogParams::EDialogType);
-        User::LeaveIfError(variantMap->Add(dialogTypeKey, dialogType));
-        CleanupStack::Pop(dialogType);
+        AddParamL(TBluetoothDialogParams::EDialogType, (TAny*) &dialogIdx,
+                CHbSymbianVariant::EInt, *variantMap);
         
-        CHbSymbianVariant* deviceName = CHbSymbianVariant::NewL( (TAny*) (&iRemoteDeviceName), 
-                                                            CHbSymbianVariant::EDes );
-        CleanupStack::PushL(deviceName);
-        TBuf16<6> deviceNameKey;
-        deviceNameKey.Num(TBluetoothDeviceDialog::EDeviceName);
-        User::LeaveIfError(variantMap->Add(deviceNameKey, deviceName));
-        CleanupStack::Pop(deviceName);
+        AddParamL(TBluetoothDeviceDialog::EDeviceName, (TAny*) &iRemoteDeviceName,
+                CHbSymbianVariant::EDes, *variantMap);
         
-        CHbSymbianVariant* fileName = CHbSymbianVariant::NewL( (TAny*) (&iReceivingFileName), 
-                                                            CHbSymbianVariant::EDes );
-        CleanupStack::PushL(fileName);
-        TBuf16<6> fileNameKey;
-        fileNameKey.Num(TBluetoothDeviceDialog::EReceivingFileName);
-        User::LeaveIfError(variantMap->Add(fileNameKey, fileName));
-        CleanupStack::Pop(fileName);
+        AddParamL(TBluetoothDeviceDialog::EReceivingFileName, (TAny*) &shortname,
+                CHbSymbianVariant::EDes, *variantMap);
         
-        CHbSymbianVariant* fileSz = CHbSymbianVariant::NewL( (TAny*) &iTotalSizeByte, 
-                                                            CHbSymbianVariant::EInt );
-        CleanupStack::PushL(fileSz);
-        TBuf16<6> fileSzKey;
-        fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
-        User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
-        CleanupStack::Pop(fileSz);
+        AddParamL(TBluetoothDeviceDialog::EReceivingFileSize, (TAny*) &iTotalSizeByte,
+                CHbSymbianVariant::EInt, *variantMap);
         
-        CHbSymbianVariant* fileCnt = CHbSymbianVariant::NewL( (TAny*) &iFileCount, 
-                                                            CHbSymbianVariant::EInt );
-        CleanupStack::PushL(fileCnt);
-        TBuf16<6> fileCntKey;
-        fileCntKey.Num(TBluetoothDeviceDialog::EReceivedFileCount);
-        User::LeaveIfError(variantMap->Add(fileCntKey, fileCnt));
-        CleanupStack::Pop(fileCnt);
+        AddParamL(TBluetoothDeviceDialog::EReceivedFileCount, (TAny*) &iFileCount,
+                CHbSymbianVariant::EInt, *variantMap);
         
+        TBuf<KMinStringSize> key(_L("OpenCnvView"));
+        TBool option = ETrue;
+        CHbSymbianVariant* value = CHbSymbianVariant::NewL( (TAny*) &option, CHbSymbianVariant::EBool );
+        CleanupStack::PushL(value);
+        variantMap->Add(key, value);
+        CleanupStack::Pop(value);
+
         iRecvDoneDialog->Show( KBTDevDialogId(), *variantMap, this );
         CleanupStack::PopAndDestroy(variantMap);
         
@@ -383,8 +374,9 @@ TInt CBIPController::PutPacketIndication()
                 {
                 //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
                 //todo: Need to use Localized string.
-                _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
-                TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+                //_LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+                //TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+                LaunchMemoryFullDialogL(iDrive);
     
                 return KErrDiskFull;
                 }
@@ -592,9 +584,10 @@ void CBIPController::HandlePutImageRequestL()
         {
         //TRAP_IGNORE(TObexUtilsUiLayer::ShowGlobalConfirmationQueryL(R_OUT_OF_MEMORY));
         //todo: Need to use Localized string.
-        _LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
-        TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
-    
+        //_LIT(KText, "Not enough memory to execute operation. Delete some documents and try again.");
+        //TRAP_IGNORE(iDialog->ShowErrorNoteL(KText));
+        
+        LaunchMemoryFullDialogL(iDrive);
         User::Leave(KErrGeneral);
         }
     
@@ -831,6 +824,20 @@ void CBIPController::LaunchReceivingIndicatorL()
         {
         if(iReceivingFileName.Length() > 0)
             {
+            TFileName shortname;
+            if ( iReceivingFileName.Length() > KMaxDisplayFileName ) 
+                {
+                // Filename is too long, 
+                // We make it shorter. Hiding the chars in the middle part of filename. 
+                shortname = iReceivingFileName.Mid(0,KMaxDisplayFileName/2);
+                shortname.Append(_L("..."));
+                shortname.Append(iReceivingFileName.Mid(iReceivingFileName.Length() - KMaxDisplayFileName/2, KMaxDisplayFileName/2));
+                }
+            else
+                {
+                shortname.Copy(iReceivingFileName);
+                }
+
             iProgressDialog = CHbDeviceDialogSymbian::NewL();
             iProgressDialog->SetObserver(this);
     
@@ -838,46 +845,21 @@ void CBIPController::LaunchReceivingIndicatorL()
             CleanupStack::PushL(variantMap);
             
             TInt dialogIdx = TBluetoothDialogParams::EReceiveProgress;
-            CHbSymbianVariant* dialogType = CHbSymbianVariant::NewL( (TAny*) &(dialogIdx), 
-                                                                CHbSymbianVariant::EInt );
-            CleanupStack::PushL(dialogType);
-            TBuf16<6> dialogTypeKey;
-            dialogTypeKey.Num(TBluetoothDialogParams::EDialogType);
-            User::LeaveIfError(variantMap->Add(dialogTypeKey, dialogType));
-            CleanupStack::Pop(dialogType);
+            AddParamL(TBluetoothDialogParams::EDialogType, (TAny*) &dialogIdx, 
+                    CHbSymbianVariant::EInt, *variantMap);
             
-            CHbSymbianVariant* deviceName = CHbSymbianVariant::NewL( (TAny*) (&iRemoteDeviceName), 
-                                                                CHbSymbianVariant::EDes );
-            CleanupStack::PushL(deviceName);
-            TBuf16<6> deviceNameKey;
-            deviceNameKey.Num(TBluetoothDeviceDialog::EDeviceName);
-            User::LeaveIfError(variantMap->Add(deviceNameKey, deviceName));
-            CleanupStack::Pop(deviceName);
+            AddParamL(TBluetoothDeviceDialog::EDeviceName, (TAny*) &iRemoteDeviceName,
+                    CHbSymbianVariant::EDes, *variantMap);
             
-            CHbSymbianVariant* fileName = CHbSymbianVariant::NewL( (TAny*) (&iReceivingFileName), 
-                                                                CHbSymbianVariant::EDes );
-            CleanupStack::PushL(fileName);
-            TBuf16<6> fileNameKey;
-            fileNameKey.Num(TBluetoothDeviceDialog::EReceivingFileName);
-            User::LeaveIfError(variantMap->Add(fileNameKey, fileName));
-            CleanupStack::Pop(fileName);
+            AddParamL(TBluetoothDeviceDialog::EReceivingFileName, (TAny*) &shortname,
+                    CHbSymbianVariant::EDes, *variantMap);
             
-            CHbSymbianVariant* fileSz = CHbSymbianVariant::NewL( (TAny*) &iTotalSizeByte, 
-                                                                CHbSymbianVariant::EInt );
-            CleanupStack::PushL(fileSz);
-            TBuf16<6> fileSzKey;
-            fileSzKey.Num(TBluetoothDeviceDialog::EReceivingFileSize);
-            User::LeaveIfError(variantMap->Add(fileSzKey, fileSz));
-            CleanupStack::Pop(fileSz);
+            AddParamL(TBluetoothDeviceDialog::EReceivingFileSize, (TAny*) &iTotalSizeByte,
+                    CHbSymbianVariant::EInt, *variantMap);
             
-            CHbSymbianVariant* fileCnt = CHbSymbianVariant::NewL( (TAny*) &iFileCount, 
-                                                                CHbSymbianVariant::EInt );
-            CleanupStack::PushL(fileCnt);
-            TBuf16<6> fileCntKey;
-            fileCntKey.Num(TBluetoothDeviceDialog::EReceivedFileCount);
-            User::LeaveIfError(variantMap->Add(fileCntKey, fileCnt));
-            CleanupStack::Pop(fileCnt);
-        
+            AddParamL(TBluetoothDeviceDialog::EReceivedFileCount, (TAny*) &iFileCount,
+                    CHbSymbianVariant::EInt, *variantMap);
+
             iDialogActive = ETrue;
             iProgressDialog->Show( KBTDevDialogId(), *variantMap, this );
             CleanupStack::PopAndDestroy(variantMap);
@@ -911,7 +893,7 @@ void CBIPController::UpdateReceivingIndicatorL()
         CleanupStack::PushL(progress);
         User::LeaveIfError(variantMap->Add(_L("progress"), progress));
         CleanupStack::Pop(progress);
-        
+
         iProgressDialog->Update(*variantMap);
         CleanupStack::PopAndDestroy(variantMap);
         }
@@ -1054,11 +1036,6 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
      return EFalse;
      }
  
- void CBIPController::DialogDismissed(TInt aButtonId)
-     {
-     (void) aButtonId;
-     }
-
  void CBIPController::DataReceived(CHbSymbianVariantMap& aData)
      {
      if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult")) == 0)
@@ -1086,6 +1063,8 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
                  delete iRecvDoneDialog;
                  iRecvDoneDialog = NULL;
                  }break;
+             default:
+                 break;
              }
          }
      }
@@ -1095,7 +1074,94 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
      (void) aCompletionCode;
      }
 
+ void CBIPController::LaunchFailureDialogL()
+     {
+     if(iFailureDialog)
+         {
+         iFailureDialog->Cancel();
+         delete iFailureDialog;
+         iFailureDialog = NULL;
+         }
+
+     iFailureDialog = CHbDeviceDialogSymbian::NewL();
+     
+     CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+     CleanupStack::PushL(variantMap);
+     
+     TInt dialogIdx = TBluetoothDialogParams::EInformationDialog;
+     AddParamL(TBluetoothDialogParams::EDialogType, (TAny*) &dialogIdx,
+             CHbSymbianVariant::EInt, *variantMap);
+     
+     AddParamL(TBluetoothDeviceDialog::EDeviceName, (TAny*) &iRemoteDeviceName,
+             CHbSymbianVariant::EDes, *variantMap);
+     
+     TInt dialogTitleIdx = TBluetoothDialogParams::ERecvFailed;
+     AddParamL(TBluetoothDialogParams::EDialogTitle, (TAny*) &dialogTitleIdx,
+             CHbSymbianVariant::EInt, *variantMap);
+     
+     TUint32 deviceClass = iResultArray->At(0)->DeviceClass().DeviceClass();
+     AddParamL(TBluetoothDeviceDialog::EDeviceClass, (TAny*) &deviceClass,
+             CHbSymbianVariant::EInt, *variantMap);
+     
+     iFailureDialog->Show( KBTDevDialogId(), *variantMap );
+     CleanupStack::PopAndDestroy(variantMap);
+     
+     iReceivingFailed = EFalse;
+     }
  
-//////////////////////////// Global part ////////////////////////////
+ void CBIPController::LaunchMemoryFullDialogL(TInt aDrive)
+     {
+     if(iMemoryFullDailog)
+         {
+         iMemoryFullDailog->Cancel();
+         delete iMemoryFullDailog;
+         iMemoryFullDailog = NULL;
+         }
+
+     iMemoryFullDailog = CHbDeviceDialogSymbian::NewL();
+     
+     CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+     CleanupStack::PushL(variantMap);
+     
+     TInt dialogIdx = TBluetoothDialogParams::EInformationDialog;
+     AddParamL(TBluetoothDialogParams::EDialogType, (TAny*) &dialogIdx,
+             CHbSymbianVariant::EInt, *variantMap);
+     
+     TInt dialogTitleIdx = TBluetoothDialogParams::EMemoryFull;
+     AddParamL(TBluetoothDialogParams::EDialogTitle, (TAny*) &dialogTitleIdx,
+             CHbSymbianVariant::EInt, *variantMap);
+     
+     TChar driveLetter;
+     iFs.DriveToChar(aDrive, driveLetter);
+     AddParamL(TBluetoothDeviceDialog::EDriveLetter, (TAny*) &driveLetter,
+             CHbSymbianVariant::EChar, *variantMap);
+     
+     TVolumeInfo volumeInfo;
+     iFs.Volume(volumeInfo, aDrive);
+     AddParamL(TBluetoothDeviceDialog::EDriveName, (TAny*) &(volumeInfo.iName),
+             CHbSymbianVariant::EDes, *variantMap);
+     
+     iMemoryFullDailog->Show( KBTDevDialogId(), *variantMap );
+     CleanupStack::PopAndDestroy(variantMap);
+     }
+
+ void CBIPController::AddParamL(const TInt aKey, const TAny* aValue, 
+         CHbSymbianVariant::TType aValueType,  CHbSymbianVariantMap& aVariantMap)
+     {
+     //Prepare the key
+     TBuf<KMinStringSize> key;
+     key.Num(aKey);
+     
+     //Prepare the value
+     CHbSymbianVariant* value = CHbSymbianVariant::NewL( aValue, aValueType );
+     CleanupStack::PushL(value);
+     
+     //add the key-value pair to the variant map
+     User::LeaveIfError(aVariantMap.Add(key, value));
+     
+     CleanupStack::Pop(value);
+     }
+ 
+ //////////////////////////// Global part ////////////////////////////
 
 //  End of File

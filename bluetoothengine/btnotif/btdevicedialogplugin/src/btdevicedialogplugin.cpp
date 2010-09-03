@@ -32,12 +32,14 @@
 #include "btsenddialogwidget.h"
 #include "btdevicedialogrecvquerywidget.h"
 #include "btrecvcompleteddialogwidget.h"
+#include "btdeviceinfowidget.h"
 #include <hbtranslator.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
 
 const char* BTDIALOG_TRANSLATION = "btdialogs";
-const char* BTVIEW_TRANSLATION = "btviews";        
+const char* BTVIEW_TRANSLATION = "btviews";
+const char* COMMON_ERRORS_TRANSLATION = "common_errors";
 
 // This plugin implements one device dialog type
 static const struct {
@@ -65,7 +67,7 @@ BtDeviceDialogPluginPrivate::BtDeviceDialogPluginPrivate()
     BtDeviceDialogPlugin Constructor
  */
 BtDeviceDialogPlugin::BtDeviceDialogPlugin():
- mDialogTranslator(0),mViewTranslator(0)
+ mDialogTranslator(0),mViewTranslator(0),mCommonErrorsTranslator(0)
 {
     d = new BtDeviceDialogPluginPrivate;
 }
@@ -78,6 +80,7 @@ BtDeviceDialogPlugin::~BtDeviceDialogPlugin()
     delete d;
     delete mDialogTranslator;
     delete mViewTranslator;
+    delete mCommonErrorsTranslator;
 }
 
 /*! 
@@ -114,6 +117,11 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
         {
         mViewTranslator = new HbTranslator(BTVIEW_TRANSLATION);
         }
+    if(!mCommonErrorsTranslator)
+        {
+        mCommonErrorsTranslator = new HbTranslator(COMMON_ERRORS_TRANSLATION);
+        }
+    
     // verify that requested dialog type is supported
     const int numTypes = sizeof(noteInfos) / sizeof(noteInfos[0]);
     for(i = 0; i < numTypes; i++) {
@@ -232,6 +240,9 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EReceiveDone:
             deviceDialog = new BTRecvcompletedDialogWidget(parameters);
+            break;
+        case TBluetoothDialogParams::EInformationDialog:
+            deviceDialog = new BtDeviceInfoWidget(parameters);
             break;
         default:
             d->mError = UnknownDeviceDialogError;

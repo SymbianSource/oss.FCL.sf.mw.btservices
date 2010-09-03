@@ -25,20 +25,25 @@
 #include <QDir>
 #include <QFile>
 #include <hbapplication.h>
+#include <hbdevicedialog.h>
 
 const QString KMimeTypeVCard("text/X-vCard");
+const QString deviceDialogType = "com.nokia.hb.btdevicedialog/1.0";
 
 
 BTMsgViewer::BTMsgViewer(QObject* parent)
-: XQServiceProvider("com.nokia.services.btmsgdispservices.displaymsg", parent), mCurrentRequestIndex(0)
+: XQServiceProvider("com.nokia.services.btmsgdispservices.displaymsg", parent), 
+  mCurrentRequestIndex(0),
+  mDialog(0),
+  mError(0)
     {    
     publishAll();
-    connect(this, SIGNAL(returnValueDelivered()), qApp, SLOT(quit()));
+    connect(this, SIGNAL(clientDisconnected()), qApp, SLOT(quit()));
     }
 
-BTMsgViewer::~BTMsgViewer ()
+BTMsgViewer::~BTMsgViewer()
     {
-
+    delete mDialog;
     }
 
 void BTMsgViewer::displaymsg( int messageId )
@@ -46,28 +51,39 @@ void BTMsgViewer::displaymsg( int messageId )
     mCurrentRequestIndex = setCurrentRequestAsync(); 
     CBtMsgViewerUtils* btViewerUtils = 0;
     
-    TRAPD(error, btViewerUtils = CBtMsgViewerUtils::NewL());  
-    if(isError(error))
+    TRAP(mError, btViewerUtils = CBtMsgViewerUtils::NewL());  
+    if(isError(mError))
         {
         if(btViewerUtils)
             delete btViewerUtils;
         
-        QVariant retVal(error); 
+        QVariant retVal(mError); 
         completeRequest(mCurrentRequestIndex, retVal);
         return;
         }
         
     HBufC* fileName = 0;
-    fileName = btViewerUtils->GetMessagePath(messageId, error);
-    if(isError(error))
+    fileName = btViewerUtils->GetMessagePath(messageId, mError);
+    if( isError(mError))
         {
         if(fileName)
             delete fileName;
         
         delete btViewerUtils;
-        
-        QVariant retVal(error); 
-        completeRequest(mCurrentRequestIndex, retVal);
+
+        if(mError == KErrNotFound || mError == KErrPathNotFound)
+            {
+            launchErrordDialog(TBluetoothDialogParams::EFileMoved);
+            }
+        else if(mError == KErrNotReady)
+            {
+            launchErrordDialog(TBluetoothDialogParams::EDriveNotFound);
+            }
+        else
+            {
+            QVariant retVal(mError); 
+            completeRequest(mCurrentRequestIndex, retVal);
+            }
         return;
         }
     
@@ -78,7 +94,7 @@ void BTMsgViewer::displaymsg( int messageId )
     
     if(mimeType == KMimeTypeVCard)
         {
-        int error = KErrGeneral;
+        mError = KErrGeneral;
         
         /*todo: copyVCardToTemp() has to be removed when phonebook updates it's capabilites to
                 access messages from private folder*/
@@ -98,11 +114,11 @@ void BTMsgViewer::displaymsg( int messageId )
             bool res = request->send(retValue);
             if  (!res) 
                 {
-                error = request->lastError();
+                mError = request->lastError();
                 }
             else
                 {
-                error = retValue.toInt();
+                mError = retValue.toInt();
                 }
             
             delete request;
@@ -112,7 +128,7 @@ void BTMsgViewer::displaymsg( int messageId )
                 access messages from private folder*/        
         deleteVCardFromTemp(newfilepath);
         
-        QVariant retVal(error); 
+        QVariant retVal(mError); 
         completeRequest(mCurrentRequestIndex, retVal);
         return;
         }
@@ -157,7 +173,7 @@ void BTMsgViewer::displaymsg( int messageId )
     args << qVariantFromValue(sf);
     request->setArguments(args);
 
-    int err = KErrNone;
+    int err = 0;
     bool res = request->send();
     if  (!res) 
         {
@@ -173,9 +189,9 @@ void BTMsgViewer::displaymsg( int messageId )
     return;
     }
 
-bool BTMsgViewer::isError(int aError)
+bool BTMsgViewer::isError(int err)
     {
-    return ((aError < KErrNone)?true:false);
+    return ((err < 0)?true:false);
     }
 
 QString BTMsgViewer::copyVCardToTemp(const QString& filepath)
@@ -192,4 +208,29 @@ QString BTMsgViewer::copyVCardToTemp(const QString& filepath)
 void BTMsgViewer::deleteVCardFromTemp(const QString& filepath)
 {
     QFile::remove(filepath);
+}
+
+void BTMsgViewer::launchErrordDialog(int dialogTitle)
+{
+    if(!mDialog)
+        {
+        mDialog = new HbDeviceDialog();
+        }
+    
+    connect(mDialog, SIGNAL(deviceDialogClosed()), this, SLOT(handledialogClosed()));
+    QVariantMap parameters;
+    
+    parameters.insert(QString::number(TBluetoothDialogParams::EDialogType), 
+      QString::number(TBluetoothDialogParams::EInformationDialog));
+    
+    parameters.insert(QString::number(TBluetoothDialogParams::EDialogTitle),
+      QString::number(dialogTitle));
+    
+    mDialog->show(deviceDialogType, parameters);    
+}
+
+void BTMsgViewer::handledialogClosed()
+{
+    QVariant retVal(mError); 
+    completeRequest(mCurrentRequestIndex, retVal);
 }

@@ -17,20 +17,32 @@
  * ==============================================================================
  */
 
-#include <stringresourcereader.h>
-#include <data_caging_path_literals.hrh> 
 #include <bautils.h>
 
-#include <dcmo.rsg>
+#include <hbtextresolversymbian.h>
 #include <btfeaturescfg.h>
 
 #include "btctrldcmoadapter.h"
+
+
+// ----------------------------------------------------------------------
+
+#ifndef DBG
+#ifdef _DEBUG
+#define DBG(a) a
+#else
+#define DBG(a)
+#endif
+#endif
+
+// ----------------------------------------------------------------------
 
 _LIT(KBluetoothDcmoPanicName, "BT DCMO Adapter");
 
 _LIT( KBluetoothControlProperty, "Bluetooth" );
 _LIT( KDisableBluetoothDescription, "Used to enable/disable the Bluetooth connectivity." ); // Description
-_LIT( KRuntimeResourceFileName, "z:dcmo.rsc" );
+_LIT( KdcmoResourceFileName, "deviceupdates_" );    
+_LIT( KdcmoResourceFilePath, "z:/resource/qt/translations/" );  
 
 TDCMOStatus CBluetoothCtrlDcmoAdapter::MapFeatureControlError(TInt aErrorCode)
     {
@@ -234,22 +246,10 @@ TDCMOStatus CBluetoothCtrlDcmoAdapter::GetDCMOPluginStrAttributeValueL(TDCMONode
 
 void CBluetoothCtrlDcmoAdapter::GetLocalizedNameL(HBufC*& aLocName)
     {
-    TFileName* fileName = new(ELeave) TFileName;
-    CleanupStack::PushL(fileName);
-    TParse* parseObj = new(ELeave) TParse();
-    CleanupStack::PushL(parseObj);
-    User::LeaveIfError(parseObj->Set(KRuntimeResourceFileName(), &KDC_RESOURCE_FILES_DIR, NULL));
-    *fileName = parseObj->FullName();
-    CleanupStack::PopAndDestroy(parseObj);
-    
-    CStringResourceReader* resReader = CStringResourceReader::NewL(*fileName);
-    CleanupStack::PushL(resReader);
-    
-    TPtrC buf;
-    buf.Set(resReader->ReadResourceString(R_DM_RUN_TIME_VAR_BLUETOOTH)); 
-    aLocName = buf.AllocL() ; 
-    
-    CleanupStack::PopAndDestroy(2,fileName); //resReader,fileName
+    TBool result = HbTextResolverSymbian::Init(KdcmoResourceFileName, KdcmoResourceFilePath );              
+    _LIT(KTextBluetooth, "txt_device_update_info_bluetooth");
+    aLocName = HbTextResolverSymbian::LoadL(KTextBluetooth);
+    DBG(RDebug::Print(aLocName->Des()));
     }
 
 void CBluetoothCtrlDcmoAdapter::Panic(TBluetoothDcmoPanic aPanic)

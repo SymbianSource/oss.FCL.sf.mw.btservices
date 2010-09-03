@@ -16,8 +16,8 @@
 */
 
 
-#ifndef BTRECVCOMPLETEDDIALOGWIDGET_H_
-#define BTRECVCOMPLETEDDIALOGWIDGET_H_
+#ifndef BTRECVCOMPLETEDDIALOGWIDGET_H
+#define BTRECVCOMPLETEDDIALOGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -76,14 +76,15 @@ private:
     HbLabel             *mFileName;
     HbLabel             *mFileSize;
     HbLabel             *mFileCount;
-    HbAction            *mShow;
-    HbAction            *mCancel;
-    HbDialog            *mDialog;
+    HbAction            *mShowAction;
+    HbAction            *mCancelAction;
+    HbDialog            *mReceiveCompleteDialog;
     int                 mFileSz;
+    bool                mOpenConversationView;
     
     Q_DISABLE_COPY(BTRecvcompletedDialogWidget)
     };
 
 
 
-#endif /* BTRECVCOMPLETEDDIALOGWIDGET_H_ */
+#endif /* BTRECVCOMPLETEDDIALOGWIDGET_H */

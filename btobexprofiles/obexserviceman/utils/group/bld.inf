@@ -31,6 +31,8 @@ PRJ_EXPORTS
 // once the localisation files are avaialble and in place in epoc32
 
 ../loc/btdialogs_en_GB.qm  /epoc32/data/z/resource/qt/translations/btdialogs_en_GB.qm
+../loc/btdialogs_en_GB.qm  /epoc32/release/winscw/urel/z/resource/qt/translations/btdialogs_en_GB.qm
+../loc/btdialogs_en_GB.qm  /epoc32/release/winscw/udeb/z/resource/qt/translations/btdialogs_en_GB.qm
 
 PRJ_MMPFILES
 obexutils.mmp

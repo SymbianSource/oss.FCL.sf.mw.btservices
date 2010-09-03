@@ -33,7 +33,7 @@ BtCpUiDeviceDetailsView::BtCpUiDeviceDetailsView(QGraphicsItem *parent)
 {
    
     mSoftKeyBackAction = new HbAction(Hb::BackNaviAction, this);
-    BTUI_ASSERT_X(mSoftKeyBackAction, "BtCpUiBaseView::BtCpUiBaseView", "can't create back action");
+    BTUI_ASSERT_X(mSoftKeyBackAction, "BtCpUiDeviceDetailsView::BtCpUiDeviceDetailsView", "can't create back action");
 
     // Create view for the application.
     // Set the name for the view. The name should be same as the view's
@@ -68,27 +68,49 @@ BtCpUiDeviceDetailsView::~BtCpUiDeviceDetailsView()
 
 void BtCpUiDeviceDetailsView::setDeviceName(const QString &deviceName)
 {
-    //todo: use Localised string Id.
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    //todo: use Localised string Id,If Loc ID is used
+    //wrong string is displayed. Need to correct text map file.
     QString heading(hbTrId("%1 details"));
     
     if(mGroupBox) {
         mGroupBox->setHeading(heading.arg(deviceName));
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetailsView::addItem(HbDataForm *item)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (item && mLayout) {
         mLayout->addItem(item);
-    }    
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetailsView::removeItem(HbDataForm *item)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (item && mLayout) {
         //todo: with out this item is not removed from the view.
         item->setVisible(false);
         mLayout->removeItem(item);
+        delete item;
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
+void BtCpUiDeviceDetailsView::removeAllItems()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if(mLayout) {
+        QGraphicsLayoutItem *item;
+        int count = mLayout->count();
+        for(int i=count-1; i>=0; i--) {
+            item = mLayout->itemAt(i);
+            mLayout->removeItem(item);
+            delete item;
+        }
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}

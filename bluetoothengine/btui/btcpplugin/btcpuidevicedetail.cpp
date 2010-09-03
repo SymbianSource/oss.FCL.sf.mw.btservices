@@ -32,12 +32,14 @@ BtCpUiDeviceDetail::BtCpUiDeviceDetail(QObject *parent) :
 
 BtCpUiDeviceDetail::~BtCpUiDeviceDetail()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     clearDeviceDetailList();
-    delete mDeviceDetailView;
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceDetail::loadDeviceDetailPlugins(QString deviceAddress, QString deviceName)
+void BtCpUiDeviceDetail::loadDeviceDetailPlugins(QString& deviceAddress, QString& deviceName)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QList<BtDevSettingInterface*> interfaces;
     BtAbstractDevSetting *devSetting;
     
@@ -48,7 +50,10 @@ void BtCpUiDeviceDetail::loadDeviceDetailPlugins(QString deviceAddress, QString 
     for (i = interfaces.constBegin(); i != interfaces.constEnd(); ++i) {
         devSetting = 0;
         devSetting = (*i)->createDevSetting( deviceAddress );
+        BtTraceQString1( TRACE_DEBUG, DUMMY_DEVLIST, "device addr=", deviceAddress);
         if(devSetting) {
+            BOstrace0(TRACE_FLOW, DUMMY_DEVLIST, "Plug-in settings appended");
+            //If settings are available add to list and connect to plugin signals.
             appendDeviceToList(devSetting);
         }
     }
@@ -58,32 +63,38 @@ void BtCpUiDeviceDetail::loadDeviceDetailPlugins(QString deviceAddress, QString 
     }
     
     createDeviceDetailsView(deviceName);
+
+    //Notify any changes in settings availability to Device view.
+    //Based on this Device Settings button will be shown.
     notifyDeviceDetailStatus();
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);   
 }
 
 void BtCpUiDeviceDetail::appendDeviceToList(BtAbstractDevSetting *devSetting)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ret = false;
     BtDeviceDetails devicedetails;
-    devicedetails.mSetting = 0;
-    devicedetails.mSettingForm = 0;
-    devicedetails.mSettingAvailable = false;
     
     devicedetails.mSetting = devSetting;
     devicedetails.mSettingAvailable = devSetting->isSettingAvailable();
-    devicedetails.mSettingForm = devSetting->getSettingWidget();
+    devicedetails.mSettingForm = 0;
+    
+    if(devicedetails.mSettingAvailable) {
+        devicedetails.mSettingForm = devSetting->getSettingWidget();
+    }
     
     mDeviceDetailList.append(devicedetails);
     
     ret = connect(devicedetails.mSetting, SIGNAL(settingAvailabilityChanged(BtAbstractDevSetting *, bool)),
             this, SLOT(handleSettingChange(BtAbstractDevSetting *, bool)));
     BTUI_ASSERT_X( ret, "BtCpUiDeviceDetail::appendDeviceToList", "connect settingAvailabilityChanged() failed");
-
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::handleSettingChange(BtAbstractDevSetting *setting, bool available)
 {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, available );  
     QList<BtDeviceDetails>::iterator i;
        
     for (i = mDeviceDetailList.begin(); i != mDeviceDetailList.end(); ++i) {
@@ -92,28 +103,35 @@ void BtCpUiDeviceDetail::handleSettingChange(BtAbstractDevSetting *setting, bool
             if(available) {
                 if(((*i).mSettingForm)) {
                     //If item already exists, remove it first.
+                    BOstrace0(TRACE_FLOW, DUMMY_DEVLIST, "Setting removed");
                     mDeviceDetailView->removeItem((*i).mSettingForm);
                 }
                 (*i).mSettingForm = setting->getSettingWidget();
+                BOstrace0(TRACE_FLOW, DUMMY_DEVLIST, "Setting added");
                 //add widget
                 mDeviceDetailView->addItem((*i).mSettingForm);
             }
             else {
                 if((*i).mSettingForm) {
+                    BOstrace0(TRACE_FLOW, DUMMY_DEVLIST, "Setting removed");
                     //remove widget
                     mDeviceDetailView->removeItem((*i).mSettingForm);
                     (*i).mSettingForm = 0;
                     checkDeviceDetailSettings();
                 }
             }
+            //Notify any changes in settings availability to Device view.
+            //Based on this Device Settings button will be shown.
             notifyDeviceDetailStatus();
         }
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 
 void BtCpUiDeviceDetail::checkDeviceDetailSettings()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QList<BtDeviceDetails>::const_iterator i;
     bool devicedetail = false;
     
@@ -129,10 +147,12 @@ void BtCpUiDeviceDetail::checkDeviceDetailSettings()
         mMainWindow->removeView(mDeviceDetailView); 
         mMainWindow->setCurrentView( mPreviousView );
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::notifyDeviceDetailStatus()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QList<BtDeviceDetails>::const_iterator i;
     bool devicedetail = false;
     
@@ -143,31 +163,41 @@ void BtCpUiDeviceDetail::notifyDeviceDetailStatus()
         }
     }
     emit deviceSettingsChanged(devicedetail);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::clearDeviceDetailList()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QList<BtDeviceDetails>::const_iterator i;
     
     for (i = mDeviceDetailList.constBegin(); i != mDeviceDetailList.constEnd(); ++i) {
         if((*i).mSetting ) {
-            disconnect((*i).mSetting);
             delete (*i).mSetting;
         }
     }
     mDeviceDetailList.clear();
+    
+    if(mDeviceDetailView) {
+        mDeviceDetailView->removeAllItems();
+        delete mDeviceDetailView;
+        mDeviceDetailView = 0;
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceDetail::createDeviceDetailsView(QString deviceName)
+void BtCpUiDeviceDetail::createDeviceDetailsView(QString& deviceName)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ret = false;
-    //Launch Device Detail View.
+    //Launch Device Detail View, this view will be created once device view
+    //is launched and will be deleted when device view is closed.
     mDeviceDetailView = new BtCpUiDeviceDetailsView();
     mDeviceDetailView->setDeviceName(deviceName);
     
     ret = connect(mDeviceDetailView, SIGNAL(aboutToClose()), this,
             SLOT(handleDeviceDetailViewClose()));
-    BTUI_ASSERT_X( ret, "BtCpUiDeviceDetail::loadDeviceDetailsView", "connect deviceDetailViewClosed() failed");
+    BTUI_ASSERT_X( ret, "BtCpUiDeviceDetail::createDeviceDetailsView", "connect deviceDetailViewClosed() failed");
 
     QList<BtDeviceDetails>::const_iterator i;
     
@@ -176,31 +206,39 @@ void BtCpUiDeviceDetail::createDeviceDetailsView(QString deviceName)
             mDeviceDetailView->addItem((*i).mSettingForm);
         }
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::loadDeviceDetailsView()
 {
-
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mPreviousView = mMainWindow->currentView();
     mMainWindow->addView(mDeviceDetailView);
     
+    //aboutToForeground of plugin is called before launching 
+    //device settings view.
     notifyViewStatusToPlugins(AboutToShow);
     
     mMainWindow->setCurrentView( mDeviceDetailView );
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::handleDeviceDetailViewClose()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    //aboutToBackground of plugin is called before going 
+    //back to device view.
     notifyViewStatusToPlugins(AboutToHide);
     
     mMainWindow->removeView(mDeviceDetailView);
     
     mMainWindow->setCurrentView( mPreviousView );
-
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::notifyViewStatusToPlugins(BtCpUiDeviceDetail::NotifyType type)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QList<BtDeviceDetails>::const_iterator i;
     BtAbstractDevSetting *deviceSetting = 0;
     for (i = mDeviceDetailList.constBegin(); i != mDeviceDetailList.constEnd(); ++i) {
@@ -219,12 +257,16 @@ void BtCpUiDeviceDetail::notifyViewStatusToPlugins(BtCpUiDeviceDetail::NotifyTyp
             }
         }
     }
-
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtCpUiDeviceDetail::sendCloseEvent()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    //aboutToClose is called before going back from
+    //device view.
     notifyViewStatusToPlugins(AboutToClose);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 

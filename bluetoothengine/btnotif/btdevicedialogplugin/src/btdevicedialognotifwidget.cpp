@@ -23,6 +23,8 @@
 #include <hbdialog.h>
 #include "btdevicedialogpluginerrors.h"
 #include <btuiiconutil.h>
+#include <btnotif.h>
+
 /*!
     class Constructor
  */
@@ -125,7 +127,7 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
     QString keyStr, prompt,title;
-    QVariant classOfDevice;
+    QVariant classOfDevice, notifType;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -135,6 +137,8 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         return;
     }
     HbIcon icon;
+    QString textStr;
+    QString devName;
     QVariant param = parameters.value( keyStr );
     int key = param.toInt();
     switch ( key ) {
@@ -158,6 +162,87 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
             prompt = QString( hbTrId( "txt_bt_dpopinfo_is_now_hidden" ) );
             mNotificationDialog->setIcon(HbIcon("qtg_large_bluetooth"));
             break;
+        case EGenericInfo:
+            {
+            notifType = parameters.value(QString::number( TBluetoothDeviceDialog::EAdditionalInt ));
+            int type = notifType.toInt();
+            switch (notifType.toInt())
+                {
+                case EBTConnected:
+                    title = QString(hbTrId( "txt_bt_dpophead_connected" ));
+                    prompt = QString( hbTrId( "txt_bt_dpopinfo_connected_to_1" ) );
+                    classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
+                    icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
+                    mNotificationDialog->setIcon(icon);
+                    break;
+                case EBTClosed:
+                    title = QString(hbTrId( "txt_bt_dpophead_disconnected" ));
+                    prompt = QString( hbTrId( "txt_bt_dpopinfo_disconnected_from_1" ) );
+                    classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
+                    icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
+                    mNotificationDialog->setIcon(icon);
+                    break;
+                case EBTDisconnected:
+                case EBTDeviceNotAvailable:
+                case EBTOfflineDisabled:
+                case EBTEnterSap:
+                case EBTSapOk:
+                case EBTSapFailed:
+                case EBTSapNoSim:
+                case EBTDeviceBusy:
+                case ECmdShowBtBatteryLow:
+                case ECmdShowBtBatteryCritical:
+                case EBTStayPowerOn:
+                    break;
+                case EBTSwitchedOn:
+                    title = QString(hbTrId("txt_bt_dpophead_bluetooth"));
+                    prompt = QString(hbTrId("txt_bt_dpopinfo_is_now_on"));
+                    icon = QString("qtg_large_bluetooth");
+                    mNotificationDialog->setIcon(icon);
+                    break;
+                case EBTSwitchedOff:
+                    title = QString(hbTrId("txt_bt_dpophead_bluetooth"));
+                    prompt = QString(hbTrId("txt_bt_dpopinfo_is_now_off"));
+                    icon = QString("qtg_large_bluetooth");
+                    mNotificationDialog->setIcon(icon);
+                    break;
+                // not used anymore?
+                case EIRNotSupported:
+                case EBTVisibilityTimeout:                    
+                case EBTAudioAccessory:
+                case EBTAudioHandset:
+                default:
+                    break;
+                }
+            break;
+            }
+        case EBluetoothTestMode:
+            title = QString(hbTrId("txt_bt_dpophead_bluetooth_test_mode"));
+            prompt = QString(hbTrId("txt_bt_dpopinfo_restart_to_exit"));
+            icon = QString("qtg_large_bluetooth");
+            mNotificationDialog->setIcon(icon);
+            break;
+            
+        case ESendCompleted:
+            title = QString(hbTrId("txt_bt_dpophead_all_files_sent"));
+            textStr = QString(hbTrId("txt_bt_dpopinfo_sent_to_1"));
+            devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+            prompt = QString(textStr.arg(devName));
+            icon = getBadgedDeviceTypeIcon(parameters.value(
+                    QString::number(TBluetoothDeviceDialog::EDeviceClass)).toDouble());
+            mNotificationDialog->setIcon(icon);
+            break;
+        
+        /*case ESendCancelled:
+            title = QString(hbTrId("txt_bt_dpophead_sending_cancelled"));
+            textStr = QString(hbTrId("txt_bt_dpopinfo_sent_to_1"));
+            devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+            prompt = QString(textStr.arg(devName));
+            icon = getBadgedDeviceTypeIcon(parameters.value(QString::number(
+                    TBluetoothDeviceDialog::EDeviceClass)).toDouble());
+            mNotificationDialog->setIcon(icon);
+            break;*/
+
         default:
             mLastError = ParameterError;
             break;

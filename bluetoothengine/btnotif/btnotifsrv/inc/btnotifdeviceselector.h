@@ -5,7 +5,7 @@
 *  Description : Class for tracking Bluetooth settings, and also for 
 *                handling notes unrelated to specific connection.
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
+*  Copyright © 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 *  All rights reserved.
 *  This component and the accompanying materials are made available
 *  under the terms of "Eclipse Public License v1.0"
@@ -89,7 +89,7 @@ private:
     /**
      * From MBTNotificationResult.
      * Handle an intermediate result from a user query.
-     * This ffunction is called if the user query passes information
+     * This function is called if the user query passes information
      * back before it has finished i.e. is dismissed. The final acceptance/
      * denial of a query is passed back in MBRNotificationClosed.
      *
@@ -162,11 +162,21 @@ private:
 	
 	void setMajorProperty(TInt aMajorProperty, TInt prop, TBool addto);
 	
-	TBool isBonded( const CBTDevice &dev );
+	TBool isBonded( const CBTDevice &dev ) const;
 	
 	CBtDevExtension* GetDeviceFromRepositoryL( const TBTDevAddr& addr );
 	
 	void SendSelectedDeviceL( CHbSymbianVariantMap& aData );
+	
+	void SortUsedDevicesL();
+	
+	void RemoveUnWantedDevices();
+	
+	void SendLastUsedDevicesL();
+	
+	void SendPairedDevicesL();
+	
+	void LoadDeviceDetailsL(const CBtDevExtension& aDevice);
     
 private: // data    
 

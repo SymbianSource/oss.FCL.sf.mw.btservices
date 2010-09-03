@@ -21,129 +21,308 @@
 #include <btdevicemodel.h>
 #include <btdelegatefactory.h>
 #include <hbnotificationdialog.h>
+#include "btqtconstants.h"
+#include "btuiutil.h"
+#include <bluetoothuitrace.h>
+#include <btengconnman.h>
 
 BtDelegateDevSecurity::BtDelegateDevSecurity(            
         BtSettingModel* settingModel, 
         BtDeviceModel* deviceModel, 
         QObject *parent) :
-    BtAbstractDelegate(settingModel, deviceModel, parent), mBtEngDevMan(0), mBtengConnMan(0), mDisconnectDelegate(0)
+    BtAbstractDelegate(settingModel, deviceModel, parent), mBtEngDevMan(0),
+    mDisconnectDelegate(0), mBtEngAddr(0), mRegDevArray(0), mOperation(0), 
+    mDevice(0),mNewDev(0), mActiveHandling(false),mAddingBlockedDev(false)
 {
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this ); 
+    mRegDevArray = new CBTDeviceArray(1);
+    BTUI_ASSERT_X( mRegDevArray, "BtDelegateDevSecurity::BtDelegateDevSecurity()", 
+            "can't allocate regdevarray");
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 BtDelegateDevSecurity::~BtDelegateDevSecurity()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );  
     delete mBtEngDevMan;
-    delete mBtengConnMan;
     delete mDisconnectDelegate;
+    delete mRegDevArray;
+    delete mNewDev;
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 
+/*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegateDevSecurity::supportedEditorTypes() const
+{
+    return BtDelegate::UnpairDevice 
+           | BtDelegate::BlockDevice
+           | BtDelegate::UnblockDevice
+           | BtDelegate::TrustDevice
+           | BtDelegate::UntrustDevice;
+}
+
+/*!
+ * performs operations on remote device:  unpair, authorize/unauthorize, block/unblock
+ * params of type QList<QVariant>: 
+ *         1) remote device address (QString)
+ *         2) DeviceSecurityService operation 
+ */
 void BtDelegateDevSecurity::exec( const QVariant &params )
 {
-    int error = KErrNone;
-    QModelIndex index = params.value<QModelIndex>();
-    
-    QString strBtAddr = getDeviceModel()->data(index,
-            BtDeviceModel::ReadableBdaddrRole).toString();
-    
-    mdeviceName = getDeviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
-    
-    TBTDevAddr symaddr;
-    TBuf<KBTDevAddrSize * 2> buffer(strBtAddr.utf16());
-    symaddr.SetReadable( buffer );
-    
-    // Disconnect if paired device was connected 
-    if ( ! mBtengConnMan ){
-        TRAP( error, mBtengConnMan = CBTEngConnMan::NewL(this) );
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    // check if in use already
+    if ( mActiveHandling ) {
+        emit delegateCompleted(KErrInUse, this);
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrInUse );
+        return;
     }
-    TBTEngConnectionStatus connstatus;
-    if ( !error && mBtengConnMan->IsConnected(symaddr, connstatus ) == KErrNone) {
-        if ( connstatus == EBTEngConnected) {
-            if (! mDisconnectDelegate){
-                mDisconnectDelegate = BtDelegateFactory::newDelegate(
-                                        BtDelegate::Disconnect, getSettingModel(), getDeviceModel()); 
-                connect( mDisconnectDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectDelegateCompleted(int)) );
-                
-            }
-            QList<QVariant>list;
-            QVariant paramFirst;
-            paramFirst.setValue(index);            
-            QVariant paramSecond;
-            DisconnectOption discoOpt = ServiceLevel;
-            paramSecond.setValue((int)discoOpt);
-            list.append(paramFirst);
-            list.append(paramSecond);
-            QVariant paramsList;
-            paramsList.setValue(list);
-            mDisconnectDelegate->exec(paramsList);
-        }
+    mActiveHandling = true;
+    
+    // check parameters
+    QList<QVariant> paramList = params.value< QList<QVariant> >(); 
+    if (paramList.count() != 2) {
+        // wrong parameters
+        emitCommandComplete( KErrArgument ); 
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrArgument );
+        return;
     }
-
-    // Set device as unpaired
-    CBTDevice *symBtDevice = 0;
+    
+    int error = 0;
     TRAP( error, {
-            symBtDevice = CBTDevice::NewL( symaddr );
-            if( !mBtEngDevMan) {
-                mBtEngDevMan = CBTEngDevMan::NewL( this );
-            }
+        if( !mBtEngDevMan) {
+            mBtEngDevMan = CBTEngDevMan::NewL( this );
+        }
     });
-    
-    if ( !error ) {
-        symBtDevice->SetPaired(EFalse);
-        // deleting link key for executing unpair is safe as no 
-        // link key shall exist if the device has been unpaired. 
-        symBtDevice->DeleteLinkKey();
-        error = mBtEngDevMan->ModifyDevice( *symBtDevice );
+    if (error) {
+        emitCommandComplete( KErrNoMemory ); 
+        BOstraceFunctionExitExt( DUMMY_DEVLIST, this, KErrNoMemory );
+        return;
     }
-    delete symBtDevice;
+    
+    mStrBtAddr = paramList.at(0).value<QString>();  // device to operate on
+    mOperation = paramList.at(1).toInt();                   // operation
+    
+    addrReadbleStringToSymbian( mStrBtAddr, mBtEngAddr );
+    BtTraceBtAddr1( TRACE_DEBUG, DUMMY_DEVLIST, "device addr=", mBtEngAddr );
+    
+
+    // get device from registry since it is needed for all operations
+    mSearchPattern.FindAddress( mBtEngAddr );
+    mRegDevArray->ResetAndDestroy();
+    mBtEngDevMan->GetDevices(mSearchPattern, mRegDevArray); // callback is HandleGetDevicesComplete()
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+}
+
+
+void BtDelegateDevSecurity::unpair()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );  
+    int error = KErrNone;
+    
+    // unpair first since malicious device might try to connect/pair again 
+    // immediately after disconnecting
+    mDevice->SetPaired(EFalse);
+    mDevice->DeleteLinkKey();
+
+    // untrust the device also
+    TBTDeviceSecurity security = mDevice->GlobalSecurity();
+    security.SetNoAuthorise( EFalse );
+    mDevice->SetGlobalSecurity( security );
+
+    error = mBtEngDevMan->ModifyDevice( *mDevice );  // see callback for possible disconnect
     
     if ( error ) {
         emitCommandComplete(error);
     }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+}
+
+void BtDelegateDevSecurity::authorizeOrBlock()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this ); 
+    BOstraceExt1( TRACE_NORMAL, DUMMY_DEVLIST, "operation (Unpair|Block|Unblock|Authorize|Unauthorize)=%d", 
+            mOperation);
+    int error = KErrNone;
+    
+    TBTDeviceSecurity security = mDevice->GlobalSecurity();
+    switch ( mOperation ) {
+    case BtAuthorize:
+        security.SetNoAuthorise( ETrue ); // set trust status to true
+        security.SetBanned( EFalse );
+        break;
+    case BtUnauthorize:
+        security.SetNoAuthorise( EFalse );
+        break;
+    case BtUnblock:
+        security.SetBanned( EFalse );
+        break;
+    case BtBlock:
+        security.SetBanned( ETrue );
+        security.SetNoAuthorise( EFalse ); // set trust status to false
+        break;
+    }
+
+    mDevice->SetGlobalSecurity( security );
+    if ( (mOperation == BtBlock) || (mOperation == BtUnblock) ) {
+        // deleting link key for executing unblock is safe as no 
+        // link key shall exist if the device has been blocked. 
+        mDevice->DeleteLinkKey();
+        if ( mOperation == BtBlock ) {
+            mDevice->SetPaired(EFalse);
+        }
+    }
+    error = mBtEngDevMan->ModifyDevice( *mDevice );
+    
+    if ( error ) {
+        emitCommandComplete(error);
+    }
+    BOstraceFunctionExitExt( DUMMY_DEVLIST, this, error );
 }
 
 void BtDelegateDevSecurity::cancel()
 {
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this ); 
+    if ( mActiveHandling ) {
+        mAddingBlockedDev = false;
+        emitCommandComplete(KErrNone);
+    }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 void BtDelegateDevSecurity::disconnectDelegateCompleted( int err )
 {
-    Q_UNUSED(err);
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );  
+    if (mDisconnectDelegate) {
+        delete mDisconnectDelegate;
+        mDisconnectDelegate = 0;
+    }
+    emitCommandComplete(err);
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDevSecurity::HandleDevManComplete( TInt aErr )
+void BtDelegateDevSecurity::HandleDevManComplete( TInt err )
 {
-    emitCommandComplete(aErr);
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );  
+
+    if ( !mActiveHandling ) {
+        BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+        return;
+    }
+    if ( !err ) {
+        if ( mAddingBlockedDev ) {
+            // blocked a device which was not in the registry originally
+            mAddingBlockedDev = false;
+            delete mNewDev;
+            mNewDev = 0;
+        }
+        else if ( mOperation == BtBlock || mOperation == BtUnpair) {  
+            // disconnect after blocking/unpairing if device is connected;
+            // disconnect done after block/unpair, instead of before, to prevent a malicious device 
+            // from reconnecting/"re-pairing"
+            CBTEngConnMan *connMan(0);
+            TRAP( err, connMan = CBTEngConnMan::NewL() );
+            TBTEngConnectionStatus connstatus(EBTEngNotConnected);
+            if (!err) {
+                err = connMan->IsConnected(mBtEngAddr, connstatus );
+                delete connMan;
+            }
+            if ( !err && connstatus == EBTEngConnected ) {
+                if (! mDisconnectDelegate){
+                    mDisconnectDelegate = BtDelegateFactory::newDelegate(
+                                            BtDelegate::DisconnectService, settingModel(), deviceModel()); 
+                    connect( mDisconnectDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, 
+                            SLOT(disconnectDelegateCompleted(int)) );
+                }
+                QList<QVariant>list;
+                list.append(QVariant(ServiceLevel));
+                list.append(QVariant(mStrBtAddr));
+                mDisconnectDelegate->exec(QVariant(list)); // see callback for continuation
+                return;
+            }
+        }
+    }
+    emitCommandComplete(err);
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
-void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt aErr, CBTDeviceArray* aDeviceArray )
+void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt err, CBTDeviceArray* aDeviceArray )
 {
-    Q_UNUSED(aErr);
-    Q_UNUSED(aDeviceArray);
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, err );  
+    
+    if ( mActiveHandling ) {
+        if ( !err && aDeviceArray->Count() ) { 
+            mDevice = aDeviceArray->At( 0 );
+            switch ( mOperation ) {
+            case BtUnpair:
+                unpair();
+                break;
+            case BtAuthorize:
+            case BtUnauthorize:
+            case BtUnblock:
+            case BtBlock:
+                authorizeOrBlock();
+                break;
+            default:
+                // wrong parameter
+                emitCommandComplete( KErrArgument );
+            }
+        }
+        else if ( err == KErrNotFound && mOperation == BtBlock) {  // device not in registry, need to add it
+            mAddingBlockedDev = true;
+            TRAP( err, {
+                    mNewDev = CBTDevice::NewL( mBtEngAddr );
+            });
+            if ( !err ) {
+                // get needed info about device from model, e.g. name, cod
+                QString btStringAddr;
+                addrSymbianToReadbleString(btStringAddr, mBtEngAddr);
+                QModelIndex start = deviceModel()->index(0,0);
+                QModelIndexList indexList = deviceModel()->match(start,
+                        BtDeviceModel::ReadableBdaddrRole, btStringAddr);
+                // ToDo:  can we be sure that device will always be found in the model?
+                QModelIndex index = indexList.at(0);
+                QString devName = deviceModel()->data(index,BtDeviceModel::NameAliasRole).toString();
+                BtTraceQString1( TRACE_DEBUG, DUMMY_DEVLIST, "device name=", devName);
+                TBuf<KMaxBCBluetoothNameLen> buf( devName.utf16() );
+                TRAP( err, mNewDev->SetDeviceNameL( BTDeviceNameConverter::ToUTF8L( buf ) ));
+                if( !err ) {
+                    int cod = (index.data(BtDeviceModel::CoDRole)).toInt();
+                    mNewDev->SetDeviceClass(cod);
+                    TBTDeviceSecurity security = mNewDev->GlobalSecurity();
+                    security.SetBanned( ETrue );
+                    security.SetNoAuthorise( EFalse ); // set trust status to false
+                    mNewDev->SetGlobalSecurity( security );
+                    mNewDev->DeleteLinkKey();
+                    mNewDev->SetPaired(EFalse);
+                    err = mBtEngDevMan->AddDevice( *mNewDev );  // see callback HandleDevManComplete()
+                }
+            }
+        }
+        if (err) {
+            mAddingBlockedDev = false;
+            emitCommandComplete( err );
+        }
+    }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 void BtDelegateDevSecurity::emitCommandComplete(int error)
 {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, error );  
     // no dialogs here since stack provides "unpaired to %1" dialog
     // and failures are not reported
-    
-    emit commandCompleted(error);
-}
-
-void BtDelegateDevSecurity::ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
-                                   RBTDevAddrArray* aConflicts )
-{
-    Q_UNUSED(aAddr);
-    Q_UNUSED(aErr);
-    Q_UNUSED(aConflicts);  
-}
-
-void BtDelegateDevSecurity::DisconnectComplete( TBTDevAddr& aAddr, TInt aErr )
-{
-    Q_UNUSED(aAddr);
-    Q_UNUSED(aErr);    
+    mActiveHandling = false;
+    mAddingBlockedDev = false;
+    if ( mNewDev ) {
+        delete mNewDev;
+        mNewDev = 0;
+    }
+    emit delegateCompleted(error, this);
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
 }
 
 

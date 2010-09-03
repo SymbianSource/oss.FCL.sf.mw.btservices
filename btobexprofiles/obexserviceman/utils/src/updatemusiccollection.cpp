@@ -16,11 +16,9 @@
 */
 
 
-
+#include "updatemusiccollection.h"
 //#include <mpxcollectionhelper.h>
 #include <mpxcollectionhelperfactory.h>
-
-#include "updatemusiccollection.h"
 #include "obexutilsdebug.h"
 
 //#include <mpxplaybackutility.h>

@@ -162,6 +162,16 @@ public:
      */
     void TrustDevice( const TBTDevAddr& aAddr );
     
+    /**
+     * Trust a device via the registry
+     */
+    void UnTrustDevice( const TBTDevAddr& aAddr );
+
+    /**
+     * Return the pairing handler
+     */
+    CBTNotifBasePairingHandler* PairingHandler();
+    
 private: 
     
     // from base class MBtSimpleActiveObserver
@@ -379,7 +389,7 @@ private:
     CBtSimpleActive* iAuthenResultActive;
 
     /**
-     * pairing hanlder at the time.
+     * pairing handler at the time.
      * Own.
      */
     CBTNotifBasePairingHandler* iPairingHandler;

@@ -23,39 +23,87 @@
 #include <cpbasesettingview.h>
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
+#include <btdelegateconsts.h>
+#include <btuimodelsortfilter.h>
+#include <HbAbstractViewItem>
+#include <HbMenu>
+
+class BtcpuiViewMgr;
+class HbSelectionDialog;
+class BtAbstractDelegate;
+class HbMainWindow;
 
 /*!
     \class BtUiBaseView
     \brief the class is the base class for all views in btapplication.
 
  */
-class BtCpUiBaseView : public CpBaseSettingView
+class BtcpuiBaseView : public CpBaseSettingView
 {
     Q_OBJECT
 
 public:
     
-    virtual ~BtCpUiBaseView();
-    virtual void activateView( const QVariant& value, bool fromBackButton ) = 0;
-    virtual void deactivateView() = 0;    
-    virtual void switchToPreviousView() = 0;
+    virtual ~BtcpuiBaseView();
+    
+    virtual void activateView( const QVariant& value, bool backNavi) = 0;
+    virtual void deactivateView() = 0;
+    virtual void setPreviousView(BtcpuiBaseView *view);
+    void setViewMgr(BtcpuiViewMgr *mgr);
+    virtual void take(BtAbstractDelegate *delegate);
+    
+public slots:
+    
+    virtual void backToPreviousView();
+    void viewByDeviceTypeDialog();
+    virtual void viewByDialogClosed(HbAction* action);
+    void contextMenuTriggered(HbAction *action);
+    void deviceSelected(const QModelIndex& modelIndex);
+    void showContextMenu(HbAbstractViewItem *item, const QPointF &coords);
+    void handleDelegateCompleted(int error, BtAbstractDelegate* delegate);
     
 signals:
 
 protected:
-    explicit BtCpUiBaseView(QGraphicsItem *parent = 0);
+    explicit BtcpuiBaseView(QGraphicsItem *parent = 0);
     
-    explicit BtCpUiBaseView( 
-            BtSettingModel &settingModel, 
+    explicit BtcpuiBaseView(BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
             QGraphicsItem *parent = 0);
     
-    virtual void setSoftkeyBack() = 0;
-
-    BtSettingModel &getSettingModel();
-    BtDeviceModel &getDeviceModel();
+    void initialise();
     
+    BtSettingModel *settingModel();
+    
+    BtDeviceModel *deviceModel();
+    
+    BtcpuiViewMgr *viewMgr();
+
+    bool createDelegate(BtDelegate::EditorType type,
+            QObject *receiver, const char *member);
+    
+    bool createExecuteDelegate(BtDelegate::EditorType type,
+            QObject *receiver, const char *member, const QVariant &param);    
+
+    int selectedDeviceTypes(HbAction* action);
+    
+    virtual void createContextMenuActions(int majorRole);
+
 protected:
+
+    enum devTypeSelectionList {
+        BtUiDevAudioDevice = 0,
+        BtUiDevComputer,
+        BtUiDevInputDevice,
+        BtUiDevPhone,
+        BtUiDevOtherDevice
+    };
+
+    // The view manager from which the device view can be accessed.
+    // not owned.
+    BtcpuiViewMgr *mViewMgr;
+    
+    HbMainWindow *mMainWindow;
     
     // owned
     BtSettingModel *mSettingModel;
@@ -63,10 +111,23 @@ protected:
     // owned
     BtDeviceModel *mDeviceModel;
     
-    QGraphicsItem *mParent;
-    int mPreviousViewId;
+    //The run-time singleton delegate in a btui view
+    BtAbstractDelegate* mDelegate;
     
-    Q_DISABLE_COPY(BtCpUiBaseView)
+    // The view which this view is navigated from.
+    // We will navigate to previous view if the back action is activated.
+    BtcpuiBaseView *mPreviousView;
+    
+    // The back action of this view.
+    HbAction *mBack;
+    
+    HbSelectionDialog *mQuery;
+    
+    HbMenu* mContextMenu;
+    HbAbstractViewItem *mLongPressedItem;
+
+    BtuiModelSortFilter*    mBtuiModelSortFilter;
+    Q_DISABLE_COPY(BtcpuiBaseView)
 };
 
 #endif // BTCPUIBASEVIEW_H

@@ -66,9 +66,9 @@ private:
     HbLabel             *mDeviceName;
     HbLabel             *mDeviceType;
     HbLabel             *mDeviceIcon;
-    HbAction            *mYes;
-    HbAction            *mNo;
-    HbCheckBox          *mCheckBox;
+    HbAction            *mYesAction;
+    HbAction            *mNoAction;
+    HbCheckBox          *mAuthorizeUser;
     HbDialog            *mDialog;
     
     Q_DISABLE_COPY(BTRecvQueryDialogWidget)

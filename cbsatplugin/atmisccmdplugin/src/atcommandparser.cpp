@@ -258,8 +258,8 @@ TPtrC8 TAtCommandParser::NextParam()
     if(!iCmd.Eos())
         {
         chr = iCmd.Peek();
-        while(!iCmd.Eos() && chr != ',' && !chr.IsSpace() && !chr.IsControl())
-            {// Stop at any of those chars: comma, space or control
+        while(!iCmd.Eos() && chr != ',' && !chr.IsControl())
+            {// Stop at any comma or control character
             iCmd.Inc();
             chr = iCmd.Peek();
             }
@@ -268,7 +268,23 @@ TPtrC8 TAtCommandParser::NextParam()
     // Extract the token at this point            
     TPtrC8 retVal = iCmd.MarkedToken();
     
-    // Skip the first delimiter and any further space and control chars
+	//ignore all space characters at the end
+    if(retVal.Length() > 1)
+    {
+        TInt pos = retVal.Length() - 1; 
+        for ( ; pos >= 0; pos-- )
+            {
+            const TChar ch( retVal[pos] );
+            if( !ch.IsSpace() )
+                {
+                break;
+                }
+            }
+        retVal.Set( retVal.Mid( 0, pos + 1 ) );
+    }
+    
+    
+    // Skip comma, space and control chars
     do
       {
       iCmd.Inc();
@@ -316,8 +332,21 @@ TInt TAtCommandParser::NextIntParam(TInt& aValue)
         }
     else
         {
-        TLex8 lex(param);
-        retVal = lex.Val(aValue);
+        //check if param contains only digits - TLex doesn't do that
+        for(TInt pos = param.Length() - 1; pos >= 0; pos--)
+            {
+            if(( param[pos] < '0' ) || ( param[pos] > '9' ))
+                {
+                retVal = KErrArgument;
+                break;
+                }
+            }
+        
+        if(retVal == KErrNone)
+            {
+            TLex8 lex(param);
+            retVal = lex.Val(aValue);
+            }
         }
     TRACE_FUNC_EXIT
     return retVal;

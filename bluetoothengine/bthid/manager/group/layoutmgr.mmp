@@ -46,7 +46,6 @@ SOURCE        genericserver.cpp
 
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE ../../../../inc
 
 LIBRARY       euser.lib
 LIBRARY       ecom.lib

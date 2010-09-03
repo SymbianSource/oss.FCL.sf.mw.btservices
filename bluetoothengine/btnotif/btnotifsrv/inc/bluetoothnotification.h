@@ -21,6 +21,7 @@
 
 #include <e32base.h>
 #include <hb/hbcore/hbdevicedialogsymbian.h>
+#include <btservices/btsimpleactive.h>
 #include "bluetoothdevicedialogs.h"
 #include "btnotificationresult.h"
 #include "bluetoothtrace.h"
@@ -34,7 +35,8 @@ class CHbSymbianVariantMap;
  *  @since Symbian^4
  */
 NONSHARABLE_CLASS( CBluetoothNotification ) : public CBase,
-                                              public MHbDeviceDialogObserver
+                                              public MHbDeviceDialogObserver,
+                                              public MBtSimpleActiveObserver
     {
 
 
@@ -101,6 +103,15 @@ public:
     inline void SetNotificationType( TBluetoothDialogParams::TBTDialogType aType,
                 TBTDialogResourceId aResourceId )
             { iType = aType; iResourceId = aResourceId; }
+    
+    /**
+     * Creates New Notification Data to be shown to the user
+     *
+     * @since Symbian^4
+     * @return CHbSymbianVariantMap newly created notification data for the device dialog
+     */
+    CHbSymbianVariantMap* CreateNotificationDataL();
+    
 
     /**
      * Sets the data to be shown to the user.
@@ -132,6 +143,15 @@ public:
     TInt Update( const TDesC& aData =KNullDesC );
 
     /**
+     * Updates the data to be shown to the user.
+     *
+     * @since Symbian^4
+     * @param ?arg1 ?description
+     * @return Error code
+     */
+    TInt Update( TInt aData);
+
+    /**
      * Show the notification, which means that it 
      * is added to the queue.
      *
@@ -150,6 +170,31 @@ public:
      */
     TInt Close();
 
+    /**
+     * Set a dialog shutdown timer.
+     * This is used by passkey input entry when incoming
+     * pairing failed since the phone is the only
+     * display.
+     *
+     * @since Symbian^4
+     * @param a time after which the dialog is automatically closed.
+     */
+    void SetCloseTimer(TInt aAfter);
+    
+    /**
+     * From MBtSimpleActiveObserver
+     */
+    void RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus );
+    
+    /**
+     * From MBtSimpleActiveObserver
+     */   
+    void CancelRequest( TInt aRequestId );
+    
+    /**
+     * From MBtSimpleActiveObserver
+     */    
+    void HandleError( CBtSimpleActive* aActive, TInt aError );
 
 private:
 
@@ -174,6 +219,24 @@ private:
      * @param aData Additional integer data to be shown in the dialog.
      */
     void SetDataL( TInt aType, TInt aData );
+
+    /**
+     * Update the data to be shown to the user, leaves on error.
+     *
+     * @since Symbian^4
+     * @param aType Identifies the type of data parameter to be set.
+     * @param aData Additional descriptor data to be shown in the dialog.
+     */
+    void UpdateDataL( TInt aType, const TDesC& aData );
+
+    /**
+     * Update the data to be shown to the user, leaves on error.
+     *
+     * @since Symbian^4
+     * @param aType Identifies the type of data parameter to be set.
+     * @param aData Additional integer data to be shown in the dialog.
+     */
+    void UpdateDataL( TInt aType, TInt aData );
     
     /**
      * From MHbDeviceDialogObserver.
@@ -242,6 +305,15 @@ private: // data
      * Own.
      */
     CHbDeviceDialogSymbian *iDialog;
+    
+    /**
+     * Active object helper for asynchronous operations.
+     * Own.
+     * Used by the closing dialog timer
+     */
+    CBtSimpleActive* iActive;
+    
+    RTimer iClosingTimer;
     
     BTUNITTESTHOOK
 

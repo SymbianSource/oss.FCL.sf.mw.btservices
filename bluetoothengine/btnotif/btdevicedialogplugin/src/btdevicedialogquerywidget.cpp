@@ -23,6 +23,9 @@
 #include <hbdialog.h>
 #include <hblabel.h>
 #include "btdevicedialogpluginerrors.h"
+#include <Bluetooth\hci\hcitypes.h>
+
+const int MaxPasskeyLength = 6;
 
 /*!
     class Constructor
@@ -111,6 +114,48 @@ bool BtDeviceDialogQueryWidget::constructQueryDialog(const QVariantMap &paramete
     TRACE_EXIT
     return true;
 }
+/*!
+    Take parameter values and generate the input status string
+ */
+QString& BtDeviceDialogQueryWidget::GetPasskeyEntryStatusString(int aStatus)
+    {
+        switch(aStatus)
+            {
+            case EPasskeyDigitEntered :
+                mDispPassKeyNumDigit ++; // keep count of remote entry
+                if(mDisplayPasskeyStatus.length()< MaxPasskeyLength + 1) // + 1 space
+                    {
+                    if(mDisplayPasskeyStatus.length()== 3)
+                        {
+                        mDisplayPasskeyStatus.append(tr(" ")); // cosmetic
+                        }
+                    mDisplayPasskeyStatus.append(tr("*"));
+                    }
+                break;
+            case EPasskeyDigitDeleted :
+                // passkey entry is limited to 6 digits
+                if((mDisplayPasskeyStatus.length()> 0 )&& (mDispPassKeyNumDigit < MaxPasskeyLength + 1))
+                    {
+                    if(mDisplayPasskeyStatus.length() == 5) // cosmetic
+                        {
+                        mDisplayPasskeyStatus = mDisplayPasskeyStatus.left(mDisplayPasskeyStatus.length()-1);
+                        }
+                    mDisplayPasskeyStatus = mDisplayPasskeyStatus.left(mDisplayPasskeyStatus.length()-1);
+                    // we only decrement if the string is not zero
+                    mDispPassKeyNumDigit --;
+                    }
+                break;
+            case EPasskeyCleared :
+            case EPasskeyEntryStarted :
+            case EPasskeyEntryCompleted :
+            default:
+                mDispPassKeyNumDigit = 0;
+                mDisplayPasskeyStatus.clear();
+                mDisplayPasskeyStatus.append(tr(""));
+                break;
+            }
+        return mDisplayPasskeyStatus;
+    }
 
 /*!
     Take parameter values and generate relevant property of this widget
@@ -119,7 +164,8 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
     QString keyStr, prompt,title;
-    QVariant name,param,addval;
+    int status = -1;
+    QVariant name,param,addval,passkeyinputstatus;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -128,7 +174,10 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
         mLastError = UnknownDeviceDialogError;
         return;
     }
-
+    // For passkey display the dialog may be terminated by
+    // a passkey entry completed event from the remote side
+    mSendPasskeyEntryCompletedAction = false;
+    
     param = parameters.value( keyStr );
     int key = param.toInt();
     switch ( key ) {
@@ -164,11 +213,18 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
             // todo: Formating the prompt need to be discussed with UI designer
             // The passcode could be displayed on a separate row if it the label did support
             // the use of newline escape character.
-            prompt.append(tr("\n\n")); // insert 2 newlines for clarity
+            prompt.append(tr("\n")); // insert 1 newlines for clarity
             prompt.append(addval.toString());
             if(key == EPasskeyDisplay)
                 {
-                prompt.append("\n");   
+                prompt.append("\n");
+                bool ret = false;
+                passkeyinputstatus = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalInt ));
+                status = passkeyinputstatus.toInt(&ret);
+                if(ret)
+                    {
+                        prompt.append(GetPasskeyEntryStatusString(status));
+                    }
                 }
             }
     }
@@ -179,7 +235,14 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
         title = title.arg(name.toString());
         mMessageBox->setHeadingWidget(new HbLabel(title));
         mMessageBox->setIconVisible(false);
-        mMessageBox->setStandardButtons( HbMessageBox::Yes | HbMessageBox::No);
+        if(key == EPasskeyDisplay)
+            {
+            mMessageBox->setStandardButtons(HbMessageBox::Cancel);
+            }
+        else
+            {
+            mMessageBox->setStandardButtons( HbMessageBox::Yes | HbMessageBox::No);
+            }
         }
     else
         {
@@ -193,6 +256,11 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
             }
         }
     mMessageBox->setText( prompt );
+    if(status == EPasskeyEntryCompleted && key == EPasskeyDisplay)
+        {
+        mSendPasskeyEntryCompletedAction = true;
+        mMessageBox->close();
+        }
     TRACE_EXIT
 }
 
@@ -207,6 +275,7 @@ void BtDeviceDialogQueryWidget::resetProperties()
     mMessageBox->setTimeout(HbDialog::NoTimeout);
     mMessageBox->setDismissPolicy(HbDialog::NoDismiss);
     mSendAction = true;
+    mDispPassKeyNumDigit = 0;
     TRACE_EXIT
     return;
 }
@@ -214,19 +283,38 @@ void BtDeviceDialogQueryWidget::resetProperties()
 
 void BtDeviceDialogQueryWidget::messageBoxClosed(HbAction* action)
 {
+    TRACE_ENTRY
     QVariantMap data;
     
     HbMessageBox *dlg=static_cast<HbMessageBox*>(sender());
-    if(dlg->actions().first() == action) {
-        //Yes
-        data.insert( QString( "result" ), QVariant(true));
-    } 
-    else if(dlg->actions().at(1) == action) {
+    if(dlg->actions().first() == action) 
+        {
+        if(dlg->actions().count() > 1)
+            {
+            data.insert( QString( "result" ), QVariant(true));
+            }
+        else
+            {
+            // this is a passkey display dialog with a cancel button
+            data.insert( QString( "result" ), QVariant(false));
+            }
+        } 
+    else if(dlg->actions().count() > 1)
+        {
+        if(dlg->actions().at(1) == action) {
         //No
         data.insert( QString( "result" ), QVariant(false));
+        }
     }
-    
+    if(mSendPasskeyEntryCompletedAction)
+        {
+        // complete successfully the dialog
+        // The BT stack will determine if pairing was ok 
+        data.insert( QString( "result" ), QVariant(true));
+        mSendPasskeyEntryCompletedAction = false;
+        }
     emit deviceDialogData(data);
     emit deviceDialogClosed();
     mSendAction = false;
+    TRACE_EXIT
 }

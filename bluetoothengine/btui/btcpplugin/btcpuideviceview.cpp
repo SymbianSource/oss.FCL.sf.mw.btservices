@@ -18,7 +18,7 @@
 #include "btcpuideviceview.h"
 #include "btuiviewutil.h"
 #include <QtGui/QGraphicsLinearLayout>
-#include <HbInstance>
+#include <hbmainwindow.h>
 #include <hbdocumentloader.h>
 #include <hbdataform.h>
 #include <hbdataformmodel.h>
@@ -34,35 +34,24 @@
 #include <qstringlist>
 #include <qdebug>
 #include <bluetoothuitrace.h>
-#include "btcpuimainview.h"
 #include <btabstractdelegate.h>
 #include <btdelegatefactory.h>
-#include <QModelIndex>
 #include "btuiiconutil.h"
 #include "btuidevtypemap.h"
-
+#include "btqtconstants.h"
 #include "btcpuidevicedetail.h"
+#include "btcpuiviewmgr.h"
 
 // docml to load
 const char* BTUI_DEVICEVIEW_DOCML = ":/docml/bt-device-view.docml";
 
-
-BtCpUiDeviceView::BtCpUiDeviceView(
-        BtSettingModel &settingModel, 
+BtcpuiDeviceView::BtcpuiDeviceView(BtSettingModel &settingModel, 
         BtDeviceModel &deviceModel, 
         QGraphicsItem *parent) :
-    BtCpUiBaseView(settingModel,deviceModel,parent),
-    mPairedStatus(false), mConnectedStatus(false),mPreviousConnectedStatus(false), mTrustedStatus(false), 
-    mBlockedStatus(false), mConnectable(false), mAbstractDelegate(0), mDeviceDetail(0)   
+    BtcpuiBaseView(settingModel,deviceModel,parent),
+    mComboboxIndex(-1), mAbstractDelegate(0), mDeviceDetail(0)
 {
-    mDeviceIndex = QModelIndex();//is it needed to initialize mIndex???
-    
-    mMainView = (BtCpUiMainView *) parent;
-    
-    mMainWindow = hbInstance->allMainWindows().first();
-    
-    mSoftKeyBackAction = new HbAction(Hb::BackNaviAction, this);
-    BTUI_ASSERT_X(mSoftKeyBackAction, "BtCpUiBaseView::BtCpUiBaseView", "can't create back action");
+    mDeviceIndex = QModelIndex(); // initialize to zero
 
     // read view info from docml file
 
@@ -80,36 +69,17 @@ BtCpUiDeviceView::BtCpUiDeviceView(
     
     bool ret = false;
 
-    bool ok = false;
-    mLoader->load( BTUI_DEVICEVIEW_DOCML, &ok );
+    mLoader->load( BTUI_DEVICEVIEW_DOCML, &ret );
     // Exit if the file format is invalid
-    BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file" );
-    
-    mOrientation = mMainWindow->orientation();
-        
-    if (mOrientation == Qt::Horizontal) {
-        mLoader->load(BTUI_DEVICEVIEW_DOCML, "landscape", &ok);
-        BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape section problem" );
-    }
-    else {
-        mLoader->load(BTUI_DEVICEVIEW_DOCML, "portrait", &ok);
-        BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape section problem" );        
-    }
-    
+    BTUI_ASSERT_X( ret, "bt-device-view", "Invalid docml file" );
     // listen for orientation changes
     ret = connect(mMainWindow, SIGNAL(orientationChanged(Qt::Orientation)),
             this, SLOT(changeOrientation(Qt::Orientation)));
     BTUI_ASSERT_X( ret, "BtCpUiDeviceView::BtCpUiDeviceView()", "connect orientationChanged() failed");
-
     
     // assign automatically created widgets to local variables
-    /*
-    mGroupBox = 0;
-    mGroupBox = qobject_cast<HbGroupBox *>( mLoader->findWidget( "groupBox_deviceView" ) );
-    BTUI_ASSERT_X( mGroupBox != 0, "bt-device-view", "Device groupbox not found" );
-    */
+    
     mDeviceIcon=0;
-    //can't use qobject_cast since HbIcon is not derived from QObject!
     mDeviceIcon = qobject_cast<HbLabel *>( mLoader->findWidget( "deviceIcon" ) );  
     BTUI_ASSERT_X( mDeviceIcon != 0, "bt-device-view", "Device Icon not found" );
     
@@ -127,174 +97,182 @@ BtCpUiDeviceView::BtCpUiDeviceView(
     BTUI_ASSERT_X( mDeviceStatus != 0, "bt-device-view", "Device status not found" );
     
     
-    mConnectionCombobox = 0;
-    mConnectionCombobox = qobject_cast<HbDataForm *>( mLoader->findWidget( "connectionCombobox" ) );
-    BTUI_ASSERT_X( mConnectionCombobox != 0, "bt-device-view", "connection combobox not found" );
+    mConnectionDataForm = 0;
+    mConnectionDataForm = qobject_cast<HbDataForm *>( mLoader->findWidget( "connectionCombobox" ) );
+    BTUI_ASSERT_X( mConnectionDataForm != 0, "bt-device-view", "connection combobox not found" );
     
-    mConnectionComboboxModel = new HbDataFormModel();
+    mConnectionComboboxModel = new HbDataFormModel( this );
     
     mPair_Unpair=0;
-    mPair_Unpair = qobject_cast<HbPushButton *>( mLoader->findWidget( "pushButton_0" ) );
+    mPair_Unpair = qobject_cast<HbPushButton *>( mLoader->findWidget( "devicePairUnpair" ) );
     BTUI_ASSERT_X( mPair_Unpair != 0, "bt-device-view", "pair/unpair button not found" );
-    ret =  connect(mPair_Unpair, SIGNAL(clicked()), this, SLOT(pairUnpair()));
-    BTUI_ASSERT_X( ret, "BtCpUiDeviceView::BtCpUiDeviceView", "can't connect pair button" );
  
     mConnect_Disconnect=0;
-    mConnect_Disconnect = qobject_cast<HbPushButton *>( mLoader->findWidget( "pushButton_1" ) );
+    mConnect_Disconnect = qobject_cast<HbPushButton *>( mLoader->findWidget( "deviceConnectDisconnect" ) );
     BTUI_ASSERT_X( mConnect_Disconnect != 0, "bt-device-view", "connect/disconnect button not found" );
-    ret =  connect(mConnect_Disconnect, SIGNAL(clicked()), this, SLOT(connectDisconnect()));
-    BTUI_ASSERT_X( ret, "BtCpUiDeviceView::BtCpUiDeviceView", "can't connect disconnect button" );
       
     mDeviceSetting = 0;
-    mDeviceSetting = qobject_cast<HbPushButton *>( mLoader->findWidget( "pushButton_2" ) );
+    mDeviceSetting = qobject_cast<HbPushButton *>( mLoader->findWidget( "deviceSettings" ) );
     BTUI_ASSERT_X( mDeviceSetting != 0, "bt-device-view", "settings button not found" );
-    
-    
     ret = connect(mDeviceSetting, SIGNAL(clicked()), this,
             SLOT(handleDeviceSetting()));
-    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::BtCpUiDeviceView", "clicked() connect failed");
+    BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::BtcpuiDeviceView", "clicked() connect failed");
 
     setConnectionCombobox();
-     
 }
 
-BtCpUiDeviceView::~BtCpUiDeviceView()
+BtcpuiDeviceView::~BtcpuiDeviceView()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     delete mLoader; // Also deletes all widgets that it constructed.
-    
-    delete mConnectionComboboxModel;
-    
-    setNavigationAction(0);
-    delete mSoftKeyBackAction;
-    if(mAbstractDelegate)
-    {
-        delete mAbstractDelegate;
-        mAbstractDelegate = 0;
-    }
-
+    delete mAbstractDelegate;
+    unloadDeviceDetails();
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-
-void BtCpUiDeviceView::setSoftkeyBack()
+void BtcpuiDeviceView::backToPreviousView()
 {
-    if (navigationAction() != mSoftKeyBackAction) {
-        setNavigationAction(mSoftKeyBackAction);
-        connect( mSoftKeyBackAction, SIGNAL(triggered()), this, SLOT(switchToPreviousView()) );
-    }
-}
-
-void BtCpUiDeviceView::switchToPreviousView()
-{
-    BTUI_ASSERT_X(mMainView, "BtCpUiSearchView::switchToPreviousView", "invalid mMainView");
-    mMainView->switchToPreviousView();
-
-    if(mDeviceDetail) {
-        mDeviceDetail->sendCloseEvent();
-    }
+    BtcpuiBaseView::backToPreviousView();
     unloadDeviceDetails();
 }
 
-void BtCpUiDeviceView::loadDeviceDetails()
+void BtcpuiDeviceView::loadDeviceDetails()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ret(false);
-    
-    unloadDeviceDetails();
-    
+    unloadDeviceDetails();  // ToDo: is it necessary to delete the device view every time there is a change?
     mDeviceDetail = new BtCpUiDeviceDetail();
-    
     ret=connect(mDeviceDetail, SIGNAL(deviceSettingsChanged(bool)),
            this, SLOT(handleDeviceSettingsChange(bool)));
-    BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::loadDeviceDetails", "deviceSettingsChanged() connect failed");
+    BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::loadDeviceDetails", "deviceSettingsChanged() connect failed");
 
-    mDeviceDetail->loadDeviceDetailPlugins(mDeviceBdAddr.toString(), mDeviceName->text());
+    QString btAddr = mDeviceBdAddr.toString();
+    QString deviceName = mDeviceName->text();
+    mDeviceDetail->loadDeviceDetailPlugins(btAddr, deviceName);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::unloadDeviceDetails()
+void BtcpuiDeviceView::unloadDeviceDetails()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if(mDeviceDetail) {
-        disconnect(mDeviceDetail);
+        mDeviceDetail->sendCloseEvent();
         delete mDeviceDetail;
         mDeviceDetail = 0;
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::activateView( const QVariant& value, bool fromBackButton )
+void BtcpuiDeviceView::activateView( const QVariant& value, bool backNavi)
 {
-    
-    Q_UNUSED( fromBackButton );  
-    
-    mConnectedStatus = false;
-    setSoftkeyBack();
-    
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    Q_UNUSED( backNavi ); 
+    // get bluetooth address of device in question
     QModelIndex index = value.value<QModelIndex>();
     mDeviceBdAddr = (mDeviceModel->data(index, BtDeviceModel::ReadableBdaddrRole));
+    QModelIndex start = mDeviceModel->index(0,0);
+    QModelIndexList indexList = mDeviceModel->match(start,BtDeviceModel::ReadableBdaddrRole, mDeviceBdAddr);
+    mDeviceIndex = indexList.at(0);
     
-    //activate view is called when device is selected
-    //clearViewData();
+    bool ret = false;
+    if (mMainWindow->orientation() == Qt::Horizontal) {
+        //mLoader->load(BTUI_DEVICEVIEW_DOCML, "landscape", &ret);
+        //BTUI_ASSERT_X( ret, "bt-device-view", "Invalid docml file: landscape section problem" );
+        int majorRole = (mDeviceModel->data(mDeviceIndex,BtDeviceModel::MajorPropertyRole)).toInt();
+        if (majorRole & BtuiDevProperty::Connectable ) {
+            mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape", &ret );
+            BTUI_ASSERT_X( ret, "bt-device-view", "Invalid docml file: landscape section problem" );  
+        }
+        else{
+            mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape2", &ret );
+            BTUI_ASSERT_X( ret, "bt-device-view", "Invalid docml file: landscape2 section problem" );  
+        }
+    }
+    else {
+        mLoader->load(BTUI_DEVICEVIEW_DOCML, "portrait", &ret);
+        BTUI_ASSERT_X( ret, "bt-device-view", "Invalid docml file: portrait section problem" );
+            
+              
+    }
+    
     updateDeviceData();
     
     mDeviceSetting->setVisible(false);
-        
-    bool ret(false);
+    loadDeviceDetails();    
+    ret = false;
     ret=connect(mDeviceModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
            this, SLOT(updateDeviceData()));
     BTUI_ASSERT_X( ret, "Btui, BtCpUiDeviceView::activateView", "dataChanged() connect failed");
-
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::handleDeviceSettingsChange(bool status)
+void BtcpuiDeviceView::deactivateView()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    disconnect(mDeviceModel, 0, this, 0);
+    unloadDeviceDetails();
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiDeviceView::handleDeviceSettingsChange(bool status)
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mDeviceSetting->setVisible(status);
+    mDeviceSetting->setStretched(true);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::handleDeviceSetting()
+void BtcpuiDeviceView::handleDeviceSetting()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if(mDeviceDetail) {
         mDeviceDetail->loadDeviceDetailsView();
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::deactivateView()
-{
-}
 
 // called due to real orientation change event coming from main window
-void BtCpUiDeviceView::changeOrientation( Qt::Orientation orientation )
+void BtcpuiDeviceView::changeOrientation( Qt::Orientation orientation )
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ok = false;
-    mOrientation = orientation;
+    int majorRole = (mDeviceModel->data(mDeviceIndex,BtDeviceModel::MajorPropertyRole)).toInt();
     if( orientation == Qt::Vertical ) {
         // load "portrait" section
         mLoader->load( BTUI_DEVICEVIEW_DOCML, "portrait", &ok );
         BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: portrait section problem" );
     } else {
         // load "landscape" section
-        mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape", &ok );
-        BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape section problem" );
+        //mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape", &ok );
+        //BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape section problem" );
+        if (majorRole & BtuiDevProperty::Connectable ) {
+            mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape", &ok );
+            BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape section problem" );  
+        }
+        else{
+            mLoader->load( BTUI_DEVICEVIEW_DOCML, "landscape2", &ok );
+            BTUI_ASSERT_X( ok, "bt-device-view", "Invalid docml file: landscape2 section problem" );  
+        }
     }
+    setTextAndVisibilityOfButtons(majorRole);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::clearViewData()
+void BtcpuiDeviceView::clearViewData()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mDeviceIcon->clear();
     mDeviceCategory->clear();
     mDeviceStatus->clear();
-    mConnectable = false;
-    /*
-    mPairedStatus = false;
-    mConnectedStatus = false;
-    mTrustedStatus = false;
-    mBlockedStatus = false;
-    
-    mConnectable = false;
-    */
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
-    
-void BtCpUiDeviceView::updateDeviceData()
+
+void BtcpuiDeviceView::updateDeviceData()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     clearViewData();
-    //Get the QModelIndex of the device using the device BDAddres
+    //Get the QModelIndex of the device using the device BDAddress
     QModelIndex start = mDeviceModel->index(0,0);
     QModelIndexList indexList = mDeviceModel->match(start,BtDeviceModel::ReadableBdaddrRole, mDeviceBdAddr);
     mDeviceIndex = indexList.at(0);
@@ -310,321 +288,391 @@ void BtCpUiDeviceView::updateDeviceData()
     
 	setDeviceCategory(cod, majorRole);
     setDeviceStatus(majorRole);
-    setTextAndVisibilityOfButtons();
+    setTextAndVisibilityOfButtons(majorRole);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::setDeviceCategory(int cod,int majorRole)
+void BtcpuiDeviceView::setDeviceCategory(int cod,int majorRole)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mDeviceCategory->setPlainText( getDeviceTypeString( cod ));
     HbIcon icon =
     getBadgedDeviceTypeIcon(cod, majorRole,
                             BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight );
     mDeviceIcon->setIcon(icon);
-
-    if (majorRole & BtuiDevProperty::Connectable ) {
-        mConnectable = true;
-    } 
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::setDeviceStatus(int majorRole)
+void BtcpuiDeviceView::setDeviceStatus(int majorRole)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QString deviceStatus;
-    
-    updateStatusVariables(majorRole);  // should we use bitmap instead??
-    
+    // Avoid unnecessary actions:
+    // The device model has been modified and need to be reflected
+    // in the UI however if we don't disable the signal before the UI update
+    // the connectionPreferenceChanged function will be called and trigger
+    // unnecessary update of the model by the device view.
+    mConnectionDataForm->removeConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
+            this, SLOT(connectionPreferenceChanged(int)));
     if (majorRole & BtuiDevProperty::Bonded && 
         majorRole & BtuiDevProperty::Trusted &&
         majorRole & BtuiDevProperty::Connected ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_trused_connected"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Bonded && 
              majorRole & BtuiDevProperty::Connected ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_connected"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Bonded && 
              majorRole & BtuiDevProperty::Trusted ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_trusted"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mComboboxIndex = ConnectionAutomatic;
+    } 
+    else if (majorRole & BtuiDevProperty::Connected && 
+             majorRole & BtuiDevProperty::Trusted ) {
+        mDeviceStatus->setPlainText(hbTrId("Trusted, Connected"));  // ToDo: missing textId!
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mComboboxIndex = ConnectionAutomatic;
+    } 
+    else if (majorRole & BtuiDevProperty::Trusted ) {
+        mDeviceStatus->setPlainText(hbTrId("Trusted"));  // ToDo: missing textId!
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Bonded) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Connected) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_connected"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Blocked) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_blocked"));
+        mCombobox->setContentWidgetData("currentIndex", ConnectionBlocked );
+        mComboboxIndex = ConnectionBlocked;
     }
     else {
-        // device not paired, connected, trusted or blocked.  is this ok?
+        // device not paired, connected, trusted or blocked.  
+        mDeviceStatus->setPlainText(" ");
+        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mComboboxIndex = ConnectionAlwaysAsk;
     }
-
+    mConnectionDataForm->addConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
+            this, SLOT(connectionPreferenceChanged(int)));
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::setConnectionCombobox(){
-    
+void BtcpuiDeviceView::setConnectionCombobox()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     //create a model class
+    mCombobox = mConnectionComboboxModel->appendDataFormItem(
+    HbDataFormModelItem::ComboBoxItem, hbTrId("txt_bt_setlabel_connection"), 
+        mConnectionComboboxModel->invisibleRootItem());
     
-    mConnectionComboboxModel->appendDataFormItem(
-    HbDataFormModelItem::ComboBoxItem, QString("Connection"), mConnectionComboboxModel->invisibleRootItem());
-    
+    QStringList connList;
+    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_automatic") );
+    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_always_ask") );
+    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_blocked") );
+    mCombobox->setContentWidgetData( "items", connList );
+
     //set the model to the view, once model and data class are created
-    mConnectionCombobox->setModel(mConnectionComboboxModel);
-
-
-
+    mConnectionDataForm->setModel(mConnectionComboboxModel);
+    mConnectionDataForm->addConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
+            this, SLOT(connectionPreferenceChanged(int)));
+    BOstraceFunctionExit0(DUMMY_DEVLIST);    
 }
 
-
-/*!
- *  instead of using separate boolean variables we could use bitmap in single variable
- */
-void BtCpUiDeviceView::updateStatusVariables(int majorRole)
+void BtcpuiDeviceView::setTextAndVisibilityOfButtons(int majorProperty)
 {
-    mPreviousConnectedStatus = mConnectedStatus;
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    disconnect(mPair_Unpair, 0, 0, 0);
+    disconnect(mConnect_Disconnect, 0, 0, 0);
     
-    if (majorRole & BtuiDevProperty::Trusted ) {
-        mTrustedStatus = true;
-    } 
-    else {
-        mTrustedStatus = false;
+    if (majorProperty & BtuiDevProperty::Blocked) {
+        mPair_Unpair->setVisible(false);
+        mConnect_Disconnect->setVisible(false);
+        mDeviceSetting->setVisible(false);
+        return;
     }
-    if (majorRole & BtuiDevProperty::Bonded) {
-        mPairedStatus = true;
-    }
-    else {
-        mPairedStatus = false;
-    }
-    if (majorRole & BtuiDevProperty::Connected) {
-        mConnectedStatus = true;
-        if (!mPreviousConnectedStatus){
-            //Loading device detail plugins after successfull connection.
-            loadDeviceDetails();
-        }
-    }
-    else {
-        mConnectedStatus = false;
-    }
-    if (majorRole & BtuiDevProperty::Blocked) {
-        mBlockedStatus = true;
-    }
-    else {
-        mBlockedStatus = false;
-    }
-}
-
-void BtCpUiDeviceView::setTextAndVisibilityOfButtons()
-{
+    bool ret;
+    mPair_Unpair->setVisible(true);
     mPair_Unpair->setStretched(true);
-    if (mPairedStatus)
-    {
-        HbIcon icon("qtg_mono_bt_unpair");
-        icon.setIconName("qtg_mono_bt_unpair");
-        mPair_Unpair->setIcon(icon);
-        mPair_Unpair->setText(hbTrId("txt_bt_button_unpair"));
-				
+    if (majorProperty & BtuiDevProperty::Bonded) {
+        updateButton(mPair_Unpair, "qtg_mono_bt_unpair", hbTrId("txt_bt_button_unpair"));
+        ret =  connect(mPair_Unpair, SIGNAL(clicked()), this, SLOT(unpairDevice()));
+        BTUI_ASSERT_X( ret, "BtcpuiDeviceView::BtcpuiDeviceView", "can't connect unpair button" );
     }
-    else
-    {
-        HbIcon icon("qtg_mono_bt_pair");
-        icon.setIconName("qtg_mono_bt_pair");
-        mPair_Unpair->setIcon(icon);
-        mPair_Unpair->setText(hbTrId("txt_bt_button_pair"));
+    else {
+        updateButton(mPair_Unpair, "qtg_mono_bt_pair", hbTrId("txt_bt_button_pair"));
+        ret =  connect(mPair_Unpair, SIGNAL(clicked()), this, SLOT(pairDevice()));
+        BTUI_ASSERT_X( ret, "BtcpuiDeviceView::BtcpuiDeviceView", "can't connect pair button" );        
     }
     
-    if (mConnectable)
-    {
+    if (majorProperty & BtuiDevProperty::Connectable ) {
         mConnect_Disconnect->setVisible(true);
         mConnect_Disconnect->setStretched(true);
-        if (mConnectedStatus)
-        {
-            HbIcon icon("qtg_mono_speaker_off");
-            icon.setIconName("qtg_mono_speaker_off");
-            mConnect_Disconnect->setIcon(icon);
-            mConnect_Disconnect->setText(hbTrId("txt_bt_button_disconnect"));
+        if (majorProperty & BtuiDevProperty::Connected) {
+            updateButton(mConnect_Disconnect, "qtg_mono_speaker_off", hbTrId("txt_bt_button_disconnect"));
+            ret =  connect(mConnect_Disconnect, SIGNAL(clicked()), this, SLOT(disconnectDevice()));
+            BTUI_ASSERT_X( ret, "BtcpuiDeviceView::BtcpuiDeviceView", "can't connect disconnect button" );
         }
-        else
-        {
-            HbIcon icon("qtg_mono_speaker");
-            icon.setIconName("qtg_mono_speaker");
-            mConnect_Disconnect->setIcon(icon);
-            mConnect_Disconnect->setText(hbTrId("txt_bt_button_connect"));
+        else {
+            updateButton(mConnect_Disconnect, "qtg_mono_speaker", hbTrId("txt_bt_button_connect"));
+            ret =  connect(mConnect_Disconnect, SIGNAL(clicked()), this, SLOT(connectDevice()));
+            BTUI_ASSERT_X( ret, "BtcpuiDeviceView::BtcpuiDeviceView", "can't connect connect button" );
         }
-        
     }
-    else
-    {
+    else {
         //it is not possible to connect, set the button invisible
         mConnect_Disconnect->setVisible(false);
     }
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-
-void BtCpUiDeviceView::pairUnpair()
+void BtcpuiDeviceView::connectionPreferenceChanged(int index)
 {
-    if (mPairedStatus)
-    {
-        //if the device is paired, call unpairDevice() when the button is tabbed
-        unpairDevice();
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if ((index >= ConnectionAutomatic)&&(index != mComboboxIndex)) {
+        switch ( index )
+        {
+        case ConnectionAutomatic:
+            setDeviceAuthorised();
+            break;
+        case ConnectionAlwaysAsk:
+            setDeviceAlwaysAsk();
+            break;
+        case ConnectionBlocked:
+            setDeviceBlocked();
+            break;
+        default: 
+            BTUI_ASSERT_X( 0, "BtCpUiDeviceView::connectionPreferenceChanged()", "wrong index" );
+        }
     }
-    else
-    {
-        //if the device is unpaired, call pairDevice() when the button is tabbed
-        pairDevice();
-
-    }
-    
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::connectDisconnect()
+void BtcpuiDeviceView::setDeviceAuthorised()
 {
-    if (mConnectedStatus)
-    {
-        //if the device is connected, call disconnectDevice() when the button is tabbed
-        disconnectDevice();
-    }
-    else
-    {
-        //if the device is disconnected, call connectDevice() when the button is tabbed
-        connectDevice();
-
-    }
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if (!mAbstractDelegate){
+        //if there is no other delegate running
+        QList<QVariant>list;
+        list.append(mDeviceBdAddr);
+        
+        if (mComboboxIndex != ConnectionAutomatic) { // transition: (always ask|blocked) --> automatic
+            // unblock the device
+            list.append(QVariant(BtAuthorize));
+        }
+        else {
+            // do nothing, state is already correct
+            return;
+        }
+        mAbstractDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::TrustDevice, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
+                this, SLOT(unpairDelegateCompleted(int)) );
+        mAbstractDelegate->exec(QVariant(list));
+    }   
+    BOstraceFunctionExit0(DUMMY_DEVLIST);  
 }
 
-void BtCpUiDeviceView::pairDevice()
+void BtcpuiDeviceView::setDeviceAlwaysAsk()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if (!mAbstractDelegate){
+        //if there is no other delegate running
+        QList<QVariant>list;
+        BtDelegate::EditorType type;
+        list.append(mDeviceBdAddr);
+        if (mComboboxIndex == ConnectionAutomatic) { // transition: automatic --> always ask
+            // unauthorize the device
+            list.append(QVariant(BtUnauthorize));
+            type = BtDelegate::UntrustDevice;
+        }
+        else if (mComboboxIndex == ConnectionBlocked) { // transition: blocked --> always ask 
+            // unblock the device
+            list.append(QVariant(BtUnblock));
+            type = BtDelegate::UnblockDevice;
+        }
+        else {
+            // do nothing, state is already correct
+            return;
+        }
+        
+        mAbstractDelegate = BtDelegateFactory::newDelegate(
+                type, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
+                this, SLOT(unpairDelegateCompleted(int)) );
+        mAbstractDelegate->exec(QVariant(list));
+    }   
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiDeviceView::setDeviceBlocked()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    //simple version of the delegate
+    //TODO: disconnect after blocking
+    if (!mAbstractDelegate){
+        //if there is no other delegate running
+        QList<QVariant> list;
+        list.append(mDeviceBdAddr);
+        
+        if ( mComboboxIndex == ConnectionAutomatic || 
+            mComboboxIndex == ConnectionAlwaysAsk ) {  // transition: automatic|always ask --> blocked
+            // to unauthorized the device
+            list.append(QVariant(BtBlock));
+        }
+        else{
+            // do nothing, state is already correct
+            return;
+        }
+        mAbstractDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::BlockDevice, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
+                this, SLOT(unpairDelegateCompleted(int)) );
+        mAbstractDelegate->exec(QVariant(list));
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiDeviceView::pairDevice()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (!mAbstractDelegate)//if there is no other delegate running
     { 
         QVariant params;
         params.setValue(mDeviceIndex);
         mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::Pair, mSettingModel, mDeviceModel); 
-        connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(pairDelegateCompleted(int)) );
+                BtDelegate::PairDevice, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, SLOT(pairDelegateCompleted(int)) );
         mAbstractDelegate->exec(params);
     }
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::pairDelegateCompleted(int status)
+void BtcpuiDeviceView::pairDelegateCompleted(int status)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     Q_UNUSED(status);
     //TODO: handle the error here
     if (mAbstractDelegate)
     {
-        disconnect(mAbstractDelegate);
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::unpairDevice()
+void BtcpuiDeviceView::unpairDevice()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (!mAbstractDelegate)//if there is no other delegate running
     { 
-        QVariant params;
-        params.setValue(mDeviceIndex);
-        mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::Unpair, mSettingModel, mDeviceModel); 
-        connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(unpairDelegateCompleted(int)) );
-        mAbstractDelegate->exec(params);
-    }
+        QList<QVariant>list;
+        list.append(mDeviceBdAddr);
+        list.append(QVariant(BtUnpair));
         
-    
+        mAbstractDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::UnpairDevice, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, 
+                SLOT(unpairDelegateCompleted(int)) );
+        mAbstractDelegate->exec(QVariant(list));
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST); 
 }
 
-void BtCpUiDeviceView::unpairDelegateCompleted(int status)
+void BtcpuiDeviceView::unpairDelegateCompleted(int status)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     Q_UNUSED(status);
     //TODO: handle the error here 
     if (mAbstractDelegate)
     {
-        disconnect(mAbstractDelegate);
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::connectDevice()
+void BtcpuiDeviceView::connectDevice()
 {
-    
-    
-    if (!mAbstractDelegate)//if there is no other delegate running
-    { 
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+
+    if (!mAbstractDelegate) { //if there is no other delegate running
         QVariant params;
         params.setValue(mDeviceIndex);
         mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::Connect, mSettingModel, mDeviceModel); 
-        connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(connectDelegateCompleted(int)) );
+                BtDelegate::ConnectService, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, SLOT(connectDelegateCompleted(int)) );
         mAbstractDelegate->exec(params);
     }
-    
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);       
 }
 
-void BtCpUiDeviceView::connectDelegateCompleted(int status)
+void BtcpuiDeviceView::connectDelegateCompleted(int status)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     Q_UNUSED(status);
-    if (mAbstractDelegate)
-    {
-        disconnect(mAbstractDelegate);
+    if (mAbstractDelegate) {
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }   
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::disconnectDevice()
+void BtcpuiDeviceView::disconnectDevice()
 {
-    if (!mAbstractDelegate)//if there is no other delegate running
-        { 
-           
-            
-            DisconnectOption discoOpt = ServiceLevel;
-                    
-            QList<QVariant>list;
-            QVariant paramFirst;
-            paramFirst.setValue(mDeviceIndex);
-            
-            QVariant paramSecond;
-            paramSecond.setValue((int)discoOpt);
-                    
-            list.append(paramFirst);
-            list.append(paramSecond);
-                    
-            QVariant params;
-            params.setValue(list);
-            
-            
-            //params.setValue(mDeviceIndex);
-            mAbstractDelegate = BtDelegateFactory::newDelegate(
-                    BtDelegate::Disconnect, mSettingModel, mDeviceModel); 
-            connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(disconnectDelegateCompleted(int)) );
-            mAbstractDelegate->exec(params);
-        }
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if (!mAbstractDelegate) { //if there is no other delegate running 
+        QList<QVariant>list;
+        list.append(QVariant(ServiceLevel));
+        list.append(mDeviceBdAddr);
+        
+        mAbstractDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::DisconnectService, mSettingModel, mDeviceModel); 
+        // todo: check return value of connect
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, SLOT(disconnectDelegateCompleted(int)) );
+        mAbstractDelegate->exec(QVariant(list));
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::disconnectDelegateCompleted(int status)
+void BtcpuiDeviceView::disconnectDelegateCompleted(int status)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     Q_UNUSED(status);
     if (mAbstractDelegate)
     {
-        disconnect(mAbstractDelegate);
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::setPrevBtDeviceName()
+void BtcpuiDeviceView::setPrevBtDeviceName()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QString deviceName = (mDeviceModel->data(mDeviceIndex, 
                 BtDeviceModel::NameAliasRole)).toString(); 
    mDeviceName->setText(deviceName);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::changeBtDeviceName(){
-    if (!mAbstractDelegate)//if there is no other delegate running
-    { 
+void BtcpuiDeviceView::changeBtDeviceName()
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if (!mAbstractDelegate){
+        //if there is no other delegate running
         QList<QVariant>list;
         
         QVariant index;
@@ -640,33 +688,35 @@ void BtCpUiDeviceView::changeBtDeviceName(){
         params.setValue(list);
         
         mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::RemoteDevName, mSettingModel, mDeviceModel); 
-        connect( mAbstractDelegate, SIGNAL(commandCompleted(int, QVariant)), this, SLOT(changeDevNameDelegateCompleted(int, QVariant)) );
+                BtDelegate::ChangeDeviceFriendlyName, mSettingModel, mDeviceModel); 
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
+                this, SLOT(changeDevNameDelegateCompleted(int, QVariant)) );
         mAbstractDelegate->exec(params);
     }
     else {
         setPrevBtDeviceName();
     }
-    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
-void BtCpUiDeviceView::changeDevNameDelegateCompleted(int status, QVariant param)
-{
-    
-    
-    if(KErrNone == status) {
-        mDeviceName->setText(param.toString());
-    }
-    else {
+void BtcpuiDeviceView::changeDevNameDelegateCompleted(int status)
+{   
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if(KErrNone != status) {
         setPrevBtDeviceName();
     }
-    //TODO:Error handling has to be done.    
-    if (mAbstractDelegate)
-    {
-        disconnect(mAbstractDelegate);
+ 
+    if (mAbstractDelegate){
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
-    }
-    
-    
+    }   
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiDeviceView::updateButton(HbPushButton *button, const QString &iconName, const QString &text)
+{
+    HbIcon icon(iconName);
+    icon.setIconName(iconName);
+    button->setIcon(icon);
+    button->setText(text);
 }

@@ -44,6 +44,17 @@ BtDelegateVisibility::~BtDelegateVisibility()
 {
     delete mBtengSettings;
 }
+
+
+/*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegateVisibility::supportedEditorTypes() const
+{
+    return BtDelegate::ChangeVisibility;
+}
+
 /*!
  * executes visibility delegate functionality, ie. calls CBTEngSettings to set the visibility mode;
  * when operation completes, emits commandCompleted signal
@@ -56,7 +67,7 @@ void BtDelegateVisibility::exec( const QVariant &params )
 
     if (mActiveHandling) {
         // complete command with error
-        emit commandCompleted(KErrInUse);
+        emit delegateCompleted(KErrInUse, this);
         return;
     } 
     mActiveHandling = true;
@@ -71,12 +82,12 @@ void BtDelegateVisibility::exec( const QVariant &params )
     err = mBtengSettings->GetVisibilityMode( visibilityMode );
     if (err) {
         mActiveHandling = false;
-        emit commandCompleted(err);
+        emit delegateCompleted(err, this);
         return;
     }
     if (visibilityMode == mOperation) {
         mActiveHandling = false;
-        emit commandCompleted(KErrNone);
+        emit delegateCompleted(KErrNone, this);
         return;
     }
     
@@ -101,7 +112,7 @@ void BtDelegateVisibility::exec( const QVariant &params )
     if (err) {
         // complete command with error
         mActiveHandling = false;
-        emit commandCompleted(err);
+        emit delegateCompleted(err, this);
     }
 }
 
@@ -122,10 +133,10 @@ void BtDelegateVisibility::VisibilityModeChanged( TBTVisibilityMode aState )
         //Error handling has to be done, if value is not set properly.
         mActiveHandling = false;
         if (mOperation == aState) {
-            emit commandCompleted(KErrNone);
+            emit delegateCompleted(KErrNone, this);
         }
         else {
-            emit commandCompleted(KErrUnknown);
+            emit delegateCompleted(KErrUnknown, this);
         }
     }
 }

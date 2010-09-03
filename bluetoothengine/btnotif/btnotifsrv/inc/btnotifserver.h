@@ -29,6 +29,8 @@ class CBTNotifConnectionTracker;
 class CBTNotifSettingsTracker;
 class CBTNotificationManager;
 class CBTNotifDeviceSelector;
+class CBTNotifGenInfoNotifier;
+class CBTNotifPowerNotifier;
 class CBtDevRepository;
 
 class CbtnotifServerTest; // ToDo: shall be refactored under compile flag?
@@ -145,6 +147,15 @@ public:
     CBtDevRepository& DevRepository();
     
     CBTNotifDeviceSelector& DeviceSelectorL();
+
+    /**
+     * Returns a handle to the Generic info notifier.
+     *
+     * @since Symbian^4
+     * @param Pointer to the Generic info notifier.
+     */
+    inline CBTNotifGenInfoNotifier* GenericInfoNotifier() const
+        { return iGenInfoNotifier; }
     
 // from base class CPolicyServer
 
@@ -159,7 +170,15 @@ public:
      * @return A pointer to the newly created server-side session object.
      */
     virtual CSession2* NewSessionL( const TVersion& aVersion, const RMessage2& aMessage ) const;
-
+    
+    /**
+     * Returns a handle to the BT poser notifier.
+     * @since Symbian^4
+     * @return A pointer to the newly created server-side session object.
+     */
+    inline CBTNotifPowerNotifier* BTPowerNotifier() const
+            { return iBTPowerNotifier; }
+    
 private:
 
     CBTNotifServer();
@@ -228,6 +247,11 @@ private: // data
      * Own.
      */
     CBTNotifDeviceSelector* iDevSelector;
+
+    /**
+     * Generic info notifier.
+     */    
+    CBTNotifGenInfoNotifier* iGenInfoNotifier;
     
     /**
      * Callback for asynchronous processing.
@@ -245,6 +269,11 @@ private: // data
      * The function entry of shutdown timeout.
      */
     TDeltaTimerEntry iShutdownTimerEntry;
+    
+    /**
+     * BT power notifier
+     */
+    CBTNotifPowerNotifier* iBTPowerNotifier;
     
     BTUNITTESTHOOK
 

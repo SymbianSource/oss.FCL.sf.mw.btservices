@@ -41,7 +41,7 @@ SOURCE      BTAccInfoMainService.cpp
 SOURCE      BTAccInfoRequester.cpp
 
 USERINCLUDE    ../inc
-SYSTEMINCLUDE  ../../inc ../../../inc /epoc32/include/ecom
+SYSTEMINCLUDE  ../../inc /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY     euser.lib

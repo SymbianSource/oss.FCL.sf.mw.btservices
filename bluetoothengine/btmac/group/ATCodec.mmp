@@ -33,7 +33,7 @@ SOURCE  atccommand.cpp
 SOURCE  atcparam.cpp
 
 USERINCLUDE    ../inc/atcodec ../common
-SYSTEMINCLUDE         ../../inc ../../../inc 
+SYSTEMINCLUDE         ../../inc 
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY euser.lib

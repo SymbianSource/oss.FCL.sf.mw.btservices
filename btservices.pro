@@ -23,7 +23,8 @@ SUBDIRS += btservices_plat \
            bluetoothengine/btnotif/btdevicedialogplugin \
            bluetoothengine/btindicator \
            btobexprofiles/obexsendservices/obexhighway \
-		   btobexprofiles/obexreceiveservices/btmsgviewer \
+           btobexprofiles/obexreceiveservices/btmsgviewer \
+           bluetoothengine/btxqservice \
 
 CONFIG += ordered
 

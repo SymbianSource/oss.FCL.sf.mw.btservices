@@ -126,7 +126,7 @@ void CBTNotifServiceAuthorizer::StartNotifierL(const RMessage2& aMessage)
         return;
         }
     
-    // User must namually authorize this request. 
+    // User must manually authorize this request. 
     // Get needed info for the dialog:
     iPairedDevice = (dev == NULL ) ? EFalse : dev->IsUserAwareBonded();
     iDeviceClass = (dev == NULL ) ? 0 : dev->Device().DeviceClass().DeviceClass();

@@ -32,7 +32,7 @@ RESOURCES += btcpplugin.qrc
 
 # Input
 HEADERS += btcpuidevicedetailsview.h\
-	btcpuimainlistviewitem.h \
+	btcpuimaingridviewitem.h \
 	btcpuisearchlistviewitem.h \
     btcpplugin.h \
     btcpuibaseview.h \
@@ -41,9 +41,11 @@ HEADERS += btcpuidevicedetailsview.h\
     btcpuideviceview.h \
     btcpuisettingitem.h \
     btuiviewutil.h \
-    btcpuidevicedetail.h
+    btcpuidevicedetail.h \
+    btcpuiviewmgr.h
+    
 SOURCES += btcpuidevicedetailsview.cpp \
-	btcpuimainlistviewitem.cpp \
+	btcpuimaingridviewitem.cpp \
 	btcpuisearchlistviewitem.cpp \
     btcpplugin.cpp \
     btcpuibaseview.cpp \

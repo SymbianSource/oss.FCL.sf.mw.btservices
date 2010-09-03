@@ -54,6 +54,7 @@ void BTRecvPrgrsDialogWidget::closeDeviceDialog(bool byClient)
 {
     Q_UNUSED(byClient);
     mDialog->close();
+    emit deviceDialogClosed();
 }
 
 HbPopup* BTRecvPrgrsDialogWidget::deviceDialogWidget() const
@@ -74,20 +75,20 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
     mLoader->load(DOCML_BT_RECV_PRGRS_DIALOG, &ok);
     if(ok)
     {
-        mDialog = qobject_cast<HbDialog*>(mLoader->findWidget("senddialog"));
-        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
+        mDialog = qobject_cast<HbDialog*>(mLoader->findWidget("receiveProgressDialog"));
+        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("receiveProgressHeading"));
         
         mFileName = qobject_cast<HbLabel*>(mLoader->findWidget("fileName"));
         mFileSize = qobject_cast<HbLabel*>(mLoader->findWidget("fileSize"));
-        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount_label"));
+        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount"));
         mFileCount->setVisible(false);
         
         //TODO - set icon based on the file icon.
         
-        mHide = qobject_cast<HbAction*>(mLoader->findObject("hideaction"));
-        mCancel = qobject_cast<HbAction*>(mLoader->findObject("cancelaction"));
+        mHide = qobject_cast<HbAction*>(mLoader->findObject("hideAction"));
+        mCancel = qobject_cast<HbAction*>(mLoader->findObject("cancelAction"));
         
-        mProgressBar = qobject_cast<HbProgressBar*>(mLoader->findWidget("horizontalProgressBar"));
+        mProgressBar = qobject_cast<HbProgressBar*>(mLoader->findWidget("receiveProgressBar"));
         
         int dialogType = parameters.value(QString::number(TBluetoothDialogParams::EDialogTitle)).toInt();
         switch(dialogType)

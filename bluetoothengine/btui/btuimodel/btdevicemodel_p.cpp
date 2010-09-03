@@ -158,7 +158,7 @@ void BtDeviceModelPrivate::removeTransientDevices()
         if(isDeviceInRange(qtdev)) {
             if(isDeviceInRegistry(qtdev)) {
                 // we cannot remove this device as it is in registry.
-                // remove it in-range property.
+                // remove its in-range property.
                 setMajorProperty(mData[i], BtuiDevProperty::InRange, false);
                 updateRssi(mData[i], RssiInvalid);
                 updateSeqNum(mData[i], -1);
@@ -278,7 +278,6 @@ void BtDeviceModelPrivate::HandleNextDiscoveryResultL(
         const TInquirySockAddr& inqAddr, const TDesC& name )
 {
     int pos = indexOf( inqAddr.BTAddr() );
-    const CBtDevExtension* dev = mDeviceRepo->Device( inqAddr.BTAddr() );
     
     //RssiRole
     int rssi( RssiInvalid ); // initialize to an invalid value.
@@ -419,9 +418,6 @@ void BtDeviceModelPrivate::updateDeviceProperty(BtuiModelDataItem& qtdev,
     // device type is mapped according to CoD:
     BtuiDevProperty::mapDeiveType(majorDeviceType, minorDeviceType, cod);
 
-
-
-    
     qtdev[BtDeviceModel::MajorPropertyRole] = 
             QVariant( qtdev[BtDeviceModel::MajorPropertyRole].toInt() | majorDeviceType );
     qtdev[BtDeviceModel::MinorPropertyRole] = QVariant( minorDeviceType );

@@ -26,6 +26,7 @@
 #include "btnotificationmanager.h"
 #include "bluetoothnotification.h"
 #include "btnotifserver.h"
+#include "btnotifbasepairinghandler.h"
 #include "bluetoothtrace.h"
 
 
@@ -114,26 +115,30 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
         User::Leave(KErrServerBusy );
         }
     
-    if(opCode == EBTNotifCancelNotifier){
+    if(opCode == EBTNotifCancelNotifier)
+        {
         CancelPairingNotifierL(uid);
         aMessage.Complete(KErrNone);
         return;
-    }
+        }
     
-    // Store the parameters locally, we need them later again.
-    iParams.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
-    aMessage.ReadL( EBTNotifSrvParamSlot, iParams );
-    iNotifierMessage = aMessage;
-    
-    // Read the notifier parameters
-    ParseNotifierReqParamsL();
+    if(opCode != EBTNotifUpdateNotifier)
+        {
+        // Store the parameters locally, we need them later again.
+        iParams.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
+        aMessage.ReadL( EBTNotifSrvParamSlot, iParams );
+        iNotifierMessage = aMessage;
+        // Read the notifier parameters
+        ParseNotifierReqParamsL();
+        }
 
-    if(opCode ==EBTNotifUpdateNotifier ){
-        UpdatePairingNotifierL(uid,iParams);
+    if(opCode ==EBTNotifUpdateNotifier )
+        {
+        UpdatePairingNotifierL(aMessage);
         aMessage.Complete(KErrNone);
         return;
-    }
-    
+        }
+ 
     const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
     if(dev)
         {
@@ -182,8 +187,7 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
         }
     else
         {
-        TInt uid = iNotifierMessage.Int0();
-        if(uid == KBTNumericComparisonNotifierUid.iUid)
+        if(uid == KBTNumericComparisonNotifierUid.iUid || uid == KBTPasskeyDisplayNotifierUid.iUid)
             {
             StartPairingUserInputL();
             }
@@ -220,23 +224,34 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
 // is currently being served.
 // ---------------------------------------------------------------------------
 //
-void CBTNotifPairNotifier::UpdatePairingNotifierL( TInt aUid, const TDesC8& aParams )
+void CBTNotifPairNotifier::UpdatePairingNotifierL( const RMessage2& aMessage )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    (void) aUid;
+    RBuf8 msgParams;
+    msgParams.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
+    aMessage.ReadL( EBTNotifSrvParamSlot, msgParams );
     TBTNotifierUpdateParams2 params;    // Enough for reading the base class type parameter
     TPckgC<TBTNotifierUpdateParams2> paramsPckg( params );
-    paramsPckg.Set( aParams );
+    paramsPckg.Set( msgParams );
     if( paramsPckg().Type() == TBTNotifierUpdateParams2::EPasskeyDisplay )
         {
         // Paskey display update - keypress on remote device.
+        TBTPasskeyDisplayUpdateParams keyUpdate;
+        TPckgC<TBTPasskeyDisplayUpdateParams> keyUpdatePckg( keyUpdate );
+        keyUpdatePckg.Set(msgParams);
+        THCIPasskeyEntryNotificationType keyType = keyUpdatePckg().KeypressNotification();
+        if( iNotification )
+            {
+            // Update the dialog
+            iNotification->Update(keyType);
+            }        
         }
     else
         {
         // name update
         TBTDeviceNameUpdateParams nameUpdate;
         TPckgC<TBTDeviceNameUpdateParams> nameUpdatePckg( nameUpdate );
-        nameUpdatePckg.Set( aParams );
+        nameUpdatePckg.Set( msgParams );
         // The result means result of conversion to unicode
         if( !nameUpdatePckg().Result() )
             {
@@ -246,14 +261,17 @@ void CBTNotifPairNotifier::UpdatePairingNotifierL( TInt aUid, const TDesC8& aPar
                 {
                 if(0 != dev->Device().FriendlyName().Length()&& dev->Device().IsValidFriendlyName())
                     {
-                    return;
+                    iCurrentDeviceName = dev->Device().FriendlyName();
                     }
-                // We don't have a friendly name then use this name
-                iCurrentDeviceName = nameUpdatePckg().DeviceName();
-                if(0 == iCurrentDeviceName.Length())
+                else
                     {
-                    // The new name is empty then use the Alias
-                    iCurrentDeviceName = dev->Alias();
+                    // We don't have a friendly name then use this name
+                    iCurrentDeviceName = nameUpdatePckg().DeviceName();
+                    if(0 == iCurrentDeviceName.Length())
+                        {
+                        // The new name is empty then use the Alias
+                        iCurrentDeviceName = dev->Alias();
+                        }
                     }
                 }
             else
@@ -274,6 +292,7 @@ void CBTNotifPairNotifier::UpdatePairingNotifierL( TInt aUid, const TDesC8& aPar
                 }
             }
         }
+    msgParams.Close();
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
@@ -383,6 +402,7 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
         {
         // The returned data is the entered passkey.
         const CBtDevExtension* dev = iParent.BTDevRepository().Device(iRemote);
+
         if(dev)
             {
             iParent.ConnectionTracker().UpdateBlockingHistoryL(&dev->Device(),aResult);
@@ -393,7 +413,7 @@ void CBTNotifPairNotifier::CompletePairingNotifierL( TInt aError, TBool aResult,
             userAcceptance() = aResult;
             resultData.Set( userAcceptance );
             }
-        if( aResult )
+         if( aResult )
             {
             if( uid == KBTManPinNotifierUid.iUid 
                 || uid == KBTPinCodeEntryNotifierUid.iUid )
@@ -479,11 +499,10 @@ void CBTNotifPairNotifier::CompleteAcceptPairingQueryL( TInt aError)
             }
         if( iAcceptPairingResult )
             {
-            // User accepted, continue to show pairing query.
-            // Trust the device
-            if(iCheckBoxState){
-            iParent.TrustDevice(iRemote);
-            }
+            if(iCheckBoxState)
+                {
+                (iParent.PairingHandler())->SetTrusted();
+                }
             StartPairingUserInputL();
             }
         else
@@ -621,6 +640,7 @@ void CBTNotifPairNotifier::ParsePasskeyDisplayReqParamsL( TBool& aLocallyInitiat
     paramsPckg.Set( iParams );
     aLocallyInitiated = paramsPckg().LocallyInitiated();
     aNumVal.Format( KPassKeyFormat, paramsPckg().NumericalValue() );
+    aNumVal.Insert(3,_L(" "));
     aAddr = paramsPckg().DeviceAddress();
     iCurrentDeviceName = paramsPckg().DeviceName();
     BOstraceFunctionExit0( DUMMY_DEVLIST );
@@ -681,6 +701,11 @@ void CBTNotifPairNotifier::NotificationClosedL( TInt aError, const TDesC8& aData
     result.Set( aData.Ptr(), result.Length() ); // Read the part containing the result
     // Set a pointer descriptor to capture the remaining data, if any.
     TPtrC8 dataPtr( aData.Mid( result.Length() ) );
+    
+    if(!result())
+        {
+        (iParent.PairingHandler())->PairingCancelledByUser();
+        }
 
     if ( iState == EIncomingPairingAcceptconfirm )
         {

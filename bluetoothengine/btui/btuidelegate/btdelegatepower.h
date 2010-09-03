@@ -32,8 +32,7 @@ class HbAction;
 
     \\sa btuidelegate
  */
-class BtDelegatePower : public BtAbstractDelegate, public MBTEngSettingsObserver, 
-        public MBTEngConnObserver 
+class BtDelegatePower : public BtAbstractDelegate, public MBTEngSettingsObserver
 {
     Q_OBJECT
 
@@ -43,29 +42,23 @@ public:
             BtDeviceModel* deviceModel, QObject *parent = 0 );
     
     virtual ~BtDelegatePower();
-
+    
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     
     //from MBTEngSettingsObserver
     
-    virtual void PowerStateChanged( TBTPowerStateValue aState );
+    virtual void PowerStateChanged( TBTPowerStateValue state );
 
-    virtual void VisibilityModeChanged( TBTVisibilityMode aState );
+    virtual void VisibilityModeChanged( TBTVisibilityMode state );
     
 public slots:
     void btOnQuestionClose(int action);
     
     void btOnWarningClose();
     
-    void disconnectDelegateCompleted(int err);
-    
-    
-protected:
-    //From MBTEngConnObserver
-    virtual void ConnectComplete( TBTDevAddr& aAddr, TInt aErr, 
-                                   RBTDevAddrArray* aConflicts );
-    virtual void DisconnectComplete( TBTDevAddr& aAddr, TInt aErr );
-    
+    void disconnectCompleted(int err, BtAbstractDelegate *delegate);
     
 private:
     void switchBTOn();
@@ -74,17 +67,13 @@ private:
     
     bool checkOfflineMode(bool& btEnabledInOffline);
     
-    void disconnectOngoingConnections();
+    void disconnectConnections();
     
-
 private:
     CBTEngSettings* mBtengSettings;
-    bool mActiveHandling; 
-    TBTPowerStateValue mReqPowerState;
-    
+    TBTPowerStateValue mReqPowerState; 
     BtAbstractDelegate* mDisconnectDelegate;
-    
-    
+
 private:
 
     Q_DISABLE_COPY(BtDelegatePower)

@@ -16,7 +16,7 @@
 */
 
 
-#include "usbobex.h"
+#include <usbobex.h>
 #include "debug.h"
 #include "obexsmclient.h"
 #include "usbclientwrapper.h"

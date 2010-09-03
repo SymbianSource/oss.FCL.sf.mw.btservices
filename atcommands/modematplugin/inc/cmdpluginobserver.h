@@ -58,7 +58,7 @@ public:
      *               EReplyTypeUndefined.
      * @return None
      */
-    virtual TInt CreateReplyAndComplete( TATExtensionReplyType aReplyType,
+    virtual void CreateReplyAndComplete( TATExtensionReplyType aReplyType,
                                          const TDesC8& aSrcBuffer=KNullDesC8,
                                          TInt aError=KErrNone ) = 0;
 

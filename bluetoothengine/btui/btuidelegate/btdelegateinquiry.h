@@ -38,19 +38,21 @@ public:
     
     virtual ~BtDelegateInquiry();
     
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     
     virtual void cancel();
     
 public slots:
-    void powerDelegateCompleted(int error);
+    void handleManagePowerCompleted(int error);
+    void handleSearchCompleted(int error);
     
 private:
-    void exec_inquiry();
+    bool startInquiry();
     
 private:
-    BtAbstractDelegate* mAbstractDelegate;
-    
+    BtAbstractDelegate *mPowerDelegate;
 };
 
 #endif /* BTDELEGATEINQUIRY_H */

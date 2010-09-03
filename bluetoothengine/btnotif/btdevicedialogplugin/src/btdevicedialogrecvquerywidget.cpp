@@ -53,6 +53,7 @@ void BTRecvQueryDialogWidget::closeDeviceDialog(bool byClient)
 {
     Q_UNUSED(byClient);
     mDialog->close();
+    emit deviceDialogClosed();
 }
 
 HbPopup* BTRecvQueryDialogWidget::deviceDialogWidget() const
@@ -73,8 +74,8 @@ bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
     mLoader->load(DOCML_BT_RECV_QUERY_DIALOG, &ok);
     if(ok)
     {
-        mDialog = qobject_cast<HbDialog*>(mLoader->findWidget("senddialog"));
-        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
+        mDialog = qobject_cast<HbDialog*>(mLoader->findWidget("receiveAuthorizationDialog"));
+        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("receiveAuthorizationHeading"));
         
         mDeviceName = qobject_cast<HbLabel*>(mLoader->findWidget("deviceName"));
         mDeviceType = qobject_cast<HbLabel*>(mLoader->findWidget("deviceType"));
@@ -87,10 +88,10 @@ bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
         mDeviceName->setPlainText(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
         mDeviceType->setPlainText(getDeviceTypeString(classOfDevice));
         
-        mYes = qobject_cast<HbAction*>(mLoader->findObject("yesaction"));
-        mNo = qobject_cast<HbAction*>(mLoader->findObject("noaction"));
+        mYesAction = qobject_cast<HbAction*>(mLoader->findObject("yesAction"));
+        mNoAction = qobject_cast<HbAction*>(mLoader->findObject("noAction"));
         
-        mCheckBox = qobject_cast<HbCheckBox*>(mLoader->findWidget("checkbox"));
+        mAuthorizeUser = qobject_cast<HbCheckBox*>(mLoader->findWidget("authorizeUser"));
 
         int dialogType = parameters.value(QString::number(TBluetoothDialogParams::EDialogTitle)).toInt();
         switch(dialogType)
@@ -103,17 +104,17 @@ bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
             case TBluetoothDialogParams::EReceiveFromPairedDevice:
             {
                 mHeading->setPlainText(hbTrId("txt_bt_title_receive_messages_from_paired_device"));
-                mCheckBox->setCheckState(Qt::Checked);
+                mAuthorizeUser->setCheckState(Qt::Checked);
             }break;
             
             case TBluetoothDialogParams::EConnect:
             {
                 mHeading->setPlainText(hbTrId("txt_bt_title_connect_to"));
-                mCheckBox->setCheckState(Qt::Checked);
+                mAuthorizeUser->setCheckState(Qt::Checked);
             }break;
             case TBluetoothDialogParams::EPairingRequest:
                 mHeading->setPlainText(hbTrId("txt_bt_title_pair_with"));
-                mCheckBox->setCheckState(Qt::Checked);                
+                mAuthorizeUser->setCheckState(Qt::Checked);                
                 break;
             default:
                 break;
@@ -126,9 +127,9 @@ bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
     mDialog->setDismissPolicy(HbPopup::NoDismiss);
     mDialog->setTimeout(HbPopup::NoTimeout);
      
-    connect(mYes, SIGNAL(triggered()), this, SLOT(yesClicked()));
-    connect(mNo, SIGNAL(triggered()), this, SLOT(noClicked()));
-    connect(mCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxStateChanged(bool)));
+    connect(mYesAction, SIGNAL(triggered()), this, SLOT(yesClicked()));
+    connect(mNoAction, SIGNAL(triggered()), this, SLOT(noClicked()));
+    connect(mAuthorizeUser, SIGNAL(clicked(bool)), this, SLOT(checkBoxStateChanged(bool)));
     
     return true;
 }

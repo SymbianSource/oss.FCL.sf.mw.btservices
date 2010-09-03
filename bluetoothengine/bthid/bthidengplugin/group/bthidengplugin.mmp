@@ -34,7 +34,6 @@ USERINCLUDE     ../../bthidclient/inc
 USERINCLUDE     ../../bthidserver/inc
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE   ../../../../inc 
 
 START RESOURCE ../data/2001E308.rss
 	TARGET bthidengplugin.rsc

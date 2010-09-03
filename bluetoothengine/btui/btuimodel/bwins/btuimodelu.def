@@ -72,4 +72,6 @@ EXPORTS
 	?data@BtDeviceModel@@UBE?AVQVariant@@ABVQModelIndex@@H@Z @ 71 NONAME ; class QVariant BtDeviceModel::data(class QModelIndex const &, int) const
 	?connectModelSignals@BtDeviceModel@@AAEXXZ @ 72 NONAME ; void BtDeviceModel::connectModelSignals(void)
 	?connectModelSignals@BtSettingModel@@AAEXXZ @ 73 NONAME ; void BtSettingModel::connectModelSignals(void)
+	?match@BtDeviceModel@@UBE?AV?$QList@VQModelIndex@@@@ABVQModelIndex@@HABVQVariant@@HV?$QFlags@W4MatchFlag@Qt@@@@@Z @ 74 NONAME ; class QList<class QModelIndex> BtDeviceModel::match(class QModelIndex const &, int, class QVariant const &, int, class QFlags<enum Qt::MatchFlag>) const
+	?deviceCount@BtDeviceModel@@QAEHH@Z @ 75 NONAME ; int BtDeviceModel::deviceCount(int)
 

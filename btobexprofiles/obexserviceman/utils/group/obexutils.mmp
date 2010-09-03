@@ -42,7 +42,6 @@ SOURCE        updatemusiccollection.cpp
 SOURCE       vMessageHandler.cpp
 #endif
 
-SYSTEMINCLUDE  ../../../inc ../../../../inc  
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 #ifdef NO101APPDEPFIXES
@@ -70,7 +69,7 @@ LIBRARY         centralrepository.lib
 LIBRARY			platformenv.lib 
 LIBRARY			mpxcollectionhelper.lib
 LIBRARY			mpxplaybackutility.lib
-LIBRARY			hbcore.lib
+LIBRARY			HbCore.lib
 LIBRARY			HbWidgets.lib
 
 #ifdef __BT_SAP

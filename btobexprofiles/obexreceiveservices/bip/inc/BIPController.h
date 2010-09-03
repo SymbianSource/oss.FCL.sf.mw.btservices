@@ -30,7 +30,6 @@
 #include <obexutilspropertynotifier.h>
 #include <btengsettings.h>
 #include "btengdevman.h"
-#include <obexutilsdialog.h>
 #include <hbdevicedialogsymbian.h>
 #include <hbsymbianvariant.h>
 
@@ -58,8 +57,7 @@ const TUid KUidMsgTypeBt                 = {0x10009ED5};
 *  The main controller for Basic Imaging Profile.
 */
 NONSHARABLE_CLASS (CBIPController): public CSrcsInterface, public MObexServerNotify,
-                                    public MObexUtilsPropertyNotifyHandler, 
-                                    public MObexUtilsDialogObserver,
+                                    public MObexUtilsPropertyNotifyHandler,
                                     public MBTEngDevManObserver,
                                     public MHbDeviceDialogObserver
     {
@@ -94,9 +92,6 @@ private: // from MObexUtilsPropertyNotifyHandler
 private: // from MBTEngDevManObserver
     void HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray);
     
-private: //from MObexUtilsDialogObserver
-    void DialogDismissed(TInt aButtonId);
-    
 private:
     CBIPController();
     void ConstructL();
@@ -117,6 +112,11 @@ private:
     TInt GetDriveWithMaximumFreeSpaceL();
     TBool IsBackupRunning();
     TBool ProcessExists( const TSecureId& aSecureId );
+    
+    void LaunchFailureDialogL();
+    void LaunchMemoryFullDialogL(TInt aDrive);
+    void AddParamL(const TInt aKey, const TAny* aValue, 
+            CHbSymbianVariant::TType aValueType, CHbSymbianVariantMap& aVariantMap);
     
 private:
     void DataReceived(CHbSymbianVariantMap& aData);
@@ -161,13 +161,14 @@ private: // Data
     TBTDeviceName               iRemoteDeviceName;
     TFileName                   iReceivingFileName;
     TFileName                   iCenRepFolder;
-    CObexUtilsDialog*           iDialog;
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
     TInt                        iFileCount;
+    CHbDeviceDialogSymbian*     iFailureDialog;
     TBool                       iReceivingFailed;
     CHbDeviceDialogSymbian*     iRecvDoneDialog;
     TBool                       iShowRecvCompleteDialog;
+    CHbDeviceDialogSymbian*     iMemoryFullDailog;
     };
     
 _LIT(KBipPanicCategory, "BIP");

@@ -27,7 +27,7 @@
 #include <obexutilsmessagehandler.h>
 #include <featmgr.h>
 #include <hbdevicenotificationdialogsymbian.h>
-#include <hbtextresolversymbian.h>
+#include <btservices/bluetoothdevicedialogs.h>
 
 // CONSTANTS
 
@@ -41,18 +41,11 @@ const TUint KBTProgressInterval         = 1000000;
 const TUid KUidMsgTypeBt                 = {0x10009ED5};
 //todo  need to find a suitable header to include. This is from obexutilslayer.h
 
-const TInt KMaxDesCLength  = 256;
+const TInt KMinStringSize = 10;
 
 
-//_LIT(KSendingDialog,"com.nokia.hb.btdevicedialog/1.0");
 
-_LIT(KLocFileName, "btdialogs_");
-_LIT(KPath, "z:/resource/qt/translations/");  
-
-_LIT(KFilesSentText, "txt_bt_dpophead_all_files_sent");//All files sent 
-_LIT(KDeviceText,"txt_bt_dpopinfo_sent_to_1");
-//_LIT(KNotConnectedText,"txt_bt_info_unable_to_connect_with_bluetooth");
-_LIT(KSendingFailedText,"txt_bt_dpophead_sending_failed");
+_LIT( KBTDevDialogId, "com.nokia.hb.btdevicedialog/1.0" );
 
 // ============================ MEMBER FUNCTIONS ===============================
 
@@ -73,7 +66,8 @@ CBTServiceStarter::CBTServiceStarter()
       iUserCancel(EFalse), 
       iFeatureManagerInitialized(EFalse),
       iTriedBIP(EFalse),
-      iTriedOPP(EFalse)
+      iTriedOPP(EFalse),
+      iShowDialogNote(EFalse)
     {    
     CActiveScheduler::Add( this );
     }
@@ -91,7 +85,6 @@ void CBTServiceStarter::ConstructL()
     iDelayedDestroyer = CBTServiceDelayedDestroyer::NewL(CActive::EPriorityStandard);
     FeatureManager::InitializeLibL();
     iFeatureManagerInitialized = ETrue;
-    iLocalisationInit = HbTextResolverSymbian::Init(KLocFileName, KPath);
     FLOG(_L("[BTSU]\t CBTServiceStarter::ConstructL() completed"));
     }
 
@@ -127,6 +120,7 @@ CBTServiceStarter::~CBTServiceStarter()
     delete iBTEngDiscovery;
     delete iDialog;
     delete iDelayedDestroyer;
+    iRemoteDeviceName.Close();
     
     if(iWaiter && iWaiter->IsStarted() )
         {
@@ -139,6 +133,11 @@ CBTServiceStarter::~CBTServiceStarter()
         FeatureManager::UnInitializeLib();
         }
     
+    if (iNotificationDialog)
+        {
+        iNotificationDialog->Cancel();
+        delete iNotificationDialog;
+        }
     FLOG(_L("[BTSU]\t CBTServiceStarter::Destructor() completed"));
     }
 
@@ -448,6 +447,7 @@ void CBTServiceStarter::LaunchWaitNoteL()
         }
     else
         {
+        iShowDialogNote = ETrue;
     //todo need to do the localisation here
         _LIT(KConnectText, "Connecting...");
         iDialog->LaunchWaitDialogL(KConnectText);
@@ -490,20 +490,20 @@ void CBTServiceStarter::LaunchProgressNoteL( MBTServiceProgressGetter* aGetter,
         
         if ( !iProgressDialogActive )
         	{
+            iShowDialogNote = ETrue;  
             // todo need to change the last parameter because we are now using the textmap id which is a string
             // whether we replace it with that or remove the parameter is to be decided
         	iMessageServerIndex = TObexUtilsMessageHandler::CreateOutboxEntryL( 
             KUidMsgTypeBt, 0 );     
 
-            deviceName.CreateL(KMaxDesCLength);
             
             if ( iDevice->IsValidFriendlyName() )
                 {
-                deviceName.Copy( iDevice->FriendlyName() );
+                deviceName.CreateL( iDevice->FriendlyName() );
                 }
             else 
                 {
-                deviceName.Copy( BTDeviceNameConverter::ToUnicodeL(iDevice->DeviceName()));
+                deviceName.CreateL( BTDeviceNameConverter::ToUnicodeL(iDevice->DeviceName()));
                 }        	
         	iDialog->LaunchProgressDialogL( this, aFileCount, 
                                 deviceName, KBTProgressInterval );	
@@ -550,6 +550,20 @@ void CBTServiceStarter::DialogDismissed(TInt aButtonId )
         { // this condition is hit for the progress dialog and connecting dialog cancel
         FLOG(_L("[BTSU]\t CBTServiceStarter::DialogDissmissed(), cancelled by user"));        
         iUserCancel=ETrue;
+        iShowDialogNote = EFalse;
+/*        if ( iDevice->IsValidFriendlyName() )
+            {
+            TRAP_IGNORE(iRemoteDeviceName.CreateL( iDevice->FriendlyName()) );
+            }
+        else 
+            {
+            TRAP_IGNORE( iRemoteDeviceName.CreateL( BTDeviceNameConverter::ToUnicodeL(iDevice->DeviceName())));
+            }
+        
+        iRemoteDeviceClass = iDevice->DeviceClass().DeviceClass();        
+        
+        TRAP_IGNORE( ShowSendCompleteNoteL(ESendCancelled) );*/
+        
         if ( iController )
             {
             iController->Abort();
@@ -563,6 +577,7 @@ void CBTServiceStarter::DialogDismissed(TInt aButtonId )
         {
         // user abortion
         //
+        iShowDialogNote = EFalse;
         iUserCancel = ETrue;
         StopTransfer( KErrCancel );
         CancelWaitNote();
@@ -578,33 +593,35 @@ void CBTServiceStarter::DialogDismissed(TInt aButtonId )
 // CBTServiceStarter::ShowErrorNote
 // -----------------------------------------------------------------------------
 //
-void CBTServiceStarter::ShowErrorNote( TInt aReason ) const
+void CBTServiceStarter::ShowErrorNote( TInt aReason ) 
     {
     FLOG(_L("[BTSU]\t CBTServiceStarter::ShowErrorNote()"));
      
-    TBuf<KMaxDesCLength> buf;
-    TPtrC sendTextMapId;
-    
     if ( iDevice->IsValidFriendlyName() )
         {
-        buf.Copy( iDevice->FriendlyName() );
+        iRemoteDeviceName.CreateL( iDevice->FriendlyName() );
         }
     else 
         {
-        TRAP_IGNORE( buf.Copy( BTDeviceNameConverter::ToUnicodeL(iDevice->DeviceName())));
+        TRAP_IGNORE( iRemoteDeviceName.CreateL( BTDeviceNameConverter::ToUnicodeL(iDevice->DeviceName())));
         }
     
+    iRemoteDeviceClass = iDevice->DeviceClass().DeviceClass();    
 
     switch ( aReason )
         {
         case EBTSNoError:
             {
-            sendTextMapId.Set(KFilesSentText());
+            TRAP_IGNORE( ShowSendCompleteNoteL(ESendCompleted) );
             break;
             }
         case EBTSConnectingFailed:
         case EBTSGettingFailed:
         case EBTSPuttingFailed:
+            {
+            TRAP_IGNORE( ShowErrorMessageL(TBluetoothDialogParams::ESendFailed) );
+            break;
+            }
         case EBTSNoSuitableProfiles:
       //todo below three enums are not valid and it is not being used at anywhere do we need to have it 
             
@@ -612,27 +629,8 @@ void CBTServiceStarter::ShowErrorNote( TInt aReason ) const
 //        case EBTSBIPOneNotSend:
 //        case EBTSBIPNoneSend:
         default:            
-            {
-            sendTextMapId.Set(KSendingFailedText());
             break;
-            }
         }        
-    
-    
-    if(iLocalisationInit)
-        {
-        TRAP_IGNORE(
-               HBufC* sendText = HbTextResolverSymbian::LoadLC(sendTextMapId);
-               HBufC* deviceName =  HbTextResolverSymbian::LoadLC(KDeviceText,buf);
-               CHbDeviceNotificationDialogSymbian::NotificationL(KNullDesC, deviceName->Des(), sendText->Des());
-               CleanupStack::PopAndDestroy( deviceName );
-               CleanupStack::PopAndDestroy( sendText );
-               );
-        }
-    else
-        {
-        TRAP_IGNORE(CHbDeviceNotificationDialogSymbian::NotificationL(KNullDesC, KDeviceText(), sendTextMapId));
-        }
     FLOG(_L("[BTSU]\t CBTServiceStarter::ShowErrorNote() completed"));
     }
 
@@ -644,7 +642,9 @@ void CBTServiceStarter::ShowErrorNote( TInt aReason ) const
 //
 void  CBTServiceStarter::LaunchConfirmationQuery(const TDesC& aConfirmText)
     {
-    TRAP_IGNORE(iDialog->LaunchQueryDialogL(aConfirmText ));
+    TInt dialogTitle = TBluetoothDialogParams::EUnsupportedImages;
+    iRemoteDeviceClass = iDevice->DeviceClass().DeviceClass();
+    ShowErrorMessageL(dialogTitle,aConfirmText);
     }
 
 // -----------------------------------------------------------------------------
@@ -695,7 +695,7 @@ void CBTServiceStarter::StopTransfer(TInt aError)
     // Reset states
     //
     iServiceStarted = EFalse;
-    if ( iWaiter && iWaiter->IsStarted() )
+    if (( iWaiter && iWaiter->IsStarted() )&&(!iShowDialogNote))
         {                
         iWaiter->AsyncStop();                    
         }    
@@ -1053,6 +1053,109 @@ TInt CBTServiceStarter::RunError( TInt aError )
     return KErrNone;
     }
 
+void CBTServiceStarter::ShowSendCompleteNoteL(const TInt aDialogTitle)
+    {
+    iNotificationDialog = CHbDeviceDialogSymbian::NewL();
+    iNotificationDialog->SetObserver(this);
+    
+    CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+    CleanupStack::PushL(variantMap);
+    
+    TInt dialogIdx = TBluetoothDialogParams::EGlobalNotif;
+    AddDataL(variantMap,TBluetoothDialogParams::EDialogType,&dialogIdx,CHbSymbianVariant::EInt);
+
+    
+    AddDataL(variantMap,TBluetoothDeviceDialog::EDeviceName,&iRemoteDeviceName,
+            CHbSymbianVariant::EDes);
+    
+    AddDataL(variantMap,TBluetoothDialogParams::EResource,&aDialogTitle,
+            CHbSymbianVariant::EInt);
+    
+    AddDataL(variantMap,TBluetoothDeviceDialog::EDeviceClass,&iRemoteDeviceClass,
+            CHbSymbianVariant::EInt);
+
+    iNotificationDialog->Show( KBTDevDialogId(), *variantMap, this );
+    CleanupStack::PopAndDestroy(variantMap);
+    }
+
+void CBTServiceStarter::ShowErrorMessageL(const TInt aDialogTitle,
+                                            const TDesC& aConfirmText)
+    {
+    iNotificationDialog = CHbDeviceDialogSymbian::NewL();
+    iNotificationDialog->SetObserver(this);
+    
+    CHbSymbianVariantMap* variantMap = CHbSymbianVariantMap::NewL();
+    CleanupStack::PushL(variantMap);
+    
+    TInt dialogIdx = TBluetoothDialogParams::EInformationDialog;
+    AddDataL(variantMap,TBluetoothDialogParams::EDialogType,&dialogIdx,CHbSymbianVariant::EInt);
+    
+    if(aDialogTitle == TBluetoothDialogParams::EUnsupportedImages )
+        {
+        AddDataL(variantMap,TBluetoothDeviceDialog::EAdditionalDesc,&aConfirmText,
+            CHbSymbianVariant::EDes);
+        }
+    else
+        {
+        AddDataL(variantMap,TBluetoothDeviceDialog::EDeviceName,&iRemoteDeviceName,
+            CHbSymbianVariant::EDes);
+        }
+    
+    AddDataL(variantMap,TBluetoothDialogParams::EDialogTitle,&aDialogTitle,
+            CHbSymbianVariant::EInt);
+    
+    AddDataL(variantMap,TBluetoothDeviceDialog::EDeviceClass,&iRemoteDeviceClass,
+            CHbSymbianVariant::EInt);
+
+    iNotificationDialog->Show( KBTDevDialogId(), *variantMap, this );
+    CleanupStack::PopAndDestroy(variantMap);
+    }
+
+void CBTServiceStarter::AddDataL(CHbSymbianVariantMap* aMap, const TInt aKey, 
+    const TAny* aData, CHbSymbianVariant::TType aDataType)
+    {
+    TBuf<KMinStringSize> key;
+    key.Num(aKey);
+
+    CHbSymbianVariant* value = CHbSymbianVariant::NewL(aData, aDataType);
+    CleanupStack::PushL( value );
+    User::LeaveIfError( aMap->Add( key, value ) ); // aMap takes the ownership of value
+    CleanupStack::Pop( value );
+    }
 
 
+void CBTServiceStarter::DataReceived(CHbSymbianVariantMap& aData)
+    {
+    if(aData.Keys().MdcaPoint(0).Compare(_L("actionResult"))==KErrNone)
+        {
+        TBool val = *(static_cast<TBool*>(aData.Get(_L("actionResult"))->Data()));
+        if(val)
+            {
+            DialogDismissed(EYesButton);
+            }
+        else
+            {
+            DialogDismissed(ENoButton);
+            }
+        if(iNotificationDialog)
+            {
+            delete iNotificationDialog;
+            iNotificationDialog = NULL;
+            }
+        }
+    }
+
+void CBTServiceStarter::DeviceDialogClosed(TInt aCompletionCode)
+    {
+    (void) aCompletionCode;
+    if(iNotificationDialog)
+        {
+        delete iNotificationDialog;
+        iNotificationDialog = NULL;
+        }
+    if ( iWaiter && iWaiter->IsStarted() )
+        {                
+        iWaiter->AsyncStop();                    
+        }
+    }
 

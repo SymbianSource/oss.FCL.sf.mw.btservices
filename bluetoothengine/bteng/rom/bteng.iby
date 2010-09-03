@@ -32,6 +32,7 @@ file=ABI_DIR\BUILD_DIR\btengsettings.dll          SHARED_LIB_DIR\btengsettings.d
 data=ZPRIVATE\10003A3F\APPS\bttoggle_reg.rsc 			Private\10003a3f\apps\bttoggle_reg.rsc
 data=DATAZ_\RESOURCE_FILES_DIR\btengsdp.rsc       RESOURCE_FILES_DIR\btengsdp.rsc
 data=DATAZ_\RESOURCE_FILES_DIR\btrfs.txt       RESOURCE_FILES_DIR\btrfs.txt
+data=ZPRIVATE\10005950\backup_registration.xml			private\10005950\backup_registration.xml
 
 ECOM_PLUGIN( btbearer.dll, btbearer.rsc )
 ECOM_PLUGIN( btrfsplugin.dll, btrfsplugin.rsc )

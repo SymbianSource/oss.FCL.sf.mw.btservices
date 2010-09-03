@@ -41,8 +41,8 @@ SOURCE          securityeventhandler.cpp
 SOURCE          cbsettinghandler.cpp
 SOURCE          cpwdcommandhandler.cpp
 SOURCE          cpincommandhandler.cpp
-SOURCE          cusdcommandhandler.cpp 
-SOURCE          cnumcommandhandler.cpp
+SOURCE          cusdcommandhandler.cpp
+SOURCE 		    cnumcommandhandler.cpp 
 SOURCE          cfuncommandhandler.cpp 
 SOURCE          cbccommandhandler.cpp
 SOURCE          ussdreadmessageimpl.cpp
@@ -54,11 +54,11 @@ SOURCE          cgsncommandhandler.cpp
 SOURCE          cgmrcommandhandler.cpp 
 SOURCE          cmgwcommandhandler.cpp 
 SOURCE          cgmicommandhandler.cpp
-SOURCE			cmgdcommandhandler.cpp
-SOURCE			telephonywrapper.cpp
-SOURCE			cgmmcommandhandler.cpp 
-SOURCE			scpbrcommandhandler.cpp
-SOURCE			scpbwcommandhandler.cpp
+SOURCE		    cmgdcommandhandler.cpp
+SOURCE		    telephonywrapper.cpp
+SOURCE		    cgmmcommandhandler.cpp 
+SOURCE		    scpbrcommandhandler.cpp
+SOURCE 		    scpbwcommandhandler.cpp
 #endif
 
 USERINCLUDE     ../inc
@@ -84,7 +84,7 @@ LIBRARY         etel.lib
 LIBRARY         hash.lib
 
 LIBRARY         ProfileEng.lib
-LIBRARY         StarterClient.lib 
+LIBRARY         starterclient.lib 
 
 LIBRARY			etel3rdparty.lib
 LIBRARY			sysutil.lib 
@@ -96,3 +96,4 @@ LIBRARY			customapi.lib
 DEBUGLIBRARY	flogger.lib
 
 // End of File
+ 

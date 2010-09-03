@@ -48,7 +48,6 @@ USERINCLUDE   ../../manager/inc
 USERINCLUDE   ../../common/inc
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE ../../../../inc
 
 SOURCEPATH		../data 
 START RESOURCE          kbdlayout.rss 

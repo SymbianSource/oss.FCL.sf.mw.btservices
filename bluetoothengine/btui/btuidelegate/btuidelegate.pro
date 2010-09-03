@@ -26,10 +26,10 @@ RESOURCES += btuidelegate.qrc
 CONFIG += qt \
     hb \
     dll
-HEADERS += btdelegateconsts.h \
-    btdelegatepower.h \
-    btdelegatefactory.h \
-    btabstractdelegate.h \
+    
+HEADERS += btdelegatepower.h \
+    ../inc/btdelegatefactory.h \
+    ../inc/btabstractdelegate.h \
     btdelegatevisibility.h \
     btdelegatedevname.h \
     btdelegateinquiry.h \
@@ -37,7 +37,8 @@ HEADERS += btdelegateconsts.h \
     btdelegatepair.h \
     btdelegatedisconnect.h \
     btdelegatedevsecurity.h \
-    btdelegateremotedevname.h
+    btdelegateremotedevname.h \
+    btdelegatedevremove.h
     
 SOURCES += btdelegatepower.cpp \
     btdelegatefactory.cpp \
@@ -49,16 +50,14 @@ SOURCES += btdelegatepower.cpp \
     btdelegatepair.cpp \
     btdelegatedisconnect.cpp \
     btdelegatedevsecurity.cpp \
-    btdelegateremotedevname.cpp
+    btdelegateremotedevname.cpp \
+    btdelegatedevremove.cpp
 
 defFilePath = .
     
 symbian: { 
     SYMBIAN_PLATFORMS = WINSCW \
         ARMV5
-    BLD_INF_RULES.prj_exports += "btdelegatefactory.h |../inc/btdelegatefactory.h"
-    BLD_INF_RULES.prj_exports += "btabstractdelegate.h |../inc/btabstractdelegate.h"
-    BLD_INF_RULES.prj_exports += "btdelegateconsts.h |../inc/btdelegateconsts.h"
     TARGET.EPOCALLOWDLLDATA = 1
     TARGET.UID3 = 0xEE02434F
     TARGET.CAPABILITY = CAP_GENERAL_DLL

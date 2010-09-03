@@ -32,7 +32,6 @@
 
 #include <obexutilspropertynotifier.h>
 
-#include <obexutilsdialog.h>
 #include <hbdevicedialogsymbian.h>
 #include <hbsymbianvariant.h>
 
@@ -58,7 +57,6 @@ enum TFileManagerBkupStatusType
 */
 class COPPController : public CSrcsInterface, public MObexServerNotify, 
                        public MObexUtilsPropertyNotifyHandler,
-                       public MObexUtilsDialogObserver,
                        public MBTEngDevManObserver,
                        public MHbDeviceDialogObserver     
     {
@@ -93,9 +91,6 @@ private: // from MObexUtilsPropertyNotifyHandler
 private: // from MBTEngDevManObserver
     void HandleGetDevicesComplete(TInt aErr, CBTDeviceArray* aDeviceArray);
     
-private: //from MObexUtilsDialogObserver
-    void DialogDismissed(TInt aButtonId);
-    
 private:
     COPPController();
     void ConstructL();
@@ -113,6 +108,11 @@ private:
     TInt GetDriveWithMaximumFreeSpaceL();  
     TBool IsBackupRunning();
     TBool ProcessExists( const TSecureId& aSecureId );
+    
+    void LaunchFailureDialogL();
+    void LaunchMemoryFullDialogL(TInt aDrive);
+    void AddParamL(const TInt aKey, const TAny* aValue, 
+            CHbSymbianVariant::TType aValueType, CHbSymbianVariantMap& aVariantMap);
     
 private:
     void DataReceived(CHbSymbianVariantMap& aData);
@@ -153,13 +153,14 @@ private:
     CBTEngDevMan*               iDevMan;
     CBTDeviceArray*             iResultArray;
     TBTDeviceName               iRemoteDeviceName;
-    CObexUtilsDialog*           iDialog;
     CHbDeviceDialogSymbian*     iProgressDialog;
     TBool                       iDialogActive;
     TInt                        iFileCount;
+    CHbDeviceDialogSymbian*     iFailureDialog;
     TBool                       iReceivingFailed;
     CHbDeviceDialogSymbian*     iRecvDoneDialog;
     TBool                       iShowRecvCompleteDialog;
+    CHbDeviceDialogSymbian*     iMemoryFullDailog;
     };
 
 #endif      // OPPCONTROLLER_H

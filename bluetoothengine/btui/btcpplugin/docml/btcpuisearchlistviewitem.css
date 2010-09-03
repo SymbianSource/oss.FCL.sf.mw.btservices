@@ -1,0 +1,20 @@
+BtCpUiSearchListViewItem
+ {
+   layout:custom-list;
+ }
+
+BtCpUiSearchListViewItem::btDeviceIcon
+ {
+ 	top:-var(hb-param-margin-gene-top);
+ 	left: -var(hb-param-margin-gene-left);
+ 	fixed-width: var(hb-param-graphic-size-primary-large);
+ 	fixed-height: var(hb-param-graphic-size-primary-large);
+ 	
+  }
+
+BtCpUiSearchListViewItem::btDeviceName
+ {
+ 	 top: -2.0un;
+  	 text-height: var(hb-param-text-height-primary);
+	 fixed-width: 40.0un;
+ } 

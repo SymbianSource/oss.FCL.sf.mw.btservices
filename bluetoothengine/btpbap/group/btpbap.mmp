@@ -40,12 +40,11 @@ USERINCLUDE     ../inc
 
 APP_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE  	../../inc
-SYSTEMINCLUDE 	../../../inc
 SYSTEMINCLUDE	/epoc32/include/ecom
 
 
 LIBRARY         euser.lib         // Kernel API
-LIBRARY         ECom.lib
+LIBRARY         ecom.lib
 LIBRARY         pbapcli.lib
 LIBRARY         bluetooth.lib
 DEBUGLIBRARY    flogger.lib       // File logging

@@ -115,7 +115,8 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
                           public MObexUtilsDialogObserver,
                           public MObexUtilsProgressObserver,
                           public MBTEngSdpResultReceiver,
-                          public MBTEngSettingsObserver
+                          public MBTEngSettingsObserver,
+                          public MHbDeviceDialogObserver
     {
     public:  // Constructors and destructor
         
@@ -393,7 +394,7 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         * @param aReason Error value
         * @return None.
         */
-        void ShowErrorNote( TInt aReason ) const;
+        void ShowErrorNote( TInt aReason );
 
         /**
         * Cancel progress note
@@ -428,6 +429,30 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
          */
         void TurnBTPowerOnL( const TBTPowerStateValue aState );
         
+        /**
+         * Shows appropriate result of the send request using the BTDeviceDialogPlugin
+         * The dialog shown will be of discreet notifcation type
+         * @param aDialogTitle The notification dialog title
+         */
+        void ShowSendCompleteNoteL( const TInt aDialogTitle );
+        
+        /**
+         * Shows appropriate result of the send request using the BTDeviceDialogPlugin
+         * The dialog shown will be of message box type
+         * @param aDialogTitle The notification dialog title
+         * */
+        void ShowErrorMessageL( const TInt aDialogTitle,
+                                        const TDesC& aConfirmText = KNullDesC);
+        
+        
+        void AddDataL(CHbSymbianVariantMap* aMap, const TInt aKey, 
+            const TAny* aData, CHbSymbianVariant::TType aDataType);
+        
+    private: // From MHbDeviceDialogObserver
+        void DataReceived(CHbSymbianVariantMap& aData);
+        
+        void DeviceDialogClosed(TInt aCompletionCode);
+
     private:    // Data definitions
 
         enum TBTServiceStarterState
@@ -474,7 +499,10 @@ NONSHARABLE_CLASS (CBTServiceStarter) : public CActive,
         TBool                       iTriedBIP;
         TBool                       iTriedOPP;
         CBTServiceDelayedDestroyer* iDelayedDestroyer;
-        TBool                       iLocalisationInit;
+        CHbDeviceDialogSymbian*     iNotificationDialog;
+        RBuf                        iRemoteDeviceName;
+        TUint32                     iRemoteDeviceClass;
+        TBool                       iShowDialogNote;
     };
 
 #endif      // BT_SERVICE_CONTROLLER_H

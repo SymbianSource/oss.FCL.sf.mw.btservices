@@ -39,6 +39,15 @@ enum PowerStateQtValue {
     BtPowerUnknown  // only for error situations
 };
 
+enum DeviceSecurityService {
+    BtUnpair = 0,
+    BtBlock,     
+    BtUnblock,
+    BtAuthorize,
+    BtUnauthorize,
+    ServiceUnknown
+};
+
 enum DisconnectOption {
     ServiceLevel = 0,
     PhysicalLink, 

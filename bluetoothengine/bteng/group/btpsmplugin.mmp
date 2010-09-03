@@ -41,7 +41,6 @@ END
 
 
 SYSTEMINCLUDE   ../../inc   	//for private API headers (BluetoothEngine subsystem)
-SYSTEMINCLUDE   ../../../inc    //for internal API headers (localconnectivity)
 SYSTEMINCLUDE   /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 

@@ -49,6 +49,9 @@ _LIT(KBTSBIPTempPathDrive,"c:");
 const TInt KBTSUMaxPathLenght=256;
 const TInt KBTSUMaxPrivatePathLenght=20;
 
+_LIT(KLocFileName, "btdialogs_");
+_LIT(KPath, "z:/resource/qt/translations/");  
+
 _LIT(KBTNotSendSomeText,"txt_bt_info_receiving_device_does_not_support_all");
 _LIT(KBTNotSendOneText,"txt_bt_info_receiving_device_does_not_support_this");
 
@@ -297,7 +300,7 @@ void CBTSBIPController::SendL()
         RBuf filename;
         filename.CreateL(KMaxFileName);
         CleanupClosePushL(filename);
-        imageparam.iFile.Name(filename);
+        User::LeaveIfError(imageparam.iFile.Name(filename));
         
         iObserverPtr->UpdateProgressNoteL(imageparam.iFileSize,iFileIndex,filename);
         CleanupStack::PopAndDestroy(&filename);
@@ -632,6 +635,7 @@ void CBTSBIPController::HandleGetCompleteIndicationL( CObexBufObject* aGetRespon
 	delete remoteCapabilityList;
     CleanupStack::PopAndDestroy( xmlParser ); 
     
+    HbTextResolverSymbian::Init(KLocFileName, KPath);
     if(!allSupported  && iListPtr->ImageCount() > 1)
     	{      	
         HBufC* sendText = HbTextResolverSymbian::LoadLC(KBTNotSendSomeText);

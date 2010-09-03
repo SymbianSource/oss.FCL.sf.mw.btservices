@@ -15,19 +15,20 @@
 *
 */
 
-
 #include "btabstractdelegate.h"
 #include "btqtconstants.h"
-
 #include <btsettingmodel.h>
 #include <btdevicemodel.h>
+#include <btengsettings.h>
+#include <bluetoothuitrace.h>
 
 /*!
     Constructor.
  */
 BtAbstractDelegate::BtAbstractDelegate( BtSettingModel *settingModel, 
         BtDeviceModel *deviceModel, QObject *parent )
-    : QObject( parent ), mSettingModel(settingModel),mDeviceModel(deviceModel)
+    : QObject( parent ), mSettingModel(settingModel), mDeviceModel(deviceModel),
+      mExecuting(false)
 {
 }
 
@@ -38,28 +39,50 @@ BtAbstractDelegate::~BtAbstractDelegate()
 {
 }
 
-BtSettingModel *BtAbstractDelegate::getSettingModel()
+bool BtAbstractDelegate::isExecuting()
+{
+    return mExecuting;
+}
+
+BtSettingModel *BtAbstractDelegate::settingModel()
 {
     return mSettingModel;
 }
 
-BtDeviceModel *BtAbstractDelegate::getDeviceModel()
+BtDeviceModel *BtAbstractDelegate::deviceModel()
 {
     return mDeviceModel;
 }
 
 void BtAbstractDelegate::cancel()
 {
-    
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
 }
 
 bool BtAbstractDelegate::isBtPowerOn()
 {
-    QModelIndex powerIndex = getSettingModel()->index(BtSettingModel::PowerStateRow, 0);
-    PowerStateQtValue powerState = (PowerStateQtValue)getSettingModel()->data(powerIndex, BtSettingModel::SettingValueRole).toInt();
-    
-    return (BtPowerOn == powerState);
+    TBTPowerStateValue state(EBTPowerOff);
+    CBTEngSettings *settings(0);
+    TRAP_IGNORE(settings = CBTEngSettings::NewL());
+    if (settings) {
+        // error on function call is treated as BT OFF
+        (void) settings->GetPowerState(state);
+        delete settings;
+    }
+   BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, state);
+   return (EBTPowerOn == state);
 }
 
+void BtAbstractDelegate::completeDelegateExecution(int error)
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, error);
+    setExecuting(false);
+    emit delegateCompleted(error, this);
+    BOstraceFunctionExit0( DUMMY_DEVLIST );
+}
 
-
+void BtAbstractDelegate::setExecuting(bool status)
+{
+    mExecuting = status;
+}

@@ -275,6 +275,11 @@ private: // data
      * Number of pairing attempt
      */
     TInt iPairingAttempt;
+
+    /**
+     * Pairing failure dialog is not deleted when the handler is deleted
+     */
+    TBool iDialogIsOrphan;
     
     };
 

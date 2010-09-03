@@ -37,6 +37,8 @@ public:
     
     virtual ~BtDelegateDevName();
 
+    int supportedEditorTypes() const;
+    
     virtual void exec( const QVariant &params );
     
 public slots:

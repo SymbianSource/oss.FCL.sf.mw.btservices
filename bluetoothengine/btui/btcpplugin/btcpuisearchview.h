@@ -18,11 +18,7 @@
 #ifndef	BTCPUISEARCHVIEW_H
 #define	BTCPUISEARCHVIEW_H
 
-#include <cpbasesettingview.h>
-#include <hbaction.h>
-#include <hbtoolbar.h>
 #include "btcpuibaseview.h"
-#include "btuimodelsortfilter.h"
 
 class HbLabel;
 class HbPushButton;
@@ -30,68 +26,46 @@ class HbIcon;
 class HbDocumentLoader;
 class HbListView;
 class BtAbstractDelegate;
-class HbSelectionDialog;
 class HbGroupBox;
 class HbDataForm;
 
-class BtCpUiSearchView : public BtCpUiBaseView
+class BtcpuiSearchView : public BtcpuiBaseView
 {
     Q_OBJECT
     
 public:
 
-    explicit BtCpUiSearchView(
-            BtSettingModel &settingModel, 
+    explicit BtcpuiSearchView(BtSettingModel &settingModel, 
             BtDeviceModel &deviceModel, 
             QGraphicsItem *parent = 0);
-    virtual ~BtCpUiSearchView();
-    virtual void activateView( const QVariant& value, bool fromBackButton );
+    virtual ~BtcpuiSearchView();
+    virtual void activateView( const QVariant& value, bool backNavi);
     virtual void deactivateView();
-    virtual void setSoftkeyBack();
-    
+    virtual void createContextMenuActions(int majorRole);
 public slots:
-    virtual void switchToPreviousView();
     void changeOrientation( Qt::Orientation orientation );
     void stopSearching();
     void retrySearch();
-    void viewByDeviceTypeDialog();
-    void viewByDialogClosed(HbAction* action);
-    void searchDelegateCompleted(int error);
+    virtual void viewByDialogClosed(HbAction* action);
     void deviceSearchCompleted(int error);
-    void deviceSelected(const QModelIndex& modelIndex);
-    
+        
 private:
+    virtual void take(BtAbstractDelegate *delegate);
     void startSearchDelegate();
     
-private:
-    enum devTypeSelectionList {
-        BtUiDevAudioDevice = 0,
-        BtUiDevComputer,
-        BtUiDevInputDevice,
-        BtUiDevPhone,
-        BtUiDevOtherDevice
-    };
 private:
     HbDocumentLoader *mLoader;
     HbLabel *mDeviceIcon;
     HbDataForm *mDataForm;
     HbLabel *mLabelSearching;        
     HbListView *mDeviceList;
-    QStringList mDevTypeList;
-    HbSelectionDialog *mQuery;
     
     Qt::Orientation mOrientation;
-    
-    HbMainWindow*           mMainWindow;
-    BtCpUiBaseView*         mMainView;
-    HbAction *              mSoftKeyBackAction;
-    HbAction*               mViewBy;
-    HbAction*               mStop;
-    HbAction*               mRetry;
 
-    //pointer to abstract delegate, and it is instantiated at runtime
-    BtAbstractDelegate*     mAbstractDelegate;
-    BtuiModelSortFilter*    mBtuiModelSortFilter;
+    HbAction* mViewBy;
+    HbAction* mStop;
+    HbAction* mRetry;
+
 };
 
 #endif//	BTCPUISEARCHVIEW_H

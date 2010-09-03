@@ -241,14 +241,18 @@ TInt CLcCustomPlugin::CreatePartOfReply( RBuf8& aDstBuffer )
         TRACE_FUNC_EXIT
         return KErrNotFound;
         }
-    aDstBuffer.Create( iReplyBuffer, partLength );
-    iReplyBuffer.Delete( 0, partLength );
+    aDstBuffer.Close();
+    TInt err = aDstBuffer.Create( iReplyBuffer, partLength );
+    if (!err)
+    	{
+    	iReplyBuffer.Delete( 0, partLength );
+    	}
     if ( iReplyBuffer.Length() == 0 )
         {
         iReplyBuffer.Close();
         }
     TRACE_FUNC_EXIT
-    return KErrNone;
+    return err;
     }
 
 // ---------------------------------------------------------------------------
@@ -256,46 +260,40 @@ TInt CLcCustomPlugin::CreatePartOfReply( RBuf8& aDstBuffer )
 // request to ATEXT. Uses iReplyBuffer for reply storage.
 // ---------------------------------------------------------------------------
 //
-TInt CLcCustomPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
+void CLcCustomPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
                                               const TDesC8& aSrcBuffer,
 											  TInt aError )
     {
     TRACE_FUNC_ENTRY
     iReplyBuffer.Close();
-    if ( aError != KErrNone )
-        {
-        HandleCommandCompleted( aError, EReplyTypeUndefined );
-        iHcCmd = NULL;
-        iHcReply = NULL;
-        TRACE_FUNC_EXIT
-        return KErrNone;
-        }
-    if ( !iHcReply )
-        {
-        TRACE_FUNC_EXIT
-        return KErrGeneral;
-        }
-    switch ( aReplyType )
-        {
-        case EReplyTypeOther:
-            iReplyBuffer.Create( aSrcBuffer );
-            break;
-        case EReplyTypeOk:
-            CreateOkOrErrorReply( iReplyBuffer, ETrue );
-            break;
-        case EReplyTypeError:
-            CreateOkOrErrorReply( iReplyBuffer, EFalse );
-            break;
-        default:
-            TRACE_FUNC_EXIT
-            return KErrGeneral;
-        }
-    CreatePartOfReply( *iHcReply );
-    HandleCommandCompleted( KErrNone, aReplyType );
+    ASSERT(iHcReply);
+    if ( !aError )
+    	{
+		switch ( aReplyType )
+			{
+			case EReplyTypeOther:
+				aError = iReplyBuffer.Create( aSrcBuffer );
+				break;
+			case EReplyTypeOk:
+				aError = CreateOkOrErrorReply( iReplyBuffer, ETrue );
+				break;
+			case EReplyTypeError:
+				aError = CreateOkOrErrorReply( iReplyBuffer, EFalse );
+				break;
+			default:
+				aError = KErrGeneral;
+			}
+    	}
+	if ( !aError )
+		{
+		aError = CreatePartOfReply( *iHcReply );
+		}
+
     iHcCmd = NULL;
     iHcReply = NULL;
+
+    HandleCommandCompleted( aError, aError ? EReplyTypeUndefined : aReplyType );
     TRACE_FUNC_EXIT
-    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------

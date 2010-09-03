@@ -40,7 +40,7 @@ MW_LAYER_SYSTEMINCLUDE
 
 SYSTEMINCLUDE           /epoc32/include/ecom
 
-LIBRARY	ECom.lib
+LIBRARY	ecom.lib
 LIBRARY euser.lib
 LIBRARY atextpluginbase.lib
 LIBRARY etelmm.lib 

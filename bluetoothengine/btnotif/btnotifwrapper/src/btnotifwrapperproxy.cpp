@@ -24,6 +24,7 @@
 #include <ecom/implementationproxy.h>
 #include <btmanclient.h>
 #include <btextnotifiers.h>
+#include <btnotif.h>
 #ifdef SYMBIAN_ENABLE_SPLIT_HEADERS
 #include <btextnotifierspartner.h>
 #endif
@@ -41,11 +42,11 @@ const TUid KBTAuthChannel = {0x00000602};
 /** Channel for OBEX passkey notifiers */
 //const TUid KBTObexAuthChannel = {0x00000603};
 /** Channel for power mode query */
-//const TUid KBTPowerModeChannel = {0x00000605};
+const TUid KBTPowerModeChannel = {0x00000605};
 /** Channel for query notifiers */
 //const TUid KBTQueryChannel = {0x00000606};
 /** Channel for power mode query */
-//const TUid KBTInfoChannel = {0x00000610};
+const TUid KBTInfoChannel = {0x00000610};
 
 
 // ======== LOCAL FUNCTIONS ========
@@ -84,7 +85,10 @@ CArrayPtr<MEikSrvNotifierBase2>* CreateNotifierArrayL()
     // KBTUserConfirmationNotifierUid for incoming JW dedicated bonding.
     
     CreateAndAppendNotifierLC( *notifiers, KDeviceSelectionNotifierUid, KBTDiscoveryChannel );
+    
+    CreateAndAppendNotifierLC( *notifiers, KBTGenericInfoNotifierUid, KBTInfoChannel );
 
+    CreateAndAppendNotifierLC( *notifiers, KPowerModeSettingNotifierUid, KBTPowerModeChannel );
     /*
      * todo:
      * Other notifiers to be migrated:
@@ -92,12 +96,8 @@ CArrayPtr<MEikSrvNotifierBase2>* CreateNotifierArrayL()
      * existing stack notifiers:
      * CreateAndAppendNotifierL( aArray, KPbapAuthNotifierUid, KBTObexPINChannel );
      * 
-     * S60 SDK API:
-     * CreateAndAppendNotifierL( aArray, KPowerModeSettingNotifierUid, KBTPowerModeChannel );
-     *
      * S60-defined platform:
      * CreateAndAppendNotifierL( aArray, KBTObexPasskeyQueryNotifierUid, KBTObexPINChannel );
-     * CreateAndAppendNotifierL( aArray, KBTGenericInfoNotifierUid, KBTInfoChannel );
      * CreateAndAppendNotifierL( aArray, KBTGenericQueryNotifierUid, KBTQueryChannel );
      * 
      * new (PAN-related):

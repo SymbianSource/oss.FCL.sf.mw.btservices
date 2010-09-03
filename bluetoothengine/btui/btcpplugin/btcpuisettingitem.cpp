@@ -18,70 +18,64 @@
 #include "btcpuisettingitem.h"
 #include <cpitemdatahelper.h>
 #include <bluetoothuitrace.h>
-
+#include <btsettingmodel.h>
+#include <btdevicemodel.h>
 #include <HbInstance>
 #include <HbTranslator>
+#include <HbView>
+#include "btcpuimainview.h"
 
-BtCpUiSettingItem::BtCpUiSettingItem(CpItemDataHelper &itemDataHelper) :
-    CpSettingFormEntryItemData(itemDataHelper)
+BtcpuiSettingItem::BtcpuiSettingItem(CpItemDataHelper &itemDataHelper) :
+    CpSettingFormEntryItemData(itemDataHelper), mMainView(0)
 {
     bool ret(false);
     loadTranslators();
     mSettingModel = new BtSettingModel(this);
     mDeviceModel = new BtDeviceModel(this);
-    
+    mMainWindow = hbInstance->allMainWindows().first();
     ret = connect(mSettingModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)), 
             this, SLOT(handleDataChanged(QModelIndex,QModelIndex)));
-    BTUI_ASSERT_X( ret, "BtCpUiSettingItem::BtCpUiSettingItem", "can't connect dataChanged" );
+    BTUI_ASSERT_X( ret, "BtcpuiSettingItem::BtcpuiSettingItem", "can't connect dataChanged" );
 
     this->setDescription(hbTrId("txt_cp_dblist_bluetooth"));
     updateStatus();
 }
 
-BtCpUiSettingItem::~BtCpUiSettingItem()
+BtcpuiSettingItem::~BtcpuiSettingItem()
 {
+    delete mMainView;
     delete mViewTranslator;
     delete mDialogTranslator;
 }
 
-void BtCpUiSettingItem::loadTranslators()
+void BtcpuiSettingItem::onLaunchView()
 {
-    mViewTranslator = new HbTranslator("btviews");
-    mDialogTranslator = new HbTranslator("btdialogs");
-}
+    // Main view will be launched when the user clicked the Bluetooth setting item in CP.
 
-void BtCpUiSettingItem::onLaunchView()
-{
-  
-    mMainWindow = hbInstance->allMainWindows().first();
-    
-    mBtMainView = new BtCpUiMainView(*mSettingModel, *mDeviceModel);
-      
+    // We need to save the pointer of the view from which the main view is launched, 
+    // for navigating back to CP when the main view is closed.
     mCpView = mMainWindow->currentView();
-    
-    mMainWindow->addView(mBtMainView);
-    mMainWindow->setCurrentView(mBtMainView);
-    
-    connect(mBtMainView, SIGNAL(aboutToClose()), this, SLOT(handleCloseView()));
-    
+    mMainView = new BtcpuiMainView(*mSettingModel, *mDeviceModel);
+    mMainWindow->addView(mMainView);
+    connect(mMainView, SIGNAL(aboutToClose()), this, SLOT(handleCloseMainView()));
+    mMainWindow->setCurrentView(mMainView);
 }
 
-void BtCpUiSettingItem::handleCloseView()
+void BtcpuiSettingItem::handleCloseMainView()
 {
-    mBtMainView->deactivateView();
+    if (mMainView) {
+        mMainWindow->removeView(mMainView);
+        delete mMainView;
+        mMainView = 0;
+    }
     mMainWindow->setCurrentView(mCpView);
-    
-    mMainWindow->removeView(mBtMainView);
-    delete mBtMainView;
-    mBtMainView = 0;
-    
 }
 
 /*!
     Slot for receiving notification of local setting changes from the model.
     Identify the setting changed and update the corresponding UI item.
  */
-void BtCpUiSettingItem::handleDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+void BtcpuiSettingItem::handleDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {     
     // update only the part of the view specified by the model's row(s)
     for (int i=topLeft.row(); i <= bottomRight.row(); i++) {
@@ -96,7 +90,12 @@ void BtCpUiSettingItem::handleDataChanged(const QModelIndex &topLeft, const QMod
     }   
 }
 
-void BtCpUiSettingItem::updateStatus()
+CpBaseSettingView *BtcpuiSettingItem::createSettingView() const
+{
+    return 0;
+}
+
+void BtcpuiSettingItem::updateStatus()
 {
     QString btStatusText;
     HbIcon btStatusIcon;
@@ -121,7 +120,7 @@ void BtCpUiSettingItem::updateStatus()
                 btStatusIcon.setIconName("qtg_large_bluetooth");
                 break;
             default:
-                BTUI_ASSERT_X(false, "BtCpUiSettingItem::updateStatus", "invalid visibility mode");
+                BTUI_ASSERT_X(false, "BtcpuiSettingItem::updateStatus", "invalid visibility mode");
         }
     }
     else {
@@ -129,12 +128,14 @@ void BtCpUiSettingItem::updateStatus()
         btStatusText = hbTrId("txt_cp_dblist_bluetooth_val_off");
         btStatusIcon.setIconName("qtg_large_bluetooth_off");
     }
-        
     this->setDescription(btStatusText);
     this->setEntryItemIcon(btStatusIcon);
 }
 
-CpBaseSettingView *BtCpUiSettingItem::createSettingView() const
+
+void BtcpuiSettingItem::loadTranslators()
 {
-	return 0;
+    mViewTranslator = new HbTranslator("btviews");
+    mDialogTranslator = new HbTranslator("btdialogs");
 }
+

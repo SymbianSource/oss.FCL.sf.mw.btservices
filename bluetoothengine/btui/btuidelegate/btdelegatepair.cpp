@@ -47,6 +47,15 @@ BtDelegatePair::~BtDelegatePair()
     delete mLoader;
 }
 
+/*!
+    Returns the supported editor types.
+    \return the sum of supported editor types
+ */
+int BtDelegatePair::supportedEditorTypes() const
+{
+    return BtDelegate::PairDevice;
+}
+
 void BtDelegatePair::exec( const QVariant &params )
 {
     
@@ -60,8 +69,8 @@ void BtDelegatePair::exec( const QVariant &params )
         //todo: Do we ask for user confirmation here..?
         if (!mAbstractDelegate) { 
             mAbstractDelegate = BtDelegateFactory::newDelegate(BtDelegate::ManagePower, 
-                    getSettingModel(), getDeviceModel() ); 
-            connect( mAbstractDelegate, SIGNAL(commandCompleted(int)), this, SLOT(powerDelegateCompleted(int)) );
+                    settingModel(), deviceModel() ); 
+            connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, SLOT(powerDelegateCompleted(int)) );
             mAbstractDelegate->exec(QVariant(BtPowerOn));
         }
     }
@@ -71,7 +80,6 @@ void BtDelegatePair::exec( const QVariant &params )
 void BtDelegatePair::powerDelegateCompleted(int error)
 {
     if (mAbstractDelegate) {
-        disconnect(mAbstractDelegate);
         delete mAbstractDelegate;
         mAbstractDelegate = 0;
     }
@@ -87,10 +95,10 @@ void BtDelegatePair::powerDelegateCompleted(int error)
 void BtDelegatePair::exec_pair()
 {
     int error = KErrNone;
-    mdeviceName = getDeviceModel()->data(deviceIndex,BtDeviceModel::NameAliasRole).toString();
+    mdeviceName = deviceModel()->data(deviceIndex,BtDeviceModel::NameAliasRole).toString();
     
-    QString strBtAddr = getDeviceModel()->data(deviceIndex,BtDeviceModel::ReadableBdaddrRole).toString();
-    int cod = getDeviceModel()->data(deviceIndex,BtDeviceModel::CoDRole).toInt();
+    QString strBtAddr = deviceModel()->data(deviceIndex,BtDeviceModel::ReadableBdaddrRole).toString();
+    int cod = deviceModel()->data(deviceIndex,BtDeviceModel::CoDRole).toInt();
     
     if ( ! mBtengConnMan ){
         TRAP( error, mBtengConnMan = CBTEngConnMan::NewL(this) );
@@ -166,7 +174,7 @@ void BtDelegatePair::PairingComplete( TBTDevAddr& aAddr, TInt aErr )
 void BtDelegatePair::emitCommandComplete(int error)
 {
 
-    emit commandCompleted(error);
+    emit delegateCompleted(error, this);
 }
 
 void BtDelegatePair::cancel()

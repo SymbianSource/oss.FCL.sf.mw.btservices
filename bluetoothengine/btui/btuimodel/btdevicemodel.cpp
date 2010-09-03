@@ -18,6 +18,7 @@
 #include <btdevicemodel.h>
 #include "btdevicemodel_p.h"
 #include "bluetoothuitrace.h"
+#include "btuidevtypemap.h"
 
 /*!
     This Constructor creates new instances of model data structure.
@@ -126,6 +127,53 @@ QVariant BtDeviceModel::data( const QModelIndex &index, int role ) const
 QMap<int, QVariant> BtDeviceModel::itemData( const QModelIndex & index ) const
 {
     return  d.data()->itemData( index.row(), index.column() );
+}
+
+/*!
+    \Reimplemented just to match the model based on major property
+ */
+QModelIndexList BtDeviceModel::match(const QModelIndex & start, int role,
+        const QVariant & value, int hits, Qt::MatchFlags flags ) const
+{
+    DevDataRole propRole = (DevDataRole)role;
+    if(BtDeviceModel::MajorPropertyRole == propRole) {
+        BtuiDevProperty::DevMajorProperty propValue = (BtuiDevProperty::DevMajorProperty)value.toInt();
+        QModelIndexList indexList;
+        int count = rowCount();
+        if (count && (start.row() < count)) {
+            for(int row = start.row(); row < count; row++) {
+                QModelIndex modelIndex = index(row,0);
+                int majorPropRole = data(modelIndex,BtDeviceModel::MajorPropertyRole).toInt();
+                if (majorPropRole & propValue) {
+                    indexList.append(modelIndex);
+                }
+            }
+        }
+        return indexList;
+    }
+    
+    return QAbstractItemModel::match(start, role, value, hits, flags);
+}
+
+
+/*!
+    Returns device count of devices having majorProperty.
+ */
+int BtDeviceModel::deviceCount(int majorProperty)
+{
+    int deviceCount = 0;
+    int count = rowCount();
+    BtuiDevProperty::DevMajorProperty propValue = (BtuiDevProperty::DevMajorProperty)majorProperty;
+    
+    for(int row = 0; row < count; row++) {
+        QModelIndex modelIndex = index(row,0);
+        int majorPropRole = data(modelIndex,BtDeviceModel::MajorPropertyRole).toInt();
+        if (majorPropRole & propValue) {
+            deviceCount++;
+        }
+    }
+
+    return deviceCount;
 }
 
 

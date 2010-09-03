@@ -39,10 +39,10 @@ public:
     
     virtual ~BtDelegateVisibility();
 
-    virtual void exec( const QVariant &params );
-    
+    int supportedEditorTypes() const;
 
-    
+    virtual void exec( const QVariant &params );
+
 public slots:
 
 private:

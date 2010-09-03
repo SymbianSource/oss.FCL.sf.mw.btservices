@@ -36,7 +36,8 @@ END
 
 
 USERINCLUDE   ../inc
-SYSTEMINCLUDE  ../../../inc ../../../../inc  /epoc32/include/ecom
+SYSTEMINCLUDE	../../../obexserviceman/utils/inc
+SYSTEMINCLUDE  /epoc32/include/ecom
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbwidgets

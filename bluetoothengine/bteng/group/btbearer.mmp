@@ -42,7 +42,6 @@ USERINCLUDE             ../btbearer/inc
 
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE           /epoc32/include/ecom
-SYSTEMINCLUDE           ../../../inc
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
 
 LIBRARY                 euser.lib

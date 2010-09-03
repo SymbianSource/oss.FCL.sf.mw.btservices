@@ -15,7 +15,6 @@
 *
 */
 
-
 #include "btsettingmodel_p.h"
 #include <btdevice.h>
 #include <btmanclient.h>
@@ -33,7 +32,7 @@ BtSettingModelPrivate::BtSettingModelPrivate( BtSettingModel& model, QObject *pa
     {
     int err( 0 );
     if (!err ) {
-        err = mLocalDeviceKey.Attach( KPropertyUidBluetoothCategory, 
+        err = mLocalDeviceKey.Attach( KPropertyUidBluetoothCategory,
                     KPropertyKeyBluetoothGetRegistryTableChange );
     }
     
@@ -56,17 +55,15 @@ BtSettingModelPrivate::BtSettingModelPrivate( BtSettingModel& model, QObject *pa
     mLocalDeviceKey.Subscribe( mLocalDeviceWatcher->RequestStatus() );
     mLocalDeviceWatcher->GoActive();
     
-    // Get the device name
-    TBTDeviceName  deviceName;
-    (void) mBtengSetting->GetLocalName( deviceName );
-    updateDeviceName( QString::fromUtf16( deviceName.Ptr(), deviceName.Length() ) );
+    // At initialization, we do not need to handle the return value
+    (void) updateLocalDeviceName();
     
-    // Get the power setting.
+    // Initialize the power setting.
     TBTPowerStateValue power( EBTPowerOff );
     (void) mBtengSetting->GetPowerState( power );
     setPowerSetting( power );
     
-    // Get the visibility mode
+    // Initialize the visibility mode
     TBTVisibilityMode visibilityMode( EBTVisibilityModeNoScans );
     (void) mBtengSetting->GetVisibilityMode( visibilityMode );
     setVisibilityMode( visibilityMode );
@@ -180,7 +177,15 @@ void BtSettingModelPrivate::RequestCompletedL( CBtSimpleActive* active, TInt sta
     if ( active->RequestId() == KLocalDeviceNameWatcher ) {
         mLocalDeviceKey.Subscribe( mLocalDeviceWatcher->RequestStatus() );
         mLocalDeviceWatcher->GoActive();
-        updateDeviceName( QString() );
+        // Refresh local name of this model only when the local device table is changed.
+        TInt changedTable;
+        TInt err = mLocalDeviceKey.Get( changedTable );
+        if( !err && changedTable == KRegistryChangeLocalTable ) {
+            bool updated = updateLocalDeviceName();
+            if (updated) {
+                emit settingDataChanged( BtSettingModel::LocalBtNameRow, this );
+            }
+        }
     }
 }
 
@@ -193,6 +198,9 @@ void BtSettingModelPrivate::CancelRequest( TInt requestId ) {
     }
 }
 
+/*!
+    AO's RunL() cannot leave in Qt applications. No handling.
+ */
 void BtSettingModelPrivate::HandleError( CBtSimpleActive* active, TInt error ) {
     Q_UNUSED( active );
     Q_UNUSED( error );
@@ -200,28 +208,20 @@ void BtSettingModelPrivate::HandleError( CBtSimpleActive* active, TInt error ) {
 
 /*!
     Update local Bluetooth device name in the data store.
-    @param name the latest Bluetooth name.
+    \return true if the local name is really updated in this model; false, otherwise.
  */
-void BtSettingModelPrivate::updateDeviceName( const QString &name ) 
+bool BtSettingModelPrivate::updateLocalDeviceName() 
 {
-    // To-do: the data structure initialization is not impled yet in the model
-    BtuiModelDataItem& item = 
-            mData[ BtSettingModel::LocalBtNameRow ];
-    
-    bool setByUser = !name.isEmpty();
-    
-    // The additional parameter is the flag indicating whether the 
-    // Bluetooth name has been set by the user.
-    // The flag is set to true if the name has been set.    
-    // item[ BtSettingModel::SettingValueParamRole ] = QVariant( setByUser );
-    
-    QString resolvedName( name );
-    if ( resolvedName.isEmpty() ) {
-        // We get the default name as suggestion for the user to set.
-        getNameFromRegistry( resolvedName );
+    QString nameInReg;
+    getNameFromRegistry( nameInReg );
+    QString currentName = mData.at(BtSettingModel::LocalBtNameRow).value(
+                    BtSettingModel::settingDisplayRole).toString();
+    if ( nameInReg != currentName ) {
+        mData[BtSettingModel::LocalBtNameRow][BtSettingModel::settingDisplayRole] = QVariant(nameInReg);
+        mData[BtSettingModel::LocalBtNameRow][BtSettingModel::SettingValueRole] = QVariant(nameInReg);
+        return true;
     }
-    item[ BtSettingModel::settingDisplayRole ] = QVariant( resolvedName );
-    item[ BtSettingModel::SettingValueRole ] = QVariant( resolvedName );
+    return false;
 }
 
 /*!
@@ -229,17 +229,12 @@ void BtSettingModelPrivate::updateDeviceName( const QString &name )
  */
 void BtSettingModelPrivate::setPowerSetting( TBTPowerStateValue state )
 {
-    BtuiModelDataItem& item = 
-            mData[ BtSettingModel::PowerStateRow ];
-    
-    item[ BtSettingModel::SettingValueRole ] = QVariant( QtPowerMode(state) );
+    mData[BtSettingModel::PowerStateRow][BtSettingModel::SettingValueRole] = QVariant(QtPowerMode(state));
 }
 
 void BtSettingModelPrivate::setVisibilityMode( TBTVisibilityMode state )
 {
-    BtuiModelDataItem& item = mData[ BtSettingModel::VisibilityRow ];
-
-    item [ BtSettingModel::SettingValueRole ] = QVariant( QtVisibilityMode(state) );
+    mData[BtSettingModel::VisibilityRow][BtSettingModel::SettingValueRole] = QVariant(QtVisibilityMode(state));
 }
 
 /*!

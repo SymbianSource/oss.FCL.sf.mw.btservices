@@ -72,10 +72,9 @@ public:
      * Update an outstanding request for this connection.
      *  
      * @since Symbian^4
-     * @param aUid The UID of the notifier for this update.
-     * @param aParams The updated parameters for this request from the client.
+     * @param aMessage.
      */
-    void UpdatePairingNotifierL( TInt aUid, const TDesC8& aParams );
+    void CBTNotifPairNotifier::UpdatePairingNotifierL( const RMessage2& aMessage);
 
     /**
      * Cancel an outstanding request for this connection.

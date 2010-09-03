@@ -19,7 +19,7 @@
 
 
 #include "btsssendlisthandler.h"
-#include "BTServiceParameterList.h"
+#include <BTServiceParameterList.h>
 
 #include <xqconversions.h>
 

@@ -52,7 +52,7 @@ SOURCE        basrvrvc.cpp
 SOURCE        basrvaccfwconn.cpp
 
 USERINCLUDE     ../inc
-SYSTEMINCLUDE   ../../inc ../../../inc
+SYSTEMINCLUDE   ../../inc
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY			euser.lib
@@ -64,7 +64,7 @@ LIBRARY         sdpdatabase.lib
 LIBRARY 		btmanclient.lib
 LIBRARY 		btengdevman.lib
 LIBRARY         centralrepository.lib
-LIBRARY 		AccPolicy.lib
+LIBRARY 		accpolicy.lib
 
 #ifdef PRJ_USE_STUB
 LIBRARY         sdpagent_stub.lib

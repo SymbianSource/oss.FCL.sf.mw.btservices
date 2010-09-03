@@ -39,7 +39,6 @@ SOURCE        hidmousedriverproxy.cpp
 
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE  ../../../../../inc
 
 SOURCEPATH		../data 
 START RESOURCE          hidmouse.rss 

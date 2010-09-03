@@ -43,6 +43,11 @@ enum TBTDialogResourceId
     EPairingFailureOk,
     EVisibilityTimeout,
     EUnpairedDevice,
+    EGenericInfo,
+    EBluetoothTestMode,
+    ESendCompleted,
+    ESendCancelled,
+    EIssueOfflineQuery,
     EUnusedResource	// The last ID
     };
 
@@ -70,8 +75,8 @@ public:
         EGlobalNotif,
         EUserAuthorization,
         EReceiveProgress,
-        ETransferFailed, 
-        EReceiveDone
+        EReceiveDone,
+        EInformationDialog
         };
 
     /**  Enumeration for the notification parameters data type to be configured. */
@@ -94,7 +99,13 @@ public:
         EPairingRequest,
         ERecvFailed,
         ESendFailed,
-        EReceiveCompleted
+        EReceiveCompleted,
+        EBTAddress,
+        EOfflineQuery,
+        EMemoryFull,
+        EFileMoved,
+        EDriveNotFound,
+        EUnsupportedImages
         };
     
     enum TDialogActionType
@@ -152,7 +163,10 @@ public:
         EAdditionalDesc,
         EReceivingFileName,
         EReceivingFileSize,
-        EReceivedFileCount
+        EReceivedFileCount,
+        ELocalAddress,
+        EDriveLetter,
+        EDriveName
         };
 
     inline TBluetoothDeviceDialog();

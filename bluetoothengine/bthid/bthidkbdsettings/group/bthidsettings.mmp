@@ -34,7 +34,7 @@ USERINCLUDE   ../../common/inc
 
 
 MW_LAYER_SYSTEMINCLUDE
-SYSTEMINCLUDE ../../../../inc ../../../inc
+SYSTEMINCLUDE ../../../inc
 
 LIBRARY       euser.lib 
 LIBRARY       ecom.lib

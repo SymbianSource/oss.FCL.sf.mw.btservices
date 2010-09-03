@@ -1,0 +1,14 @@
+<hbwidget version="0.1" type="BtCpUiSearchListViewItem">
+
+	<layout name="custom-list" type="mesh">
+
+		<meshitem src="btDeviceIcon" srcEdge="TOP" dst="" dstEdge="TOP" />
+		<meshitem src="btDeviceIcon" srcEdge="LEFT" dst="" dstEdge="LEFT" />
+		<meshitem src="btDeviceIcon" srcEdge="BOTTOM" dst="" dstEdge="BOTTOM" />
+
+		<meshitem src="btDeviceName" srcEdge="TOP" dst="btDeviceIcon" dstEdge="TOP" />
+		<meshitem src="btDeviceName" srcEdge="LEFT" dst="btDeviceIcon" dstEdge="RIGHT" />
+						
+	</layout>
+	
+</hbwidget>

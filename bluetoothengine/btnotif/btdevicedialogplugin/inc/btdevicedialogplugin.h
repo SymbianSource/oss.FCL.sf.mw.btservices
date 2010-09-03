@@ -70,6 +70,7 @@ private:
     BtDeviceDialogPluginPrivate *d;
     HbTranslator* mDialogTranslator;
     HbTranslator* mViewTranslator;
+    HbTranslator* mCommonErrorsTranslator;
 };
 
 #endif // BTDEVICEDIALOGPLUGIN_P_H

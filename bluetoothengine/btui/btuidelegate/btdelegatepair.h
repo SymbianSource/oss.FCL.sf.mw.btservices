@@ -41,6 +41,8 @@ public:
             BtDeviceModel* deviceModel, QObject *parent = 0 );
     
     virtual ~BtDelegatePair();
+    
+    int supportedEditorTypes() const;
 
     virtual void exec( const QVariant &params );
     

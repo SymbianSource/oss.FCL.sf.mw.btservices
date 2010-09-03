@@ -33,16 +33,6 @@
 #include <hbselectiondialog.h>
 #include "btdevicedialogutils.h"
 
-
-
-/*struct device
-    {
-    QString mDeviceName;
-    QString mDeviceType;
-    int     mDeviceIdx;
-    };*/
-
-
 class BTDeviceSearchDialogWidget : public QObject,
                                 public HbDeviceDialogInterface
     {
@@ -61,10 +51,8 @@ public: // from HbDeviceDialogInterface
     
 public slots:
     void stopRetryClicked();
-    void retryClicked();
     void viewByClicked();
     void deviceSelected(const QModelIndex& modelIndex);
-//    void viewByItemSelected(int index);
     void selectionDialogClosed(HbAction *action);
     void searchDialogClosed(); 
     
@@ -87,26 +75,15 @@ signals:
 private:
     HbDocumentLoader *mLoader;
     
-    /**
-     * 
-     * item model for content list view.
-     */
-    
     QStandardItemModel* mContentItemModel;
     
     HbSelectionDialog *mQuery;
-//    QList<QString>      mDeviceTypeList;
     QStringList mDevTypeList;
-//    QList<device>       mDeviceList;
-    HbListView*         mListView;
+    HbListView*         mDeviceList;
     HbLabel*            mSearchLabel; 
     HbLabel*            mSearchIconLabel;
     HbLabel*            mSearchDoneLabel;
-//    bool                mViewByChosen;
-//    QList<device>       mDeviceLstOfType;
-//    int                 mDeviceLstIdx;
     int                 mSelectedDeviceType;
-//    int                 mDeviceDialogData;
     HbDialog *mSearchDevicesDialog;
     HbAction *mStopRetryAction;
     HbAction *mShowAction;

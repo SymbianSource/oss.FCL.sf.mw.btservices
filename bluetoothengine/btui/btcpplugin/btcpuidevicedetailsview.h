@@ -38,7 +38,7 @@ public:
     void setDeviceName(const QString &deviceName);
     void addItem(HbDataForm *item);
     void removeItem(HbDataForm *item);
-
+    void removeAllItems();
     
 protected:
     HbDocumentLoader *mLoader;

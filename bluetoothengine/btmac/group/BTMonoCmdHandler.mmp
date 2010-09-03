@@ -54,8 +54,7 @@ SOURCE	      btmccallinghandler.cpp
 
 USERINCLUDE   ../inc/btmonocmdhandler 
 USERINCLUDE   ../common
-USERINCLUDE   ../../inc 
-USERINCLUDE   ../../../inc
+USERINCLUDE   ../../inc
 
 #ifdef NO101APPDEPFIXES
 APP_LAYER_SYSTEMINCLUDE
@@ -76,7 +75,7 @@ LIBRARY telephonyservice.lib
 #ifdef __PROTOCOL_CDMA
 LIBRARY etelcdma.lib
 #endif
-LIBRARY BAFL.lib
+LIBRARY bafl.lib
 LIBRARY btengdiscovery.lib
 #ifdef PRJ_FILE_TRACE
 LIBRARY flogger.lib

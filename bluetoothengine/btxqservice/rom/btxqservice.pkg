@@ -1,0 +1,36 @@
+;
+; Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+; All rights reserved.
+; This component and the accompanying materials are made available
+; under the terms of "Eclipse Public License v1.0""
+; which accompanies this distribution, and is available
+; at the URL "http://www.eclipse.org/legal/epl-v10.html".
+;
+; Initial Contributors:
+; Nokia Corporation - initial contribution.
+;
+; Contributors:
+;
+; Description:  
+;
+;
+
+
+; Language
+&EN
+
+; SIS header: name, uid, version
+#{"btxqservice"},(0xE219A7EC),1,0,0
+
+; Localised Vendor name
+%{"Nokia, Qt Software"}
+
+; Unique Vendor name
+:"Nokia, Qt Software"
+
+; Executable and default resource files
+"/epoc32/release/armv5/urel/btxqservice.exe"    - "!:\sys\bin\btxqservice.exe"
+"/epoc32/data/z/resource/apps/btxqservice.rsc"    - "!:\resource\apps\btxqservice.rsc"
+"/epoc32/data/z/private/10003a3f/import/apps/btxqservice_reg.rsc"    - "!:\private\10003a3f\import\apps\btxqservice_reg.rsc"
+
+; Manual PKG post-rules from PRO files

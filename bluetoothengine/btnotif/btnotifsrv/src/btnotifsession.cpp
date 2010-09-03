@@ -17,6 +17,7 @@
 
 #include "btnotifsession.h"
 #include <btextnotifiers.h>
+#include <btnotif.h>
 #ifdef SYMBIAN_ENABLE_SPLIT_HEADERS
 #include <btextnotifierspartner.h>
 #endif
@@ -24,6 +25,8 @@
 #include "btnotifsettingstracker.h"
 #include "btnotifconnectiontracker.h"
 #include "btnotifdeviceselector.h"
+#include "btnotifgeninfonotifier.h"
+#include "btnotifpowernotifier.h"
 
 
 // ======== LOCAL FUNCTIONS ========
@@ -92,6 +95,8 @@ CBTNotifSession::~CBTNotifSession()
 void CBTNotifSession::ServiceL( const RMessage2& aMessage )
     {
     CBTNotifConnectionTracker* connTracker = Server()->ConnectionTracker();
+    CBTNotifGenInfoNotifier* genInfoNotifier = Server()->GenericInfoNotifier();
+    CBTNotifPowerNotifier* bTPowerNotifier = Server()->BTPowerNotifier();
     TInt opCode = aMessage.Function();
     TInt uid = aMessage.Int0();
     TInt err( KErrNotReady );
@@ -134,6 +139,26 @@ void CBTNotifSession::ServiceL( const RMessage2& aMessage )
                         {
                         // tracker not available, can't do this now.
                         aMessage.Complete( err );
+                        }
+                    }
+                else
+                    {
+                    if(uid == KBTGenericInfoNotifierUid.iUid & NULL != genInfoNotifier)
+                        {
+                            TRAP(err,genInfoNotifier->HandleNotifierRequestL(aMessage));
+                            if(err)
+                                {
+                                aMessage.Complete(err);
+                                }
+                        }
+                    
+                    else if(uid == KPowerModeSettingNotifierUid.iUid && NULL != bTPowerNotifier)
+                        {
+                        TRAP(err, bTPowerNotifier->HandleNotifierRequestL(aMessage));
+                        if(err)
+                            {
+                            aMessage.Complete(err);
+                            }
                         }
                     }
                 }

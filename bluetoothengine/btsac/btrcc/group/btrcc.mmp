@@ -39,14 +39,13 @@ SOURCE	btrccmain.cpp
 SOURCE	btrccLinker.cpp
 SOURCE	btrccPlugin.cpp
 SOURCE	btrccAbsoluteVolumeLevelController.cpp 
-SOURCE	btrccplayerstarter.cpp
 SOURCE	btrccBrowsingAdapter.cpp
 SOURCE	btrccLegacyVolumeLevelController.cpp
 SOURCE	btrccVolumeLevelControllerBase.cpp
 SOURCE	btrccActive.cpp
 
 USERINCLUDE     ../inc ../../common
-SYSTEMINCLUDE   ../../../inc ../../../../inc 
+SYSTEMINCLUDE   ../../../inc
 SYSTEMINCLUDE   /epoc32/include/ecom /epoc32/include/mmf/server
 MW_LAYER_SYSTEMINCLUDE
 
@@ -54,7 +53,7 @@ START RESOURCE  ../data/10208978.rss
 TARGET btrcc.rsc
 END
 
-LIBRARY	ECom.lib		// Symbian E-Com Plugin definitions and types
+LIBRARY	ecom.lib		// Symbian E-Com Plugin definitions and types
 LIBRARY euser.lib       // User library
 LIBRARY esock.lib       // Socket services
 LIBRARY bluetooth.lib	// Bluetooth type definitions

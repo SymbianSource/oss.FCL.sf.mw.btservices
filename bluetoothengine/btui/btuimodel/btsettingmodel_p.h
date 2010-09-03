@@ -78,7 +78,8 @@ private:
 private:
 
     void setVisibilityMode( TBTVisibilityMode state );
-    void updateDeviceName( const QString &name );
+    
+    bool updateLocalDeviceName();
     
     void setPowerSetting( TBTPowerStateValue state );
     

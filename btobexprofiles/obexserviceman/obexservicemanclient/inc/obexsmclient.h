@@ -22,7 +22,7 @@
 //  INCLUDES
 #include <e32std.h>
 #include <locodbearer.h>
-#include "usbobex.h"
+#include <usbobex.h>
 
 /// server name
 _LIT(KSrcsName,"obexserviceman");

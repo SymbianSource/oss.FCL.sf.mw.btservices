@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 {
     HbApplication a( argc, argv );
     
-    BTMsgViewer* btmsgviewer = new BTMsgViewer();
+    QPointer<BTMsgViewer> btmsgviewer = new BTMsgViewer();
     
     int retVal = a.exec();
     delete btmsgviewer;

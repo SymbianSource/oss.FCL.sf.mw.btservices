@@ -43,7 +43,7 @@ public:
     
     virtual ~BtCpUiDeviceDetail();
     
-    void loadDeviceDetailPlugins(QString deviceAddress, QString deviceName);
+    void loadDeviceDetailPlugins(QString& deviceAddress, QString& deviceName);
         
     void loadDeviceDetailsView();
     
@@ -66,7 +66,7 @@ private:
     void appendDeviceToList(BtAbstractDevSetting *devSetting);
     void clearDeviceDetailList();
     void notifyDeviceDetailStatus();
-    void createDeviceDetailsView(QString deviceName);
+    void createDeviceDetailsView(QString& deviceName);
     void notifyViewStatusToPlugins(BtCpUiDeviceDetail::NotifyType type);
     void checkDeviceDetailSettings();
     

@@ -29,6 +29,11 @@ _LIT( KBTDevDialogId, "com.nokia.hb.btdevicedialog/1.0" );
 _LIT( KBTDevDialogResult, "result" );
 _LIT( KBTDevDialogInput, "input" );
 
+enum TDialogState
+    {
+    EWaitingForClosing,
+    };
+
 // ======== MEMBER FUNCTIONS ========
 
 // ---------------------------------------------------------------------------
@@ -38,6 +43,7 @@ _LIT( KBTDevDialogInput, "input" );
 CBluetoothNotification::CBluetoothNotification( CBTNotificationManager* aManager )
 :   iManager( aManager )
     {
+    iActive = NULL;
     }
 
 
@@ -76,11 +82,37 @@ CBluetoothNotification* CBluetoothNotification::NewL(
 CBluetoothNotification::~CBluetoothNotification()
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if(iActive)
+        {
+        if(iActive->IsActive())
+            {
+            iActive->Cancel();
+            }
+        delete iActive;
+        }
+    iClosingTimer.Close();
     delete iDialog;
     delete iNotificationData;
     delete iReturnData;
 	BOstraceFunctionExit1( DUMMY_DEVLIST, this )
 }
+
+
+// ---------------------------------------------------------------------------
+// Creates new notification data.
+// ---------------------------------------------------------------------------
+//
+CHbSymbianVariantMap* CBluetoothNotification::CreateNotificationDataL()
+    {
+    if(iNotificationData!=NULL)
+        {
+        delete iNotificationData;
+        iNotificationData = NULL;
+        }
+    iNotificationData = CHbSymbianVariantMap::NewL();
+    return iNotificationData;
+    }
+
 
 // ---------------------------------------------------------------------------
 // Sets the data to be shown to the user.
@@ -110,15 +142,30 @@ TInt CBluetoothNotification::SetData( TInt aDataType, TInt aData )
 TInt CBluetoothNotification::Update( const TDesC& aData )
     {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
-    (void) aData;
-    int ret = iDialog->Update( *iNotificationData );
-    delete iNotificationData;
-    iNotificationData = NULL;
-    TRAP( ret, iNotificationData = CHbSymbianVariantMap::NewL() );
+    TRAPD(ret,UpdateDataL( TBluetoothDeviceDialog::EDeviceName, aData ));
+    if(!ret)
+        {
+            int ret = iDialog->Update( *iNotificationData );
+        }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     return ret;
     }
 
+// ---------------------------------------------------------------------------
+// Updates the data to be shown to the user.
+// ---------------------------------------------------------------------------
+//
+TInt CBluetoothNotification::Update( TInt aData )
+    {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    TRAPD(ret,UpdateDataL( TBluetoothDeviceDialog::EAdditionalInt, aData ));
+    if(!ret)
+        {
+            ret = iDialog->Update( *iNotificationData );
+        }
+    BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    return ret;
+    }
 
 // ---------------------------------------------------------------------------
 // Show the notification, which means that it is added to the queue.
@@ -133,9 +180,6 @@ void CBluetoothNotification::ShowL()
     iReturnData = NULL;
     iReturnData = CHbSymbianVariantMap::NewL();
     iDialog->Show( KBTDevDialogId(), *iNotificationData, this );
-    delete iNotificationData;
-    iNotificationData = NULL;
-    iNotificationData = CHbSymbianVariantMap::NewL();
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 
@@ -205,12 +249,116 @@ void CBluetoothNotification::SetDataL( TInt aType, const TDesC& aData )
 		BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 
-
 // ---------------------------------------------------------------------------
 // Sets the data to be shown to the user.
 // ---------------------------------------------------------------------------
 //
 void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
+    {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aType );
+    TBuf<6> key;
+    CHbSymbianVariant* value = NULL;
+    switch( aType )
+        {
+        case TBluetoothDialogParams::EDialogType:
+        case TBluetoothDialogParams::EResource:
+        case TBluetoothDialogParams::EDialogTitle:
+        case TBluetoothDeviceDialog::EDeviceClass:
+        case TBluetoothDeviceDialog::EAdditionalInt:
+            key.Num(aType);
+            value = CHbSymbianVariant::NewL( (TAny*) &aData, CHbSymbianVariant::EInt );
+            BtTraceBlock( 
+                    TBuf<32> buf;
+                    switch (aType) {
+                        case TBluetoothDialogParams::EDialogType:
+                            buf = _L("EDialogType"); 
+                            break;
+                        case TBluetoothDialogParams::EResource:
+                            buf = _L("EResource");
+                            break;
+                        case TBluetoothDeviceDialog::EDeviceClass:
+                            buf = _L("EDeviceClass");
+                            break;
+                        case TBluetoothDeviceDialog::EAdditionalInt:
+                            buf = _L("EAdditionalInt");
+                            break;
+                    }
+                    TPtrC p(buf);
+                    TInt *intPtr = (TInt *)value->Data();
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%d]", &p, *intPtr);
+                    );
+            User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
+            break;
+        case TBluetoothDialogParams::EAddress:
+        case TBluetoothDeviceDialog::EDeviceName:
+            PanicServer( EBTNotifPanicBadArgument );
+            break;
+        case TBluetoothDialogParams::ENoParams:
+        case TBluetoothDeviceDialog::ENoParams:
+        default:
+            break;
+        }
+        BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    }
+
+// ---------------------------------------------------------------------------
+// Sets the data to be shown to the user.
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::UpdateDataL( TInt aType, const TDesC& aData )
+    {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aType );
+    TBuf16<6> key;
+    CHbSymbianVariant* value = NULL;
+    switch( aType )
+        {
+        case TBluetoothDialogParams::EAddress:
+        case TBluetoothDeviceDialog::EDeviceName:
+        case TBluetoothDeviceDialog::EAdditionalDesc:
+        case TBluetoothDialogParams::EDialogTitle:
+            key.Num(aType);
+            value = CHbSymbianVariant::NewL( (TAny*) &aData, CHbSymbianVariant::EDes );
+            BtTraceBlock( 
+                    TBuf<32> buf;
+                    switch (aType) {
+                        case TBluetoothDialogParams::EAddress:
+                            _LIT(KAddress,"EAddress");
+                            buf.Append(KAddress); 
+                            break;
+                        case TBluetoothDeviceDialog::EDeviceName:
+                            _LIT(KDeviceName,"EDeviceName");
+                            buf.Append(KDeviceName); 
+                            break;
+                        case TBluetoothDeviceDialog::EAdditionalDesc:
+                            _LIT(KAdditionalDesc,"EAdditionalDesc");
+                            buf.Append(KAdditionalDesc); 
+                            break;
+                    }
+                    TPtrC p(buf);
+                    TPtrC16 *ptr = (TPtrC16 *)value->Data();
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%S]", &p, ptr);
+                    );
+            User::LeaveIfError(iNotificationData->Delete( key));
+            User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
+            break;
+        case TBluetoothDialogParams::EResource:
+        case TBluetoothDeviceDialog::EDeviceClass:
+        case TBluetoothDeviceDialog::EAdditionalInt:
+            PanicServer( EBTNotifPanicBadArgument );
+            break;
+        case TBluetoothDialogParams::ENoParams:
+        case TBluetoothDeviceDialog::ENoParams:
+        default:
+            break;
+        }
+        BOstraceFunctionExit1( DUMMY_DEVLIST, this );
+    }
+
+// ---------------------------------------------------------------------------
+// Sets the data to be shown to the user.
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::UpdateDataL( TInt aType, TInt aData )
     {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aType );
     TBuf<6> key;
@@ -244,6 +392,7 @@ void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
                     TInt *intPtr = (TInt *)value->Data();
                     BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%d]", &p, *intPtr);
                     );
+			User::LeaveIfError(iNotificationData->Delete(key));
 			User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
             break;
         case TBluetoothDialogParams::EAddress:
@@ -257,6 +406,7 @@ void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
         }
 		BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
+
 
 // ---------------------------------------------------------------------------
 // From class MHbDeviceDialogObserver.
@@ -393,3 +543,47 @@ void CBluetoothNotification::DeviceDialogClosed( TInt aCompletionCode )
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     }
 
+// ---------------------------------------------------------------------------
+// Activate a timer which will automatically close the dialog when expired.
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::SetCloseTimer(TInt aAfter)
+    {
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aAfter );
+    TRAP_IGNORE(iActive = CBtSimpleActive::NewL(*this, EWaitingForClosing ));
+    User::LeaveIfError( iClosingTimer.CreateLocal() );
+    iClosingTimer.After(iActive->iStatus, aAfter);
+    iActive->GoActive();
+    }
+
+// ---------------------------------------------------------------------------
+// From MBtSimpleActiveObserver
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus )
+    {
+    (void)aActive;
+    (void)aStatus;
+    Close();
+    }
+
+// ---------------------------------------------------------------------------
+// From MBtSimpleActiveObserver
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::CancelRequest( TInt aRequestId )
+    {
+    (void)aRequestId;
+    // ignore    
+    }
+
+// ---------------------------------------------------------------------------
+// From MBtSimpleActiveObserver
+// ---------------------------------------------------------------------------
+//
+void CBluetoothNotification::HandleError( CBtSimpleActive* aActive, TInt aError )
+    {
+    (void)aActive;
+    (void)aError;
+    // ignore
+    }

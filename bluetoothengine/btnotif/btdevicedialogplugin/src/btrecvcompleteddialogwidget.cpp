@@ -15,10 +15,10 @@
 *
 */
 
+#include "btrecvcompleteddialogwidget.h"
 #include <xqaiwrequest.h>
 #include <xqappmgr.h>
 #include <QThreadPool>
-#include "btrecvcompleteddialogwidget.h"
 #include "bluetoothdevicedialogs.h"
 
 const char* DOCML_BT_RECV_CMPLTD_DIALOG = ":/docml/bt-receive-done-dialog.docml";
@@ -56,8 +56,9 @@ void CoversationViewServiceStarter::run()
 
 
 BTRecvcompletedDialogWidget::BTRecvcompletedDialogWidget(const QVariantMap &parameters)
+:mLoader(0),
+ mOpenConversationView(false)
 {
-    mLoader = 0;
     constructDialog(parameters);
 }
 
@@ -72,6 +73,7 @@ BTRecvcompletedDialogWidget::~BTRecvcompletedDialogWidget()
 
 bool BTRecvcompletedDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
+    Q_UNUSED(parameters);
     return true;
 }
 
@@ -83,12 +85,13 @@ int BTRecvcompletedDialogWidget::deviceDialogError() const
 void BTRecvcompletedDialogWidget::closeDeviceDialog(bool byClient)
 {
     Q_UNUSED(byClient);
-    mDialog->close();
+    mReceiveCompleteDialog->close();
+    emit deviceDialogClosed();
 }
 
 HbPopup* BTRecvcompletedDialogWidget::deviceDialogWidget() const
 {
-    return mDialog;
+    return mReceiveCompleteDialog;
 }
 
 QObject* BTRecvcompletedDialogWidget::signalSender() const
@@ -104,23 +107,23 @@ bool BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
     mLoader->load(DOCML_BT_RECV_CMPLTD_DIALOG, &ok);
     if(ok)
     {
-        mDialog = qobject_cast<HbDialog*>(mLoader->findWidget("recvCompleteddialog"));
-        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("heading"));
+    	mReceiveCompleteDialog = qobject_cast<HbDialog*>(mLoader->findWidget("receiveCompleteDialog"));
+        mHeading = qobject_cast<HbLabel*>(mLoader->findWidget("receiveCompleteHeading"));
         
         mFileName = qobject_cast<HbLabel*>(mLoader->findWidget("fileName"));
         mFileSize = qobject_cast<HbLabel*>(mLoader->findWidget("fileSize"));
-        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount_label"));
+        mFileCount = qobject_cast<HbLabel*>(mLoader->findWidget("fileCount"));
         mFileCount->setVisible(false);
         
         //TODO - set icon based on the file icon.
         
-        mShow = qobject_cast<HbAction*>(mLoader->findObject("showaction"));
-        mCancel = qobject_cast<HbAction*>(mLoader->findObject("cancelaction"));
+        mShowAction = qobject_cast<HbAction*>(mLoader->findObject("showAction"));
+        mCancelAction = qobject_cast<HbAction*>(mLoader->findObject("cancelAction"));
         
         QString headingStr(hbTrId("txt_bt_title_received_from_1"));
         QString senderName(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
         mHeading->setPlainText(headingStr.arg(senderName));
-        mDialog->setHeadingWidget(mHeading);
+        mReceiveCompleteDialog->setHeadingWidget(mHeading);
         
         mFileName->setPlainText(parameters.value(QString::number(TBluetoothDeviceDialog::EReceivingFileName)).toString());
         
@@ -169,22 +172,31 @@ bool BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
             }
     }
 
-    mDialog->setBackgroundFaded(false);
-    mDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mDialog->setTimeout(HbPopup::NoTimeout);
+    mReceiveCompleteDialog->setBackgroundFaded(false);
+    mReceiveCompleteDialog->setDismissPolicy(HbPopup::NoDismiss);
+    mReceiveCompleteDialog->setTimeout(HbPopup::NoTimeout);
      
-    connect(mShow, SIGNAL(triggered()), this, SLOT(showClicked()));
-    connect(mCancel, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+    connect(mShowAction, SIGNAL(triggered()), this, SLOT(showClicked()));
+    connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+    
+    QVariantMap::const_iterator i = parameters.find("OpenCnvView");
+    if(i != parameters.end())
+        {
+        mOpenConversationView = (i.value().toBool() == true) ? true : false; 
+        }
     
     return true;
 }
 
 void BTRecvcompletedDialogWidget::showClicked()
 {   
-    CoversationViewServiceStarter* service = new CoversationViewServiceStarter(KBluetoothMsgsConversationId);
-    service->setAutoDelete(true);
-    
-    QThreadPool::globalInstance()->start(service);
+    if(mOpenConversationView)
+        {
+        CoversationViewServiceStarter* service = new CoversationViewServiceStarter(KBluetoothMsgsConversationId);
+        service->setAutoDelete(true);
+        
+        QThreadPool::globalInstance()->start(service);
+        }
           
     QVariantMap data;
     data.insert(QString("actionResult"), QVariant(TBluetoothDialogParams::EShow));

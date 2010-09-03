@@ -39,7 +39,9 @@ CBTNotifBasePairingHandler::CBTNotifBasePairingHandler( CBTNotifSecurityManager&
 //
 void CBTNotifBasePairingHandler::BaseConstructL( )
     {
-    iActive = CBtSimpleActive::NewL( *this, 0 );  
+    iActive = CBtSimpleActive::NewL( *this, 0 );
+    iPairingCancelledByUser = EFalse;
+    iTrustDevice = EFalse;
     }
 
 // ---------------------------------------------------------------------------
@@ -132,30 +134,58 @@ TBool CBTNotifBasePairingHandler::IsPairResultSet()
 void CBTNotifBasePairingHandler::ShowPairingResultNoteL(TInt aResult)
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    CBluetoothNotification* notification = 
+    iNotification = 
             iParent.ConnectionTracker().NotificationManager()->GetNotification();
-    User::LeaveIfNull( notification ); // For OOM exception, leaves with KErrNoMemory
+    User::LeaveIfNull( iNotification ); // For OOM exception, leaves with KErrNoMemory
     TBTDialogResourceId resourceId = EPairingSuccess;
     if(KErrNone != aResult)
         {
         resourceId = EPairingFailureOk;
+        iNotification->SetNotificationType( TBluetoothDialogParams::EQuery, resourceId );
         }
-    notification->SetNotificationType( TBluetoothDialogParams::ENote, resourceId );
+    else
+        {
+        iNotification->SetNotificationType( TBluetoothDialogParams::ENote, resourceId );
+        }
+    
     const CBtDevExtension* dev = iParent.BTDevRepository().Device(iAddr);
     if(dev)
         {
-        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceName, dev->Alias()));
-        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceClass, dev->Device().DeviceClass().DeviceClass()));
+        User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EDeviceName, dev->Alias()));
+        User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EDeviceClass, dev->Device().DeviceClass().DeviceClass()));
         }
     else
         {
         TBTDeviceName name;
         iAddr.GetReadable(name);
-        User::LeaveIfError(notification->SetData( TBluetoothDialogParams::EAddress, name ));
-        User::LeaveIfError(notification->SetData( TBluetoothDeviceDialog::EDeviceClass, 0)); // No device class
+        User::LeaveIfError(iNotification->SetData( TBluetoothDialogParams::EAddress, name ));
+        User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EDeviceClass, 0)); // No device class
         }
-    iParent.ConnectionTracker().NotificationManager()->QueueNotificationL( notification);
+    iParent.ConnectionTracker().NotificationManager()->QueueNotificationL( iNotification);
     BOstraceFunctionExit0( DUMMY_DEVLIST );
+    }
+
+// ---------------------------------------------------------------------------
+// The notifier can call this function to inform the handler
+// when the pairing is cancelled by the user. This is used
+// to decide if a pairing fails dialog must be displayed or not
+// ---------------------------------------------------------------------------
+//
+void CBTNotifBasePairingHandler::PairingCancelledByUser()
+    {
+    iPairingCancelledByUser = ETrue;
+    }
+
+// ---------------------------------------------------------------------------
+// The notifier call this function whenever the trust checkbox is checked
+// in the accept pairing dialog.
+// This is needed because we want to trust the device only when pairing
+// is successfull.
+// ---------------------------------------------------------------------------
+//
+void CBTNotifBasePairingHandler::SetTrusted()
+    {
+    iTrustDevice = ETrue;
     }
 
 
