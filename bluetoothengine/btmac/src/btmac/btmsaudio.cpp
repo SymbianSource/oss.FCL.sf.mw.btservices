@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2006 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -110,6 +110,13 @@ void CBtmsAudio::RfcommErrorL(TInt /*aErr*/)
 
 void CBtmsAudio::SyncLinkDisconnectCompleteL(TInt /*aErr*/)
     {
+    // Need to delete the socket _now_ as the destructor is called from an async
+    // callback and that is too late - the listener RSocket owned by iSco needs
+    // to be shut down before the ChangeStateL() call below because Entry actions
+    // in Ctrl/Sniffm open a new one.
+    delete iSco;
+    iSco = NULL;
+
     CBtmsInuse* next;
     if (iRfcomm->IsInSniff())
         next = CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), NULL); 

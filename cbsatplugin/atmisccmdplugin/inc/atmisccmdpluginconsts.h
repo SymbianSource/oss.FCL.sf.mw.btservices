@@ -54,7 +54,7 @@ _LIT8(KCMSErr, "+CMS ERROR: ");
 // Max buffer length for an MD5 digest - originally defined in SCPServerInterface.h
 const TInt KSCPMaxHashLength( 32 );
 
-const TInt KSCPBRDefaultSizeOfOneEntry( 320 );
+const TInt KSCPBRDefaultSizeOfOneEntry( 400 );
 const TInt KSCPBRMaxNameLength( 64 );
 const TInt KSCPBRMaxNumberLength( 32 );
 const TInt KSCPBRMaxEmailLength( 64 );

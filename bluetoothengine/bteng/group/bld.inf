@@ -39,6 +39,8 @@ PRJ_EXPORTS
 
 ../data/btrfs.txt                           z:/resource/btrfs.txt
 
+../data/backup_registration.xml             z:/private/10005950/backup_registration.xml
+
 
 PRJ_MMPFILES
 bteng.mmp

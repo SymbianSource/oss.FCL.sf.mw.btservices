@@ -392,7 +392,8 @@ void CSCPBRCommandHandler::FormatReplyL()
         {
         AppendEntryL(iEntries[i]);
         }
-
+    iReply.Append(KCRLF);
+    
     TRACE_FUNC_EXIT
     }
 
