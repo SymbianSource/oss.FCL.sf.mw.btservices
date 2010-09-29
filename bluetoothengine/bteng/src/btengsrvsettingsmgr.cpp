@@ -471,7 +471,7 @@ void CBTEngSrvSettingsMgr::CheckSspDebugModeL( TBool aDebugMode )
                                    (TInt) aDebugMode );
             SetPowerStateL( EBTOff, EFalse );
             }
-        else
+        else if( !( iServer->IsTimerQueued( CBTEngServer::ESspDebugModeTimer ) ) )
             {
             // There are still existing connections, queue the
             // timer again for half the period.

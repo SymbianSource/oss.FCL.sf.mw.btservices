@@ -36,7 +36,8 @@ SERVICE.FILE = xml/btxqservice_conf.xml
 SERVICE.OPTIONS = embeddable \
     hidden
     
-libFiles.path = "!:\sys\bin"
+libFiles.path = "!:/sys/bin"
+
 DEPLOYMENT += libFiles
 
 HEADERS += inc/btxqaddrservice.h \
@@ -56,7 +57,6 @@ INCLUDEPATH += $$MW_LAYER_SYSTEMINCLUDE \
 
 BLD_INF_RULES.prj_exports += \
   "$${LITERAL_HASH}include <platform_paths.hrh>" \
-  "inc/btxqserviceapi.h  MW_LAYER_PLATFORM_EXPORT_PATH(btxqserviceapi.h)" \
   "rom/btxqservice.iby   CORE_MW_LAYER_IBY_EXPORT_PATH(btxqservice.iby)"
   
   

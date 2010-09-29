@@ -81,9 +81,12 @@ CBTEngSrvPluginMgr* CBTEngSrvPluginMgr::NewL( CBTEngServer* aServer )
 //
 CBTEngSrvPluginMgr::~CBTEngSrvPluginMgr()
     {
+    TRACE_FUNC_ENTRY
     iPluginInfoArray.Close();
     iPluginArray.ResetAndDestroy();
+    iUuidContainter.Close();
     REComSession::FinalClose();
+    TRACE_FUNC_EXIT
     }
 
 

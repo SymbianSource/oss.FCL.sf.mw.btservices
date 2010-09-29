@@ -20,6 +20,8 @@
 
 // INCLUDE FILES
 #include <e32property.h>
+#include <ctsydomainpskeys.h>
+#include <PSVariables.h>
 #include "BTSapDomainPSKeys.h"
 
 #include "BTSapServerState.h"
@@ -78,7 +80,7 @@ CBTSapStatusObserver::~CBTSapStatusObserver()
     }
     
 // ---------------------------------------------------------
-// CBTSapStatusObserver::StartObservingL()
+// CBTSapStatusObserver::SubscribeSapStatusL()
 //----------------------------------------------------------
 //
 void CBTSapStatusObserver::SubscribeSapStatusL(MSapStatusObserver* aObserver)
@@ -130,6 +132,102 @@ void CBTSapStatusObserver::RunL()
     }
 
 // ---------------------------------------------------------
+// CBTSapCallStatusObserver::CBTSapCallStatusObserver()
+//----------------------------------------------------------
+//
+CBTSapCallStatusObserver::CBTSapCallStatusObserver(): CActive(CActive::EPriorityStandard)
+    {                                
+    CActiveScheduler::Add( this );
+    }
+
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::NewL()
+//----------------------------------------------------------
+// 
+CBTSapCallStatusObserver* CBTSapCallStatusObserver::NewL() 
+    {
+    CBTSapCallStatusObserver* self = new(ELeave) CBTSapCallStatusObserver();
+    CleanupStack::PushL( self );
+    self->ConstructL();
+    CleanupStack::Pop();
+    return self;
+    }
+ 
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::ConstructL()
+//----------------------------------------------------------
+//   
+void CBTSapCallStatusObserver::ConstructL()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapCallStatusObserver::ConstructL")));
+    User::LeaveIfError(iProperty.Attach( KPSUidCtsyCallInformation, 
+            KCTsyCallState));
+    }
+
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::~CBTSapCallStatusObserver
+//----------------------------------------------------------
+//
+CBTSapCallStatusObserver::~CBTSapCallStatusObserver()
+    {
+    Cancel();
+    iProperty.Close();
+    }
+    
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::SubscribeCallStatusL()
+//----------------------------------------------------------
+//
+void CBTSapCallStatusObserver::SubscribeCallStatusL(MSapCallStatusObserver* aObserver)
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapCallStatusObserver::SubscribeCallStatusL")));
+    
+    ASSERT(aObserver);
+    
+    iObserver = aObserver;
+    
+    iProperty.Subscribe(iStatus);
+    SetActive();
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapCallStatusObserver::SubscribeCallStatusL() Exit")));
+    }
+    
+
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::DoCancel()
+// ---------------------------------------------------------
+//
+void CBTSapCallStatusObserver::DoCancel()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapCallStatusObserver::DoCancel")));
+    
+    iProperty.Cancel();
+    }
+
+// ---------------------------------------------------------
+// CBTSapCallStatusObserver::RunL()
+// ---------------------------------------------------------
+//
+void CBTSapCallStatusObserver::RunL()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapCallStatusObserver::RunL")));
+    
+    TInt btSapState;
+    TInt err = iStatus.Int();
+    
+    iProperty.Subscribe(iStatus);
+    SetActive();
+    
+    if (!err)
+        {
+        err = iProperty.Get(btSapState);
+        if (!err)
+            {
+            iObserver->CallStatusChangedL(btSapState);
+            }
+        }
+    }
+
+// ---------------------------------------------------------
 // CBTSapServerState::CBTSapServerState()
 // ---------------------------------------------------------
 //
@@ -169,6 +267,7 @@ CBTSapServerState::~CBTSapServerState()
     delete iSimCardStatusNotifier;
     delete iRequestHandler;
     delete iStatusObserver;
+    delete iBTCallStatusObserver;
 
     iSubscriptionModule.Close();
     iPhone.Close();
@@ -206,6 +305,7 @@ void CBTSapServerState::ConstructL()
     iSocketHandler = CBTSapSocketHandler::NewL(*this, *iRequestHandler);
     iSimCardStatusNotifier = CBTSapSimCardStatusNotifier::NewL(*this);
     iStatusObserver = CBTSapStatusObserver::NewL();
+    iBTCallStatusObserver = CBTSapCallStatusObserver::NewL();
     
 	TState* state = new (ELeave) TStateInit(*this);
 	CleanupStack::PushL(state);
@@ -213,6 +313,46 @@ void CBTSapServerState::ConstructL()
 	CleanupStack::Pop(state);
     
 	ChangeState(EStateInit);
+    }
+
+// ---------------------------------------------------------
+// CBTSapServerState::SubscribeCallStatusL()
+// ---------------------------------------------------------
+//
+void CBTSapServerState::SubscribeCallStatusL()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapServerState::SubscribeCallStatusL")));
+    if (!iBTCallStatusObserver->IsActive())
+        {
+        iBTCallStatusObserver->SubscribeCallStatusL(this);
+        }
+    }
+
+// ---------------------------------------------------------
+// CBTSapServerState::CancelSubscribeCallStatusL()
+// ---------------------------------------------------------
+//
+void CBTSapServerState::CancelSubscribeCallStatusL()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapServerState::CancelSubscribeCallStatusL")));
+    iBTCallStatusObserver->Cancel();
+    }
+
+// ---------------------------------------------------------
+// CBTSapServerState::CallStatusChangedL()
+// ---------------------------------------------------------
+//
+void CBTSapServerState::CallStatusChangedL(TInt aStatus)
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_INFO, BTSapPrintTrace(_L("[BTSap]  TStateConnect: callState: %d"), aStatus));
+
+    // If callState is EPSTelephonyCallStateNone or EPSTelephonyCallStateUninitialized, there's no ongoing call
+    TBool retVal = (aStatus != EPSCTsyCallStateNone) && (aStatus != EPSCTsyCallStateUninitialized);
+    if (retVal)
+        {
+        BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  CBTSapServerState::CallStatusChangedL() call ended")));
+        iStateArray[iCurrentState]->CallInactive();
+        }
     }
 
 // ---------------------------------------------------------

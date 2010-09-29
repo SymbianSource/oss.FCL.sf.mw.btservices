@@ -53,7 +53,9 @@ enum TSapConnectionCompleteReason
     {
     EConnectionError,
     EUserAccepted,
-    EUserRejected
+    EUserRejected,
+    EConnectionWithActiveCall,
+    EConnectionWithoutActiveCall
     };
 
 enum TSapConnectionState
@@ -70,6 +72,7 @@ class CBTSapSimCardStatusNotifier;
 class RTelServer;
 class RMobilePhone;
 class MSapStatusObserver;
+class MSapCallStatusObserver;
 
 /*
 * An abstarct interface that defines a callback method
@@ -128,12 +131,68 @@ private:
     RProperty iProperty;
     };
 
+/*
+* An abstarct interface that defines a callback method
+* for the Call state observer. CallStatusChangedL
+* is called by CBTCallStatusObserver when the call connection
+* state has changed. aStatus represents the new status value.
+*/
+class MSapCallStatusObserver
+    {
+    public:
+    virtual void CallStatusChangedL(TInt aStatus) = 0;
+    };
+
+/*
+* An observer that monitors KPSUidCtsyCallInformation
+* P&S key . The clients can call SubscribeCallStatusL in order to 
+* get a changed call status returned via 
+* MSapCallStatusObserver::CallStatusChangedL.
+*/ 
+class CBTSapCallStatusObserver : public CActive
+    {
+public:
+    /**
+    * Two-phased constructor.
+    */
+    static CBTSapCallStatusObserver* NewL();
+    /**
+    * Destructor.
+    */
+    virtual ~CBTSapCallStatusObserver();
+    
+    /**
+    * Starts listening KCTsyCallState P&S key.
+    * When the key value is changed, the new state is indicated
+    * through the observer interface (MSapCallStatusObserver).
+    */
+    void SubscribeCallStatusL(MSapCallStatusObserver* aObserver);
+      
+private:
+    /**
+    * Two-Phase constructor
+    */
+    void ConstructL();
+    
+    /**
+    * Default constructor
+    */
+    CBTSapCallStatusObserver();
+    
+    // From CActive
+    virtual void DoCancel();
+    virtual void RunL();
+      
+private:
+    MSapCallStatusObserver* iObserver;
+    RProperty iProperty;
+    };
 
 /**
 *  CBTSapServerState core class
 *
 */
-class CBTSapServerState : public CActive, MSapStatusObserver
+class CBTSapServerState : public CActive, MSapStatusObserver, MSapCallStatusObserver
     {
 private:
     class TState
@@ -149,6 +208,7 @@ private:
         virtual TInt RejectSapConnection(TBTSapRejectReason aReason);
         virtual void SimCardStatusChanged(TCardStatus aCardStatus);
         virtual TInt ChangeState(TBTSapServerState& aNextState);
+        virtual TInt CallInactive();
 
         void NotifySapState(TSapConnectionState aState);
         void StartBTNotifier(TInt type);
@@ -206,6 +266,7 @@ private:
         TInt RejectSapConnection(TBTSapRejectReason aReason);
         TInt ChangeState(TBTSapServerState& aNextState);
         void SimCardStatusChanged(TCardStatus aCardStatus);
+        TInt CallInactive();
 
     private:
         void CheckMaxMsgSize(TConnectionStatus& aMsgSizeStatus);
@@ -214,6 +275,8 @@ private:
     private:
         TBool iConnectRequestOK;
         TCardStatus iCardStatus;
+        TBool iSendRespMessageDone;
+        TBool iMessageSizeNegotiationDone;
         RProperty iProperty;
         };
 
@@ -367,9 +430,15 @@ public:
 
     TBTSapMessage& BTSapResponseMessage();
 
+    void SubscribeCallStatusL();
+    
+    void CancelSubscribeCallStatusL();
+    
     // From MSapStatusObserver
     void SapStatusChangedL(TInt aStatus);
-
+   
+    // From MSapCallStatusObserver
+    void CallStatusChangedL(TInt aStatus);
 private:
 
     void OpenSubscriptionModuleL();
@@ -420,6 +489,7 @@ private:    // Data
     TBTSapMessage iResponseMessage;
     TBTSapMessage iRequestMessage;
     CBTSapStatusObserver* iStatusObserver;
+    CBTSapCallStatusObserver* iBTCallStatusObserver;
     TBool iStatesCreated;
     };
 

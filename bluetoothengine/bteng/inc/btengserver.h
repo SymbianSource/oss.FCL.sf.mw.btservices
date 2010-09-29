@@ -132,6 +132,15 @@ public:
             { return iSettingsMgr; }
 
     /**
+     * Getter for key watcher instance.
+     *
+     * @since Symbian^3
+     * @return Pointer to instance of key watcher.
+     */
+    inline CBTEngSrvKeyWatcher* KeyWatcher() const
+            { return iWatcher; }
+    
+    /**
      * Getter for plug-in manager instance.
      *
      * @since Symbian^3

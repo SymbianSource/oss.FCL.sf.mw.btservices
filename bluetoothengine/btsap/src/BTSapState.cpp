@@ -54,6 +54,12 @@ TInt CBTSapServerState::TState::DisconnectSapConnection(TBTSapDisconnectType /*a
     return KErrNotReady;
     }
 
+TInt CBTSapServerState::TState::CallInactive()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_ERROR, BTSapPrintTrace(_L("[BTSap]  TState: CallInactive: Not Ready#")));
+    return KErrNotReady;
+    }
+
 void CBTSapServerState::TState::SimCardStatusChanged(TCardStatus /*aCardStatus*/)
     {
     BTSAP_TRACE_OPT(KBTSAP_TRACE_ERROR, BTSapPrintTrace(_L("[BTSap]  TState: SimCardStatusChanged: Not Ready#")));

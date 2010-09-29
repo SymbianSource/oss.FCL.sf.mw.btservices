@@ -79,6 +79,10 @@ public:
      */
     virtual void HandleError( CBTEngActive* aActive, TInt aError );
 
+public:
+    
+    TBool GetSspDebugModeKeyValue();
+    
 private:
 
     /**

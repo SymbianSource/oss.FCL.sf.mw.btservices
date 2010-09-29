@@ -529,3 +529,16 @@ void CBTEngSrvKeyWatcher::CheckBDAddrL()
         }
     CleanupStack::PopAndDestroy( cenRep );
     }
+
+// ---------------------------------------------------------------------------
+// Gets the current value of ssp mode key. Return ETrue if BT is in SSP debug mode
+// ---------------------------------------------------------------------------
+//
+TBool CBTEngSrvKeyWatcher::GetSspDebugModeKeyValue()
+    {
+    TInt val;
+    // Getter failure is handled as Debug mode off
+    TInt err = iSspDebugModeKey.Get( val );
+    TRACE_INFO( ( _L( "CBTEngSrvKeyWatcher::GetSspDebugModeKeyValue err %d val %d" ), err, val) )
+    return ( !err && val );
+    }

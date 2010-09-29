@@ -30,7 +30,7 @@
 
 
 CBTSapServerState::TStateConnect::TStateConnect(CBTSapServerState& aServerState)
-    : TStateIdle(aServerState), iConnectRequestOK(EFalse), iCardStatus(ECardStatusReserved)
+    : TStateIdle(aServerState), iConnectRequestOK(EFalse), iCardStatus(ECardStatusReserved), iSendRespMessageDone(EFalse), iMessageSizeNegotiationDone(EFalse) 
     {
     }
 
@@ -43,14 +43,26 @@ void CBTSapServerState::TStateConnect:: Enter(TRequestStatus& aStatus)
 
     iStatus = &aStatus;
     TConnectionStatus connectionStatus = EConnectionErrReject;
-    if(!IsCallOngoing())
-        {   // SAP cannot be accepted if a call is ongoing or if no SIM is present
-        connectionStatus = EConnectionOK;
-        }
-
-    if (connectionStatus == EConnectionOK)
+    if (!iMessageSizeNegotiationDone)
         {
         CheckMaxMsgSize(connectionStatus);
+        }
+    
+    if (connectionStatus == EConnectionOK || iMessageSizeNegotiationDone)
+        {
+        iMessageSizeNegotiationDone = ETrue;
+        if(IsCallOngoing())
+            {   // SAP cannot be accepted if a call is ongoing or if no SIM is present
+            connectionStatus = EConnectionOKOngoingCall;
+            }
+        else
+            {
+            connectionStatus = EConnectionOK;
+            }
+        }
+    else
+        {
+        iMessageSizeNegotiationDone = EFalse;
         }
 
     if (connectionStatus == EConnectionOK)
@@ -84,10 +96,23 @@ void CBTSapServerState::TStateConnect:: Enter(TRequestStatus& aStatus)
 #endif //__WINS__
 
         }
+    else if (connectionStatus == EConnectionOKOngoingCall) 
+        {
+        iConnectRequestOK = EFalse;
+        aStatus = KRequestPending; 
+        if (iSendRespMessageDone)
+            {
+            //start subscribe to CallStatusChange
+            iServerState.SubscribeCallStatusL();
+            }
+        else
+            {
+            User::RequestComplete(iStatus, EConnectionWithActiveCall);
+            }
+        }    
     else
         {
         iConnectRequestOK = EFalse;
-
         iResponseMessage.SetMsgID(EConnectResponse);
         iResponseMessage.AddParameter(EParaConnectionStatus, connectionStatus);
 
@@ -121,8 +146,25 @@ TBTSapServerState CBTSapServerState::TStateConnect::Complete(TInt aReason)
     BTSAP_TRACE_OPT(KBTSAP_TRACE_STM, BTSapPrintTrace(_L("[BTSap]  SM: TStateConnect: Complete")));
 
     TBTSapServerState nextState = EStateNotConnected;
-
-    if (aReason == EUserAccepted || aReason == EUserRejected)
+    if (aReason == EConnectionWithActiveCall)
+        {
+        if (!iSendRespMessageDone)
+            {
+            TInt connectionStatus = EConnectionOKOngoingCall;
+            iResponseMessage.SetMsgID(EConnectResponse);
+            iResponseMessage.AddParameter(EParaConnectionStatus, connectionStatus);
+            iServerState.BTSapSocketHandler().Send(iResponseMessage.Data());
+            iSendRespMessageDone = ETrue;
+            }
+        //wait in TStateConnect state, until call is released
+        nextState = EStateConnect;
+        }   
+    else if (aReason == EConnectionWithoutActiveCall)
+        {
+        //Enter TStateConnect state one last time, make a SAP connection
+        nextState = EStateConnect;
+        }   
+    else if (aReason == EUserAccepted || aReason == EUserRejected)
         {
         TInt connectionStatus = (aReason == EUserAccepted) ? EConnectionOK : EConnectionErrReject;
 
@@ -147,6 +189,8 @@ TBTSapServerState CBTSapServerState::TStateConnect::Complete(TInt aReason)
                 NotifySapState(ESapConnected);
                 }
             nextState = EStateIdle;
+            iSendRespMessageDone = EFalse;
+            iMessageSizeNegotiationDone = EFalse;
             }
         }
 
@@ -156,6 +200,9 @@ TBTSapServerState CBTSapServerState::TStateConnect::Complete(TInt aReason)
 void CBTSapServerState::TStateConnect::Cancel()
     {
     NotifySapState(ESapNotConnected);
+    iSendRespMessageDone = EFalse;
+    iMessageSizeNegotiationDone = EFalse;
+    iServerState.CancelSubscribeCallStatusL();
     User::RequestComplete(iStatus, KErrCancel);
     }
 
@@ -182,7 +229,12 @@ TBool CBTSapServerState::TStateConnect::IsCallOngoing()
         BTSAP_TRACE_OPT(KBTSAP_TRACE_INFO, BTSapPrintTrace(_L("[BTSap]  TStateConnect: callState: %d"), callState));
 
         // If callState is EPSTelephonyCallStateNone or EPSTelephonyCallStateUninitialized, there's no ongoing call
-        retVal = (callState != EPSCTsyCallStateNone) && (callState != EPSCTsyCallStateUninitialized);
+        // should EPSCTsyCallStateDisconnecting be treated as non active call status ???
+        // added it here for testing with SAP 1.0 supported carkit. Since there is delay for call status changes from EPSCTsyCallStateDisconnecting
+        // to EPSCTsyCallStateNone or EPSCTsyCallStateUninitialized. If we do not treat EPSCTsyCallStateDisconnecting as 
+        // Call Inactive status, SAP connection will be dropped and client connects to HFP profile instead. 
+        // could be removed and try if it works with SAP 1.1 clients.
+        retVal = (callState != EPSCTsyCallStateNone) && (callState != EPSCTsyCallStateUninitialized) && (callState != EPSCTsyCallStateDisconnecting);
         }
     else
         {
@@ -262,6 +314,17 @@ TInt CBTSapServerState::TStateConnect::ChangeState(TBTSapServerState& aNextState
 void CBTSapServerState::TStateConnect::SimCardStatusChanged(TCardStatus aCardStatus)
     {
     iCardStatus = aCardStatus;
+    }
+
+TInt CBTSapServerState::TStateConnect::CallInactive()
+    {
+    BTSAP_TRACE_OPT(KBTSAP_TRACE_FUNCTIONS, BTSapPrintTrace(_L("[BTSap]  SM: TStateConnect: CallInactive")));
+
+    if (*iStatus == KRequestPending)
+        {
+        User::RequestComplete(iStatus, EConnectionWithoutActiveCall);
+        }
+    return KErrNone;
     }
 
 //  End of File  

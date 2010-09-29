@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api id="3c53dacd18832420468296bf6e888937" dataversion="2.0">
+  <name>bt_xqservice_api</name>
+  <description>The API for using Bluetooth Qt-Highway services.</description>
+  <type>c++</type>
+  <collection>bluetoothengine</collection>
+  <libs/>
+  <release category="platform" sinceversion="5.2"/>
+  <attributes>
+    <htmldocprovided>no</htmldocprovided>
+    <adaptation>no</adaptation>
+  </attributes>
+</api>

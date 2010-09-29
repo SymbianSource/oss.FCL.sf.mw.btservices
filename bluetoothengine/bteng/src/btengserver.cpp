@@ -568,11 +568,17 @@ TInt CBTEngServer::IdleTimerCallBack( TAny* aPtr )
 //
 TInt CBTEngServer::DebugModeTimerCallBack( TAny* aPtr )
     {
+    TRACE_FUNC_ENTRY
     __ASSERT_ALWAYS(aPtr, PanicServer(EBTEngPanicArgumentIsNull) );
-    // Set our internal debug mode key to off. Ignore error, not critical here.
-    (void) RProperty::Set( KPSUidBluetoothTestingMode, KBTSspDebugmode, EFalse );
     CBTEngServer* server = (CBTEngServer*) aPtr;
-    TRAP_IGNORE( server->SettingsManager()->CheckSspDebugModeL( EFalse ) );
+    server->RemoveTimer( ESspDebugModeTimer );
+    if( server->KeyWatcher()->GetSspDebugModeKeyValue() )
+        {
+        // Set our internal debug mode key to off. Ignore error, not critical here.
+        (void) RProperty::Set( KPSUidBluetoothTestingMode, KBTSspDebugmode, EFalse );
+        }
+    TRAP_IGNORE( server->SettingsManager()->CheckSspDebugModeL( EFalse ) );    
+    TRACE_FUNC_EXIT
     return KErrNone;
     }
 

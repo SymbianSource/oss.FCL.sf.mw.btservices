@@ -103,7 +103,8 @@ enum TConnectionStatus
     EConnectionOK,
     EConnectionErrReject,
     EConnectionErrNotSupported,
-    EConnectionErrTooSmall
+    EConnectionErrTooSmall,
+    EConnectionOKOngoingCall
     };
     
 enum TValidationResult

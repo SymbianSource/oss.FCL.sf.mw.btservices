@@ -15,9 +15,9 @@
 #
 #
 
-TEMPLATE = subdirs
-
-symbian*: { 
-    include(bt_remote_device_setting_api/bt_remote_device_setting_api.pri)
-    include(bt_xqservice_api/bt_xqservice_api.pri)
+symbian*: {
+    # Build.inf rules
+            BLD_INF_RULES.prj_exports += \
+          "$${LITERAL_HASH}include<platform_paths.hrh>" \
+          "bt_xqservice_api/inc/btxqserviceapi.h MW_LAYER_PLATFORM_EXPORT_PATH(btxqserviceapi.h)" 
 }
