@@ -905,23 +905,22 @@ void CBTUIPairedDevicesView::ConnectL(
             OpenWaitNoteL(iWaitForConnectDlg,R_BT_CONNECTING_TO_WAIT_NOTE,R_BT_CONNECTING_TO ,
                 ECmdShowBtWaitConnectingToNote,aDevice.iName); 
 	        }
+	    
+	    __ASSERT_DEBUG(iConnectDevice == NULL,PANIC(EBTPanicClassMemberVariableNotNull));
 		iConnectDevice=new(ELeave) TBTDevice(aDevice);            
 		iConnectDevice->iOperation=EOpConnect;
 		     
 		if( currentPowerMode == EBTPowerOff )
 			{
-				// turn on the flag IsConnectDevice
-				//
-				iIsConnectDevice = ETrue;
+            // turn on the flag IsConnectDevice
+            iIsConnectDevice = ETrue;
 			}
         else
         	{	
-        		// connect device
-        		//
-        		iModel->ChangeDevice(*iConnectDevice);
-        		
-        		// reset IsConnectDevice flag
-        		iIsConnectDevice = EFalse;
+            // connect device
+            iModel->ChangeDevice(*iConnectDevice);        		
+            // reset IsConnectDevice flag
+            iIsConnectDevice = EFalse;
         	}
         }
     TRACE_FUNC_EXIT

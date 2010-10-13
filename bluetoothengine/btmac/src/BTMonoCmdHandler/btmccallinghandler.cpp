@@ -94,15 +94,13 @@ void CBtmcCallingHandler::RequestCompletedL(CBtmcActive& aActive, TInt aErr)
             TInt result = KErrNone;
             if (!aErr)
                 {
-                RBuf8 buf;
-                buf.CreateL(KDefaultCmdBufLength);
+                TBuf8<KDefaultCmdBufLength> buf;
                 aErr = iRespProperty.Get(buf);
                 if (!aErr && buf.Length() >= sizeof(TInt))
                     {
                     const TUint8* ptr = buf.Ptr();
                     result = *((const TInt*)ptr);
                     }
-                buf.Close();
                 }
             TRACE_INFO((_L("resp %d"), result))
             TATId atid = EATOK;

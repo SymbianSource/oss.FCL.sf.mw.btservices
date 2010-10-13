@@ -27,7 +27,6 @@ PRJ_TESTEXPORTS
 
 PRJ_MMPFILES
 atmisccmdplugin.mmp
-atmisccmdplugin_td.mmp
 
 PRJ_TESTMMPFILES
 

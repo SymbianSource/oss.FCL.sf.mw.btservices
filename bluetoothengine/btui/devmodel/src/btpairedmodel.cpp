@@ -59,6 +59,7 @@ CBTPairedModel::~CBTPairedModel()
 	
     delete iConnMan;
     delete iPairingDevice;
+    delete iDisconnectDevice;
     delete iLinks;
     delete iBtEngSettings;
     iSocketServ.Close();    
@@ -131,45 +132,48 @@ TInt CBTPairedModel::DoChangeDeviceL(const TBTDevice& aDevice)
     	{    	
     	if( iState != EDisconnectBeforeOperationState)
     		{
-    			// disconnect by CBTEngConnMan if connected that way.
-    			if (aDevice.iStatus & static_cast<TInt>(EStatusBtuiConnected ) )
-    				{
-    				TInt code=KErrNone;
-		    		TRAPD(err,
-		    		iState=EDisconnectBeforeOperationState;
-			    		iDisconnectDevice=new(ELeave) TBTDevice(aDevice);
-			    		code=iConnMan->Disconnect(aDevice.iAddr,EBTDiscImmediate);    				
-			    		);
-					// if the return code is KErrNone then there will be
-					// a callback. However if it fails, there will not be any.
-					// So the execution will go on inside this method, if there was an error.
-					if(err == KErrNone && code==KErrNone )
-						{
-						return KErrNone;
-						}
-						
-    				}
-    			else // try disconnecting from the link layer
-    				{
-    				TInt code=KErrNone;
-    				TRAPD(err,
-					iState=EDisconnectBeforeOperationState;
-						iDisconnectDevice=new(ELeave) TBTDevice(aDevice);
-						code=iLinks->Disconnect(aDevice.iAddr);
-						);
-					// if the return code is KErrNone then there will be
-					// a callback. However if it fails, there will not be any.
-					// So the execution will go on inside this method, if there was an error.
-					if(err == KErrNone && code==KErrNone )
-						{
-						return KErrNone;
-						}
-    				}
-    		}
-   		else    
-			iState=EIdleState;
-    
+            TInt code = KErrNone;
+            iState=EDisconnectBeforeOperationState;
+            __ASSERT_DEBUG(iDisconnectDevice == NULL,PANIC(EBTPanicClassMemberVariableNotNull));
+            iDisconnectDevice = new TBTDevice(aDevice);   				
+
+            if( iDisconnectDevice )
+                {
+                // disconnect by CBTEngConnMan if connected that way.
+                if ( aDevice.iStatus & static_cast<TInt>(EStatusBtuiConnected ) )
+                    {
+                    code = iConnMan->Disconnect(aDevice.iAddr,EBTDiscImmediate);    				
+                    }
+                else // try disconnecting from the link layer
+                    {
+                    code = iLinks->Disconnect(aDevice.iAddr);
+                    }
+                }
+            else 
+                {
+                code = KErrNoMemory;
+                }
+            // if the return code is KErrNone then there will be
+            // a callback. However if it fails, there will not be any.
+            // So the execution will go on inside this method, if there was an error.
+            if( code == KErrNone )
+                {
+                return code;
+                }
+            else
+                {
+                // Reset the state if error happened
+                TRACE_INFO((_L("[BTUI] CBTPairedModel::DoChangeDeviceL disconnect error = %d, operation %d"), code, aDevice.iOperation));
+                delete iDisconnectDevice;
+                iDisconnectDevice = NULL;
+                iState = EIdleState; 
+                }
+            }
     	}
+    else
+        {
+        iState=EIdleState;
+        }
     	
     if(	aDevice.iOperation ==EOpPair)
     	{
@@ -179,12 +183,7 @@ TInt CBTPairedModel::DoChangeDeviceL(const TBTDevice& aDevice)
     	}
     
     TInt err = CBTDevModelBase::DoChangeDeviceL(aDevice);
-    if(iDisconnectDevice!= NULL)
-    	{
-    	delete iDisconnectDevice;
-    	iDisconnectDevice=NULL;
-    	}
-    
+       
     if (err != KErrNone)
         {      
         TBTDevAddr addr;
@@ -207,6 +206,7 @@ TInt CBTPairedModel::DoChangeDeviceL(const TBTDevice& aDevice)
             	}
             case EOpDisconnect:
             	{
+                __ASSERT_DEBUG(iDisconnectDevice == NULL,PANIC(EBTPanicClassMemberVariableNotNull));
             	iDisconnectDevice=new(ELeave) TBTDevice(aDevice);            		            		           	
 				if (aDevice.iStatus & static_cast<TInt>(EStatusBtuiConnected ) )            	
 					{
@@ -216,7 +216,14 @@ TInt CBTPairedModel::DoChangeDeviceL(const TBTDevice& aDevice)
 					{
 					err=iLinks->Disconnect(aDevice.iAddr);
 					}
-                
+                // Reset the state if error happened
+				if( err )
+				    {
+                    TRACE_INFO((_L("[BTUI] CBTPairedModel::DoChangeDeviceL disconnect error = %d, operation %d"), err, aDevice.iOperation));
+                    delete iDisconnectDevice;
+                    iDisconnectDevice = NULL;
+                    iState = EIdleState;
+				    }
                 break;
             	}
             default:

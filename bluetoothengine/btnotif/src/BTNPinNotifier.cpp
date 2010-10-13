@@ -99,15 +99,15 @@ CBTPinNotifier::TNotifierInfo CBTPinNotifier::RegisterL()
 // in registry. Jump to RunL as soon as possible.
 // ----------------------------------------------------------
 //
-void CBTPinNotifier::ProcessStartParamsL()
+void CBTPinNotifier::GetParamsL(const TDesC8& aBuffer, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    FLOG(_L("[BTNOTIF]\t CBTPinNotifier::ProcessStartParamsL() >>"));
+    FLOG(_L("[BTNOTIF]\t CBTPinNotifier::GetParamsL() >>"));
 
-    CBTNPairNotifierBase::ProcessStartParamsL();
+    CBTNPairNotifierBase::GetParamsL( aBuffer, aReplySlot, aMessage );
 
     TBTPinCodeEntryNotifierParams param;
  	TPckgC<TBTPinCodeEntryNotifierParams> pckg(param);
- 	pckg.Set(*iParamBuffer);
+ 	pckg.Set(aBuffer);
 
     iBTAddr = pckg().DeviceAddress();
     if ( OtherOutgoPairing(iBTAddr) )
@@ -123,7 +123,7 @@ void CBTPinNotifier::ProcessStartParamsL()
     iStrongPinRequired = pckg().StrongPinCodeRequired();
     ProcessParamsGetDeviceL( iBTAddr, pckg().DeviceName() );
     
-    FLOG(_L("[BTNOTIF]\t CBTPinNotifier::ProcessStartParamsL() <<"));
+    FLOG(_L("[BTNOTIF]\t CBTPinNotifier::GetParamsL() <<"));
     }
 
 // ----------------------------------------------------------
@@ -263,7 +263,6 @@ void CBTPinNotifier::GenerateQueryPromptL( RBuf& aRBuf )
                 aRBuf, R_BT_MIN_PASSKEY_PROMPT, devName, 1 );
 
         RBuf tmpBuf;
-        tmpBuf.CreateL( aRBuf.MaxLength() );
         tmpBuf.CleanupClosePushL();
         tmpBuf.Swap( aRBuf );
         aRBuf.ReAllocL( aRBuf.MaxLength() + sizeof(TUint));

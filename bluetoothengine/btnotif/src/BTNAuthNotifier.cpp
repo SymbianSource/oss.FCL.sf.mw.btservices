@@ -107,14 +107,22 @@ CBTAuthNotifier::TNotifierInfo CBTAuthNotifier::RegisterL()
     }
 
 // ----------------------------------------------------------
-// CBTAuthNotifier::ProcessStartParamsL
+// CBTAuthNotifier::GetParamsL
 // Initialize parameters and check if device is already
 // in registry. Jump to RunL as soon as possible.
 // ----------------------------------------------------------
 //
-void CBTAuthNotifier::ProcessStartParamsL()
+void CBTAuthNotifier::GetParamsL(const TDesC8& aBuffer, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::ProcessStartParamsL()"));
+    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::GetParamsL()"));
+
+    if( !iMessage.IsNull())
+        {
+        User::Leave(KErrInUse);
+        }
+
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
 
     if ( AutoLockOnL() )
         {
@@ -126,7 +134,7 @@ void CBTAuthNotifier::ProcessStartParamsL()
     
     TBTAuthorisationParams param;
     TPckgC<TBTAuthorisationParams> pckg(param);
-    pckg.Set(*iParamBuffer);
+    pckg.Set(aBuffer);
 
     iServiceUid = pckg().iUid.iUid;  // Pick up service uid from message
     iBTAddr = pckg().iBDAddr;
@@ -163,13 +171,13 @@ void CBTAuthNotifier::ProcessStartParamsL()
         }
 
 #ifdef _DEBUG
-    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::ProcessStartParamsL() Executing authorisation..."));
+    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::GetParamsL() Executing authorisation..."));
     TBuf<12> deviceAddressString;
     pckg().iBDAddr.GetReadable(deviceAddressString);
     FTRACE(FPrint(_L("[BTNOTIF]\t  BT Address: %S"), &deviceAddressString));
-    FTRACE(FPrint(_L("[BTNOTIF]\t CBTAuthNotifier::ProcessStartParamsL Service Uid: %d = 0x%X"), iServiceUid, iServiceUid ));
+    FTRACE(FPrint(_L("[BTNOTIF]\t CBTAuthNotifier::GetParamsL Service Uid: %d = 0x%X"), iServiceUid, iServiceUid ));
 #endif
-    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::ProcessStartParamsL() completed"));
+    FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::GetParamsL() completed"));
     }
 
 // ----------------------------------------------------------

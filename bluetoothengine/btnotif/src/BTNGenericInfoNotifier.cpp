@@ -97,14 +97,22 @@ TPtrC8 CBTGenericInfoNotifier::StartL( const TDesC8& aBuffer )
     }
 
 // ----------------------------------------------------------
-// CBTGenericInfoNotifier::ProcessStartParamsL
+// CBTGenericInfoNotifier::GetParamsL
 // Mandatory for BT Notifiers when using asynchronous launch. 
 // ----------------------------------------------------------
 //
-void CBTGenericInfoNotifier::ProcessStartParamsL()
+void CBTGenericInfoNotifier::GetParamsL(const TDesC8& aBuffer, 
+                                     TInt /*aReplySlot*/, 
+                                     const RMessagePtr2& aMessage )
     {
-	FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::ProcessStartParamsL"));  
- 	ProcessParamBufferL(*iParamBuffer, EFalse);
+	FLOG(_L("[BTNOTIF]\t CBTGenericInfoNotifier::GetParamsL"));  
+	if (!iMessage.IsNull())
+	    {
+	    aMessage.Complete(KErrInUse);
+	    return;
+	    }
+    iMessage = aMessage;
+ 	ProcessParamBufferL(aBuffer, EFalse);
     }
 
 // ----------------------------------------------------------

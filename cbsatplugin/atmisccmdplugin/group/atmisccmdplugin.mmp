@@ -41,26 +41,15 @@ SOURCE          cfuncommandhandler.cpp
 SOURCE          cbccommandhandler.cpp
 SOURCE          ussdreadmessageimpl.cpp
 SOURCE          ussdsendmessageimpl.cpp
-SOURCE          hvercommandhandler.cpp 
-SOURCE          cgsncommandhandler.cpp 
-SOURCE          cgmrcommandhandler.cpp 
-SOURCE          cmgwcommandhandler.cpp 
-SOURCE          cgmicommandhandler.cpp
-SOURCE			cmgdcommandhandler.cpp
-SOURCE			telephonywrapper.cpp
-SOURCE			cgmmcommandhandler.cpp 
-SOURCE			scpbrcommandhandler.cpp
-SOURCE			scpbwcommandhandler.cpp
+
 
 USERINCLUDE     ../inc
 
 MW_LAYER_SYSTEMINCLUDE
 
-// Resources
 START RESOURCE  ../data/2002C3BA.rss
 TARGET          atmisccmdplugin.rsc
 END
-
 
 LIBRARY	        ecom.lib
 LIBRARY         euser.lib
@@ -75,8 +64,9 @@ LIBRARY         StarterClient.lib
 
 LIBRARY			etel3rdparty.lib
 LIBRARY			sysutil.lib 
-LIBRARY			customapi.lib
 
-DEBUGLIBRARY	flogger.lib
+LIBRARY		    flogger.lib
 
+MACRO _DEBUG
+MACRO USE_FILE_LOGGING
 // End of File

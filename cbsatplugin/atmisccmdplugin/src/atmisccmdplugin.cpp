@@ -24,44 +24,20 @@
 #include "cnumcommandhandler.h"
 #include "cfuncommandhandler.h"
 #include "cbccommandhandler.h"
-#include "hvercommandhandler.h"
-#include "cgsncommandhandler.h"
-#include "cgmrcommandhandler.h"
-#include "cgmicommandhandler.h"
-#include "cmgwcommandhandler.h"
-#include "cmgdcommandhandler.h"
-#include "telephonywrapper.h"
-#include "cgmmcommandhandler.h"
-#include "scpbrcommandhandler.h"
-#include "scpbwcommandhandler.h"
 
 #include "atmisccmdpluginconsts.h"
-#include "cmserror.h"
 #include "debug.h"
 
-#include <exterror.h>           // Additional RMobilePhone error code
-#include <etelmmerr.h>          // ETelMM error code
-#include <gsmerror.h>           // GSM error code
+#include <EXTERROR.H>           // Additional RMobilePhone error code
 
 // +CME error code
-_LIT8(KCMEMemoryFailure, "+CME ERROR: 23\r\n"); // Memory failure.\r\n
 _LIT8(KCMEIncorrectPassword, "+CME ERROR: 16\r\n"); // Incorrect password.\r\n
 _LIT8(KCMEPUKRequired, "+CME ERROR: 12\r\n"); // PUK required.\r\n
 _LIT8(KCMENotAllowed, "+CME ERROR: 3\r\n"); // Operation not allowed.\r\n
 _LIT8(KCMEPhoneError, "+CME ERROR: 0\r\n"); // Phone failure.\r\n
 _LIT8(KCMEPhoneUnknown, "+CME ERROR: 100\r\n"); // unknown error
-_LIT8(KCMESimNotInserted, "+CME ERROR: 10\r\n"); // SIM not inserted 
-_LIT8(KCMEMemoryFull, "+CME ERROR: 20\r\n"); // Memory full
-_LIT8(KCMEInvalidIndex, "+CME ERROR: 21\r\n"); // Invalid index 
-_LIT8(KCMENotFound, "+CME ERROR: 22\r\n"); // Not found 
-_LIT8(KCMEDialStringTooLong, "+CME ERROR: 26\r\n"); // Dial string too long 
-_LIT8(KCMETextStringTooLong, "+CME ERROR: 24\r\n"); // Text string too long 
-_LIT8(KCMEInvalidCharacters, "+CME ERROR: 27\r\n"); // Invalid characters in dial string
-
-
 
 const TInt KErrorReplyLength = 9;  // CR+LF+"ERROR"+CR+LF
-const TInt KEditorReplyLength = 4;  // CR+LF+'>'+' '
 
 CATMiscCmdPlugin* CATMiscCmdPlugin::NewL()
     {
@@ -83,16 +59,7 @@ CATMiscCmdPlugin::~CATMiscCmdPlugin()
     delete iCNUMHandler;
     delete iCFUNHandler;
     delete iCBCHandler;
-	delete iHVERHandler;
-	delete iCGSNHandler;
-    delete iCGMRHandler;
-    delete iCGMIHandler;
-    delete iCMGWHandler;
-    delete iCMGDHandler;
-    delete iCGMMHandler;
-	delete iSCPBRHandler;
-    delete iSCPBWHandler;  
-	
+    
     iPhone.Close();
     iTelServer.Close();
 	}
@@ -114,38 +81,6 @@ void CATMiscCmdPlugin::ConstructL()
     iCNUMHandler = CCNUMCommandHandler::NewL(this, iCommandParser, iPhone, iTelServer);
     iCFUNHandler = CCFUNCommandHandler::NewL(this, iCommandParser, iPhone);
     iCBCHandler = CCBCCommandHandler::NewL(this, iCommandParser, iPhone);
-	iHVERHandler = CHVERCommandHandler::NewL(this, iCommandParser, iPhone);
-    iCGSNHandler = CCGSNCommandHandler::NewL(this, iCommandParser, iPhone);
-    iCGMRHandler = CCGMRCommandHandler::NewL(this, iCommandParser, iPhone);
-    iCGMIHandler = CCGMICommandHandler::NewL(this, iCommandParser, iPhone);
-    iCMGWHandler = CCMGWCommandHandler::NewL(this, iCommandParser, iPhone);
-    iCMGDHandler = CCMGDCommandHandler::NewL(this, iCommandParser, iPhone); 
-    iCGMMHandler = CCGMMCommandHandler::NewL(this, iCommandParser, iPhone);
-	iSCPBRHandler = CSCPBRCommandHandler::NewL(this, iCommandParser, iPhone);
-    iSCPBWHandler = CSCPBWCommandHandler::NewL(this, iCommandParser, iPhone);
-    
-   
-    // Get telephony information - Model, IMEI, Manufacturer
-    CTelephonyWrapper* telephonyWrapper = CTelephonyWrapper::NewL();
-    TInt result = telephonyWrapper->SynchronousGetPhoneId();
-
-    if (KErrNone == result)
-        {
-        static_cast<CHVERCommandHandler*>(iHVERHandler)->SetHWVersion(telephonyWrapper->GetPhoneModel());
-        static_cast<CCGSNCommandHandler*>(iCGSNHandler)->SetSerialNum(telephonyWrapper->GetPhoneSerialNum());
-        static_cast<CCGMICommandHandler*>(iCGMIHandler)->SetManufacturer(telephonyWrapper->GetPhoneManufacturer());
-        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetManufacturer(telephonyWrapper->GetPhoneManufacturer());
-        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetModelID(telephonyWrapper->GetPhoneModel());
-        }
-    else // The result is used to determine whether to display CME error or not
-        {
-        static_cast<CHVERCommandHandler*>(iHVERHandler)->SetTelephonyError(result);
-        static_cast<CCGSNCommandHandler*>(iCGSNHandler)->SetTelephonyError(result);
-        static_cast<CCGMICommandHandler*>(iCGMIHandler)->SetTelephonyError(result);
-        static_cast<CCGMMCommandHandler*>(iCGMMHandler)->SetTelephonyError(result);
-        }
-    delete telephonyWrapper;
-    
     TRACE_FUNC_EXIT
    	}
 
@@ -215,67 +150,7 @@ TBool CATMiscCmdPlugin::IsCommandSupported( const TDesC8& aCmd )
             }
         case (TAtCommandParser::ECmdAtCmee):
             {
-            iCurrentHandler = NULL;	
-            break;
-			}
-        case (TAtCommandParser::ECmdAtHver):
-            {
-            iCurrentHandler = iHVERHandler;
-            break;
-            }
-        case (TAtCommandParser::ECmdAtCgsn): // intentional fall through
-        case (TAtCommandParser::ECmdAtGsn):
-        case (TAtCommandParser::ECmdAtI1):
-            {
-            iCurrentHandler = iCGSNHandler;
-            break;
-            }
-        case (TAtCommandParser::ECmdAtCgmr): // intentional fall through
-        case (TAtCommandParser::ECmdAtGmr):
-        case (TAtCommandParser::ECmdAtI2):
-        case (TAtCommandParser::ECmdAtI4):
-            {
-            iCurrentHandler = iCGMRHandler;
-            break;
-            }
-        case (TAtCommandParser::ECmdAtCgmi): // intentional fall through
-        case (TAtCommandParser::ECmdAtGmi):
-        case (TAtCommandParser::ECmdAtI):
-        case (TAtCommandParser::ECmdAtI0):
-            {
-            iCurrentHandler = iCGMIHandler;
-            break;
-            }
-        case (TAtCommandParser::ECmdAtCmgw):
-            {
-            iCurrentHandler = iCMGWHandler;
-            break;
-            }
-		case (TAtCommandParser::ECmdAtCmgd):
-            {
-            iCurrentHandler = iCMGDHandler;
-            break;
-            }
-		case (TAtCommandParser::ECmdAtCmgf):
-            {
             iCurrentHandler = NULL;
-            break;
-            }
-		case (TAtCommandParser::ECmdAtCgmm): // intentional fall through
-		case (TAtCommandParser::ECmdAtGmm):
-		case (TAtCommandParser::ECmdAtI3):
-            {
-            iCurrentHandler = iCGMMHandler;
-            break;
-            }
-		case (TAtCommandParser::ECmdAtScpbr):
-            {
-            iCurrentHandler = iSCPBRHandler;
-            break;
-            }    
-		case (TAtCommandParser::ECmdAtScpbw):
-            {
-            iCurrentHandler = iSCPBWHandler;
             break;
             }
         case (TAtCommandParser::EUnknown):
@@ -302,11 +177,6 @@ void CATMiscCmdPlugin::HandleCommand( const TDesC8& aCmd,
 	if(iCommandParser.Command() == TAtCommandParser::ECmdAtCmee)
 	    {
         HandleCMEECommand();
-        HandleCommandCompleted( KErrNone, EReplyTypeOk);
-	    }
-	else if (iCommandParser.Command() == TAtCommandParser::ECmdAtCmgf)
-	    {
-        HandleCMGFCommand();
         HandleCommandCompleted( KErrNone, EReplyTypeOk);
 	    }
 	else if (iCurrentHandler != NULL)
@@ -408,29 +278,30 @@ TInt CATMiscCmdPlugin::CreatePartOfReply( RBuf8& aBuffer )
     {
     TRACE_FUNC_ENTRY
     TInt ret = KErrNone;
+    TInt partLength;
     if ( iReplyBuffer.Length() <= 0 )
         {
         ret = KErrGeneral;
         }
     else
         {
-    	TInt partLength = NextReplyPartLength();
+        partLength = NextReplyPartLength();
         if ( iReplyBuffer.Length() < partLength )
             {
             ret =  KErrNotFound;
             }
-        else if (ret == KErrNone)
-			{
-			aBuffer.Create( iReplyBuffer, partLength );
-			iReplyBuffer.Delete( 0, partLength );
-			if ( iReplyBuffer.Length() == 0 )
-				{
-				iReplyBuffer.Close();
-				}
-			}
+        }
+    Trace(KDebugPrintD, "ret: ", ret);
+    if (ret == KErrNone)
+        {
+        aBuffer.Create( iReplyBuffer, partLength );
+        iReplyBuffer.Delete( 0, partLength );
+        if ( iReplyBuffer.Length() == 0 )
+            {
+            iReplyBuffer.Close();
+            }
         }
 
-    Trace(KDebugPrintD, "ret: ", ret);
     TRACE_FUNC_EXIT
     return ret;
     }
@@ -477,9 +348,6 @@ TInt CATMiscCmdPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
         {
         case EReplyTypeOther:
             break;
-        case EReplyTypeEditor:
-            CreateEditModeBuffer( iReplyBuffer );
-            break;
         case EReplyTypeOk:
             CreateOkOrErrorReply( iReplyBuffer, ETrue );
             break;
@@ -492,12 +360,9 @@ TInt CATMiscCmdPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
         }
     CreatePartOfReply( *iHcReply );
     HandleCommandCompleted( KErrNone, aReplyType );
-    if ( EReplyTypeEditor != aReplyType )
-        {
-        iHcCmd = NULL;
-        iHcReply = NULL;
-        iCurrentHandler = NULL;
-        }
+    iHcCmd = NULL;
+    iHcReply = NULL;
+    iCurrentHandler = NULL;
     TRACE_FUNC_EXIT
     return KErrNone;
     }
@@ -543,28 +408,6 @@ TInt CATMiscCmdPlugin::CreateOkOrErrorReply( RBuf8& aReplyBuffer,
         }
 
     aReplyBuffer.ReAlloc(aReplyBuffer.Length() + replyBuffer.Length());
-    aReplyBuffer.Append( replyBuffer );
-    TRACE_FUNC_EXIT
-    return KErrNone;
-    }
-
-/**
- * @see MATMiscCmdPlugin::CreateEditModeBuffer
- */
-TInt CATMiscCmdPlugin::CreateEditModeBuffer( RBuf8& aReplyBuffer )
-    {
-    TRACE_FUNC_ENTRY
-    _LIT8( KReplyPromptAndSpace, "> " );
-    TBuf8<KEditorReplyLength> replyBuffer;
-    replyBuffer.Append( iCarriageReturn );
-    replyBuffer.Append( iLineFeed );
-    replyBuffer.Append( KReplyPromptAndSpace );
-
-    TInt err = aReplyBuffer.ReAlloc( aReplyBuffer.Length() + replyBuffer.Length() );
-    if (KErrNone != err)
-        {
-        return err;
-        }
     aReplyBuffer.Append( replyBuffer );
     TRACE_FUNC_EXIT
     return KErrNone;
@@ -658,62 +501,10 @@ void CATMiscCmdPlugin::CreateCMEReplyAndComplete(TInt aError)
                 response.Append(KCMENotAllowed);
                 break;
                 }
-			case KErrGsmMMImeiNotAccepted:
-	            {
-	            // Memory failure
-	            response.Append(KCMEMemoryFailure);
-	            break;
-	            }
             case KErrUnknown:
-            case KErrGsmSimServAnrFull:
                 {
                 // unknown error
                 response.Append(KCMEPhoneUnknown);
-                break;
-                }
-            case KErrNotFound:
-                {
-                response.Append(KCMENotFound);
-                break;
-                }
-            case KErrInUse:
-            case KErrGsmMMServiceOptionTemporaryOutOfOrder:
-                {
-                // SIM not inserted
-                response.Append(KCMESimNotInserted);
-                break;
-                }
-            case KErrArgument:
-            case KErrGsm0707InvalidIndex:
-            case KErrGsm0707NotFound:
-                {
-                // Invalid index
-                response.Append(KCMEInvalidIndex);
-                break;
-                }
-            case KErrGsm0707TextStringTooLong:
-                {
-                // Text string too long
-                response.Append(KCMETextStringTooLong);
-                break;
-                }
-            case KErrGsm0707DialStringTooLong:
-                {
-                // Dial string too long
-                response.Append(KCMEDialStringTooLong);
-                break;
-                }
-            case KErrGsmCCUnassignedNumber:
-            case KErrGsm0707InvalidCharsInDialString:
-                {
-                // Invalid characters in dial string
-                response.Append(KCMEInvalidCharacters);
-                break;
-                }
-            case KErrMMEtelMaxReached:
-                {
-                // Memory full
-                response.Append(KCMEMemoryFull);
                 break;
                 }
             default:
@@ -730,100 +521,6 @@ void CATMiscCmdPlugin::CreateCMEReplyAndComplete(TInt aError)
         CreateReplyAndComplete( EReplyTypeError);
         }
 
-    TRACE_FUNC_EXIT
-    }
-
-void CATMiscCmdPlugin::CreateCMSReplyAndComplete(TInt aError)
-    {
-    TRACE_FUNC_ENTRY
-    
-    if(iQuietMode)
-        {
-        CreateReplyAndComplete(EReplyTypeError);
-        }
-    else 
-        {
-        // return error code to AT client
-        RBuf8 response;
-        if (KErrNone != response.Create(KDefaultCmdBufLength))
-            {
-            CreateReplyAndComplete(EReplyTypeError);
-            return;
-            }
-       
-        // return error code to AT client
-        response.Append(KCRLF);
-        response.Append(KCMSErr);
-
-        switch(aError)
-            {
-            case KErrGsmSMSReserved:
-                {
-                // Other application cause SMS interface being reserved
-                response.AppendNum(EATCMSErr301);
-                break;
-                }
-            case KErrGsmSMSInvalidPDUModeParameter:
-                {
-                // Under the mode of PDU, PDU parameter error 
-                response.AppendNum(EATCMSErr304);
-                break;
-                }
-            case KErrGsm0707SimFailure:
-            case KErrGsmMMServiceOptionTemporaryOutOfOrder:
-                {    
-                // SIM card not inserted
-                response.AppendNum(EATCMSErr310);
-                break;
-                }
-            case KErrGsmSMSSimPin1Required:
-                {
-                // PIN request by SIM card
-                response.AppendNum(EATCMSErr311);
-                break;
-                }
-            case KErrGsmSMSPhoneToSimLockRequired:
-                {
-                // PH-(U) SIM PIN request by SIM card
-                response.AppendNum(EATCMSErr312);
-                break;
-                }
-            case KErrGsmSMSSimPuk1Required:
-                {
-                // PUK request by SIM card
-                response.AppendNum(EATCMSErr316);
-                break;
-                }
-            case KErrGsmSMSMemoryFailure:
-                {
-                // Memory error
-                response.AppendNum(EATCMSErr320);
-                break;
-                }
-            case KErrPathNotFound:
-            case KErrGsmSMSInvalidMemoryIndex:
-                {
-                // Invalid Memory index number 
-                response.AppendNum(EATCMSErr321);
-                break;
-                }
-            case KErrOverflow:
-            case KErrGsmSMSMemoryFull:
-                {
-                // Memory is full
-                response.AppendNum(EATCMSErr322);
-                break;
-                }
-            default:
-				{
-				response.AppendNum(EATCmsErrGeneral);
-				break;
-				}
-            }
-        CreateReplyAndComplete( EReplyTypeError, response );
-        response.Close();
-        }
-    
     TRACE_FUNC_EXIT
     }
 
@@ -858,27 +555,6 @@ void CATMiscCmdPlugin::HandleCMEECommand()
     TRACE_FUNC_EXIT
     }
 
-
-void CATMiscCmdPlugin::HandleCMGFCommand()
-    {
-    TRACE_FUNC_ENTRY
-    
-    TAtCommandParser::TCommandHandlerType cmdHandlerType = iCommandParser.CommandHandlerType();
-    
-    if (cmdHandlerType == TAtCommandParser::ECmdHandlerTypeSet)
-        {
-        TInt msgFormat = 0;
-        TInt ret = iCommandParser.NextIntParam(msgFormat);
-        if(ret == KErrNone && iCMGWHandler)
-            {
-            static_cast<CCMGWCommandHandler*> (iCMGWHandler)->SetMessageFormat(msgFormat);
-            }
-        }
-    
-    TRACE_FUNC_EXIT
-    }
-  
-
 void CATMiscCmdPlugin::ConnectToEtelL(RTelServer& aTelServer, RMobilePhone& aPhone)
     {
     TRACE_FUNC_ENTRY
@@ -895,12 +571,6 @@ void CATMiscCmdPlugin::ConnectToEtelL(RTelServer& aTelServer, RMobilePhone& aPho
         }
     User::LeaveIfError(aTelServer.GetPhoneInfo(0, info));
     User::LeaveIfError(aPhone.Open(aTelServer, info.iName));
-    
-    if (iTelServer.SetExtendedErrorGranularity(RTelServer::EErrorExtended)!=KErrNone)
-        {
-        User::LeaveIfError(iTelServer.SetExtendedErrorGranularity(RTelServer::EErrorBasic));
-        }
-
     TRACE_FUNC_EXIT
     }
 

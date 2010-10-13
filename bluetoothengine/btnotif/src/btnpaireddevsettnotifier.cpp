@@ -86,18 +86,27 @@ CBTPairedDevSettNotifier::TNotifierInfo CBTPairedDevSettNotifier::RegisterL()
 
 
 // ----------------------------------------------------------
-// CBTPairedDevSettNotifier::ProcessStartParamsL
+// CBTPairedDevSettNotifier::GetParamsL
 // Mandatory for BT Notifiers when using asynchronous launch. 
 // This notifier is synchronous so no implementation is needed.
 // ----------------------------------------------------------
 //
-void CBTPairedDevSettNotifier::ProcessStartParamsL()
+void CBTPairedDevSettNotifier::GetParamsL(const TDesC8& aBuffer, 
+                                     TInt aReplySlot, 
+                                     const RMessagePtr2& aMessage)
     {
-   	FLOG(_L("[BTNOTIF]\t CBTPairedDevSettNotifier::ProcessStartParamsL"));    
+   	FLOG(_L("[BTNOTIF]\t CBTPairedDevSettNotifier::GetParamsL"));    
 
-	ProcessParamBufferL(*iParamBuffer); 
+    if( iReplySlot != NULL || !iMessage.IsNull())
+        {
+        User::Leave(KErrInUse);
+        }
 
-	FLOG(_L("[BTNOTIF]\t CBTPairedDevSettNotifier::ProcessStartParamsL Complete"));    
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
+	ProcessParamBufferL(aBuffer); 
+
+	FLOG(_L("[BTNOTIF]\t CBTPairedDevSettNotifier::GetParamsL Complete"));    
   	}
 
 // ----------------------------------------------------------

@@ -58,27 +58,7 @@ void TAtCommandParser::ParseAtCommand(const TDesC8& aCmd)
     _LIT8(KAtCpin, "AT+CPIN");
     _LIT8(KAtCusd, "AT+CUSD");
     _LIT8(KAtCnum, "AT+CNUM");
-	_LIT8(KAtCmee, "AT+CMEE");
-    _LIT8(KAtHver, "AT^HVER");
-    _LIT8(KAtCgsn, "AT+CGSN");
-    _LIT8(KAtCgmr, "AT+CGMR");
-    _LIT8(KAtCgmi, "AT+CGMI");
-    _LIT8(KAtCmgw, "AT+CMGW");
-	_LIT8(KAtCmgd, "AT+CMGD");
-	_LIT8(KAtCmgf, "AT+CMGF");
-	_LIT8(KAtiBase, "ATI");
-	_LIT8(KAti0, "ATI0");
-	_LIT8(KAti1, "ATI1");
-	_LIT8(KAti2, "ATI2");
-	_LIT8(KAti3, "ATI3");
-	_LIT8(KAti4, "ATI4");
-	_LIT8(KAtGmr, "AT+GMR");
-	_LIT8(KAtGmi, "AT+GMI");
-	_LIT8(KAtGsn, "AT+GSN");
-	_LIT8(KAtCgmm, "AT+CGMM");
-	_LIT8(KAtGmm, "AT+GMM");
-	_LIT8(KAtScpbr, "AT^SCPBR");
-	_LIT8(KAtScpbw, "AT^SCPBW");
+    _LIT8(KAtCmee, "AT+CMEE");
     
     Trace(KDebugPrintS, "token: ", &token);
     // Determine the AT command type
@@ -110,89 +90,9 @@ void TAtCommandParser::ParseAtCommand(const TDesC8& aCmd)
         {
         iCmdType = ECmdAtCnum;
         }
-    else if(!token.CompareF(KAtCmee))
+    else if(!token.Compare(KAtCmee))
         {
         iCmdType = ECmdAtCmee;
-		}
-    else if(!token.CompareF(KAtHver))
-        {
-        iCmdType = ECmdAtHver;
-        }
-    else if(!token.CompareF(KAtCgsn))
-        {
-        iCmdType = ECmdAtCgsn;
-        }
-    else if(!token.CompareF(KAtGsn))
-        {
-        iCmdType = ECmdAtGsn;
-        }
-    else if(!token.CompareF(KAtCgmr))
-        {
-        iCmdType = ECmdAtCgmr;
-        }
-    else if(!token.CompareF(KAtGmr))
-        {
-        iCmdType = ECmdAtGmr;
-        }
-    else if(!token.CompareF(KAtCgmi))
-        {
-        iCmdType = ECmdAtCgmi;
-        }    
-    else if(!token.CompareF(KAtGmi))
-        {
-        iCmdType = ECmdAtGmi;
-        } 
-    else if(!token.CompareF(KAtCmgw))
-        {
-        iCmdType = ECmdAtCmgw;
-        }
-    else if(!token.CompareF(KAtCmgd))
-        {
-        iCmdType = ECmdAtCmgd;
-        }
-    else if(!token.CompareF(KAtCmgf))
-        {
-        iCmdType = ECmdAtCmgf;
-        }
-    else if(!token.CompareF(KAtCgmm))
-        {
-        iCmdType = ECmdAtCgmm;
-        }
-    else if(!token.CompareF(KAtGmm))
-        {
-        iCmdType = ECmdAtGmm;
-        }
-    else if(!token.CompareF(KAtiBase))
-        {
-        iCmdType = ECmdAtI;
-        }
-    else if(!token.CompareF(KAti0))
-        {
-        iCmdType = ECmdAtI0;
-        }
-    else if(!token.CompareF(KAti1))
-        {
-        iCmdType = ECmdAtI1;
-        }
-    else if(!token.CompareF(KAti2))
-        {
-        iCmdType = ECmdAtI2;
-        }
-    else if(!token.CompareF(KAti3))
-        {
-        iCmdType = ECmdAtI3;
-        }
-    else if(!token.CompareF(KAti4))
-        {
-        iCmdType = ECmdAtI4;
-        }
-	else if(!token.CompareF(KAtScpbr))
-        {
-        iCmdType = ECmdAtScpbr;
-        } 
-    else if(!token.CompareF(KAtScpbw))
-        {
-        iCmdType = ECmdAtScpbw;
         }
     else
         {
@@ -254,8 +154,8 @@ TPtrC8 TAtCommandParser::NextParam()
     if(!iCmd.Eos())
         {
         chr = iCmd.Peek();
-        while(!iCmd.Eos() && chr != ',' && !chr.IsControl())
-            {// Stop at any comma or control character
+        while(!iCmd.Eos() && chr != ',' && !chr.IsSpace() && !chr.IsControl())
+            {// Stop at any of those chars: comma, space or control
             iCmd.Inc();
             chr = iCmd.Peek();
             }
@@ -264,30 +164,12 @@ TPtrC8 TAtCommandParser::NextParam()
     // Extract the token at this point            
     TPtrC8 retVal = iCmd.MarkedToken();
     
-	//ignore all space characters at the end
-    if(retVal.Length() > 1)
-    {
-        TInt pos = retVal.Length() - 1; 
-        for ( ; pos >= 0; pos-- )
-            {
-            const TChar ch( retVal[pos] );
-            if( !ch.IsSpace() )
-                {
-                break;
-                }
-            }
-        retVal.Set( retVal.Mid( 0, pos + 1 ) );
-    }
-    
-    
     // Skip comma, space and control chars
-    do
-      {
-      iCmd.Inc();
-      chr = iCmd.Peek();
-      }
-    while(!iCmd.Eos() && (chr.IsSpace() || chr.IsControl()));
-    
+    while(!iCmd.Eos() && (chr == ',' || chr.IsSpace() || chr.IsControl()))
+        {
+        iCmd.Inc();
+        chr = iCmd.Peek();
+        }
     TRACE_FUNC_EXIT
     return retVal;
     }
@@ -328,21 +210,8 @@ TInt TAtCommandParser::NextIntParam(TInt& aValue)
         }
     else
         {
-        //check if param contains only digits - TLex doesn't do that
-        for(TInt pos = param.Length() - 1; pos >= 0; pos--)
-            {
-            if(( param[pos] < '0' ) || ( param[pos] > '9' ))
-                {
-                retVal = KErrArgument;
-                break;
-                }
-            }
-        
-        if(retVal == KErrNone)
-            {
-            TLex8 lex(param);
-            retVal = lex.Val(aValue);
-            }
+        TLex8 lex(param);
+        retVal = lex.Val(aValue);
         }
     TRACE_FUNC_EXIT
     return retVal;

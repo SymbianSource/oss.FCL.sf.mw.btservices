@@ -42,8 +42,6 @@
 #include <csxhelp/bt.hlp.hrh> // The bt hrh info is needed, for help launching
 #endif
 
-// ================= CONSTANT =======================
-const TInt KMaxPasskeyLength = 16;
 
 // ================= MEMBER FUNCTIONS =======================
 
@@ -94,19 +92,19 @@ CBTSSPPasskeyEntryNotifier::TNotifierInfo CBTSSPPasskeyEntryNotifier::RegisterL(
     }
 
 // ----------------------------------------------------------
-// CBTSSPPasskeyEntryNotifier::ProcessStartParamsL
+// CBTSSPPasskeyEntryNotifier::GetParamsL
 // Initialize parameters and check if device is already
 // in registry. Jump to RunL as soon as possible.
 // ----------------------------------------------------------
 //
-void CBTSSPPasskeyEntryNotifier::ProcessStartParamsL()
+void CBTSSPPasskeyEntryNotifier::GetParamsL(const TDesC8& aBuffer, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    FLOG(_L("[BTNOTIF]\t CBTSSPPasskeyEntryNotifier::ProcessStartParamsL()"));
+    FLOG(_L("[BTNOTIF]\t CBTSSPPasskeyEntryNotifier::GetParamsL()"));
 
-    CBTNPairNotifierBase::ProcessStartParamsL();
+    CBTNPairNotifierBase::GetParamsL( aBuffer, aReplySlot, aMessage );
     
     TBTPasskeyDisplayParamsPckg pckg;
-    pckg.Copy(*iParamBuffer);
+    pckg.Copy(aBuffer);
     iBTAddr = pckg().DeviceAddress();
     if ( OtherOutgoPairing(iBTAddr) )
         {
@@ -122,7 +120,7 @@ void CBTSSPPasskeyEntryNotifier::ProcessStartParamsL()
 
     ProcessParamsGetDeviceL( iBTAddr, pckg().DeviceName() );
     
-    FLOG(_L("[BTNOTIF]\t CBTSSPPasskeyEntryNotifier::ProcessStartParamsL() completed"));
+    FLOG(_L("[BTNOTIF]\t CBTSSPPasskeyEntryNotifier::GetParamsL() completed"));
     }
 
 // ----------------------------------------------------------
@@ -137,19 +135,8 @@ TPtrC8 CBTSSPPasskeyEntryNotifier::UpdateL(const TDesC8& aBuffer)
     
     TBTPasskeyDisplayUpdateParamsPckg pckg;
     pckg.Copy(aBuffer);
-    
-    // Update devicename if needed
-    CBTNPairNotifierBase::UpdateL(aBuffer);
-        
-    if(pckg().Type() != TBTNotifierUpdateParams2::EPasskeyDisplay 
-       || !iAuthoriseDialog->IsQueryReleased())
-        {
-        TPtrC8 ret(KNullDesC8);
-        return (ret);
-        }
-    
-    TInt length = iBuf.Length();
-    if (length > KMaxPasskeyLength )
+  
+    if(pckg().Type() != TBTNotifierUpdateParams2::EPasskeyDisplay)
         {
         TPtrC8 ret(KNullDesC8);
         return (ret);
@@ -173,10 +160,7 @@ TPtrC8 CBTSSPPasskeyEntryNotifier::UpdateL(const TDesC8& aBuffer)
         case EPasskeyDigitDeleted:
             {
             // remove an '*' from the tail of iBuf
-            if ( length )
-                {
-                iBuf.Delete(iBuf.Length()-1, 1);
-                }
+            iBuf.Delete(iBuf.Length()-1, 1);  
             break;
             }
         case EPasskeyCleared:

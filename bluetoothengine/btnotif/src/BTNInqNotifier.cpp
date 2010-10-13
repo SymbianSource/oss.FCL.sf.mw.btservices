@@ -77,21 +77,30 @@ CBTInqNotifier::TNotifierInfo CBTInqNotifier::RegisterL()
     }
 
 // ----------------------------------------------------------
-// CBTInqNotifier::ProcessStartParamsL
+// CBTInqNotifier::GetParamsL
 // Initialize parameters and launch device search.
 // ----------------------------------------------------------
 //
-void CBTInqNotifier::ProcessStartParamsL()
+void CBTInqNotifier::GetParamsL(const TDesC8& aBuffer, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    FLOG(_L("[BTNOTIF]\t CBTInqNotifier::ProcessStartParamsL()"));
+    FLOG(_L("[BTNOTIF]\t CBTInqNotifier::GetParamsL()"));
 
+    if( !iMessage.IsNull() )
+        {
+        aMessage.Complete(KErrInUse);
+        return;
+        }
+
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
+    
     TBTDeviceClass cod;
     TBTDeviceSelectionParamsPckg pckg;
-    pckg.Copy(*iParamBuffer); 
+    pckg.Copy(aBuffer); 
 
     LaunchInquiryL(pckg().DeviceClass());
     
-    FLOG(_L("[BTNOTIF]\t CBTInqNotifier::ProcessStartParamsL() completed "));
+    FLOG(_L("[BTNOTIF]\t CBTInqNotifier::GetParamsL() completed "));
     }
 
 // ----------------------------------------------------------

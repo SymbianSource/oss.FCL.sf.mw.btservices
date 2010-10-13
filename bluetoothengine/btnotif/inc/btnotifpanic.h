@@ -22,10 +22,7 @@ _LIT(KBtNotifPanicName, "BtNotif Panic");
 
 enum TBtNotifPanic
     {
-    EiDeviceNullWhenCallingGetDeviceFromRegL    = 0,
-    EiParamBufferLeakedFromPreviousActivation   = 1,
-    EiParamBufferNullInProcessStartParams       = 2,
-    EiMessageNullInProcessStartParams           = 3,
+    EiDeviceNullWhenCallingGetDeviceFromRegL = 0,
     };
 
 template <typename XAny>

@@ -90,7 +90,7 @@ class CBmbCmdListener : public CActive
         RProperty iATRespProperty;
 
 		// At command buffer
-        RBuf8 iAtCmdBuf;
+		TBuf8<KDefaultCmdBufLength> iAtCmdBuf;
     };
 
 #endif

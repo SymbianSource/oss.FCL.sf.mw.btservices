@@ -45,6 +45,8 @@ class MBTAccObserver;
 class CRemConInterfaceSelector;
 class CRemConCoreApiController;
 class CBTRCCVolumeLevelController;
+class CRemConCoreApiTarget;
+class CPlayerStarter;
 class CBTRCCBrowsingAdapter;
 
 // CLASS DECLARATION
@@ -291,6 +293,10 @@ NONSHARABLE_CLASS(CBTRCCLinker) : public CActive, public MRemConBatteryTargetObs
 		
 		// For receiving the accessory battery status
         CRemConBatteryApiTarget *iRemConBatteryTgt;
+        
+	    CRemConCoreApiTarget* iCoreTarget; // not own
+	    
+	    CPlayerStarter* iPlayerStarter; // owned
 	    
         // For handling the browsing commands. 
 	    CBTRCCBrowsingAdapter *iBrowsingAdapter;

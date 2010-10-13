@@ -39,6 +39,7 @@ SOURCE	btrccmain.cpp
 SOURCE	btrccLinker.cpp
 SOURCE	btrccPlugin.cpp
 SOURCE	btrccAbsoluteVolumeLevelController.cpp 
+SOURCE	btrccplayerstarter.cpp
 SOURCE	btrccBrowsingAdapter.cpp
 SOURCE	btrccLegacyVolumeLevelController.cpp
 SOURCE	btrccVolumeLevelControllerBase.cpp

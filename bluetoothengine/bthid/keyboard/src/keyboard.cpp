@@ -1189,6 +1189,17 @@ TInt CHidKeyboardDriver::WindowGroupForKeyEvent(const TKeyEvent& aKeyEvent,
         TRACE_INFO( (_L("[HID]\tCHidKeyboardDriver::WindowGroupForKeyEvent: type %d, kc 0x%08x, sc 0x%08x, mod 0x%06x, rep %d]"),
                         aType, aKeyEvent.iCode, aKeyEvent.iScanCode,
                         aKeyEvent.iModifiers, aKeyEvent.iRepeats));
+    _LIT(KBackDrop, "*EiksrvBackdrop*");
+
+    if (EStdKeyApplication0 == aKeyEvent.iScanCode && (EEventKeyDown == aType
+            || EEventKeyUp == aType))
+        {
+        // Application key up/down events go to the Eikon server
+        // Use this old way for application key
+        TInt result = iWsSession.FindWindowGroupIdentifier(0, KBackDrop); //This was in A2.x __EIKON_SERVER_NAME
+        DBG(if (KErrNotFound == result) RDebug::Print(_L("[HID]\tCHidKeyboardDriver::WindowGroupForKeyEvent(): BackDropWindowGroup Name not found!")));
+        return result;
+        }
 
     if (EKeyDevice2 == aKeyEvent.iCode && EEventKey == aType)
         {
@@ -1369,33 +1380,7 @@ void CHidKeyboardDriver::HandleApplicationLaunchKeysL(TUint16 aScancodeKey,
 void CHidKeyboardDriver::LaunchApplicationL(TInt aAppUid)
     {
         TRACE_INFO( (_L("[HID]\tCHidKeyboardDriver::LaunchApplication: UID 0x%08x"), aAppUid));
-    
-    //KeyLock or phone auto lock is on, refuse to continue    
-    if (iKeyLock.IsKeyLockEnabled())
-        {        
-        TRACE_INFO( _L("[HID]\tCHidKeyboardDriver::LaunchApplicationL() SKIPPED BECAUSE OF KEYLOCK"));
-        return;
-        }
-    
-    TInt devLockStatus( EAutolockStatusUninitialized );
-    TInt err = RProperty::Get(  KPSUidCoreApplicationUIs, KCoreAppUIsAutolockStatus, devLockStatus );
-                    
-    if (!err)
-        {
-        if ( EAutolockOff != devLockStatus && EAutolockStatusUninitialized != devLockStatus)
-            {
-            //Auto lock is on, refuse to continue
-            TRACE_INFO( _L("[HID]\tCHidKeyboardDriver::LaunchApplicationL() SKIPPED BECAUSE OF AUTO LOCK"));
-            return;
-            }
-        }
-    else
-        {
-        //failed to get AUTO LOCK status
-        TRACE_INFO( _L("[HID]\tCHidKeyboardDriver::LaunchApplicationL() SKIPPED BECAUSE OF FAILED TO GET AUTO LOCK STATUS"));
-        return;
-        }
-    
+
     TApaTaskList taskList(iWsSession);
     TUid uid = TUid::Uid(aAppUid);
     TApaTask task = taskList.FindApp(uid);
@@ -1480,8 +1465,6 @@ TBool CHidKeyboardDriver::HandleKeyMapping(TDecodedKeyInfo& aKey,
         case EStdKeyEscape:
             // fall through
         case EStdKeyF8:
-            // fall through
-        case EStdKeyApplication0: 	 
             // fall through
         case EStdKeyApplication2:
             // fall through
@@ -1960,15 +1943,6 @@ TBool CHidKeyboardDriver::HandleKeyMappingOther(TDecodedKeyInfo& aKey,
 
             break;
             }
-        case EStdKeyApplication0:
-			{ 	  	 
-			TRACE_INFO((_L("[HID]\tAPPLICATION KEY(Alt+Tab) >>> TSW"))); 	  	 
-					 
-			// Dedicated Application key 	  	 
-			scancode = EStdKeyApplication0; 	  	 
-			isMmKey = ETrue; 	  	 
-			break; 	  	 
-			}            
         case EStdKeyF8:
             // fall through
         case EStdKeyApplication2:

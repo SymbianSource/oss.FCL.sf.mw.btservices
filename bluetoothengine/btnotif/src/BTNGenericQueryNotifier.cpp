@@ -135,20 +135,31 @@ TPtrC8 CBTGenericQueryNotifier::StartL( const TDesC8& /*aBuffer*/ )
     }
 
 // ----------------------------------------------------------
-// CBTGenericQueryNotifier::ProcessStartParamsL
+// CBTGenericQueryNotifier::GetParamsL
 // Mandatory for BT Notifiers when using asynchronous launch.
 // This notifier is synchronous so no implementation is needed.
 // ----------------------------------------------------------
 //
-void CBTGenericQueryNotifier::ProcessStartParamsL()
+void CBTGenericQueryNotifier::GetParamsL(const TDesC8& aBuffer,
+                                     TInt aReplySlot,
+                                     const RMessagePtr2& aMessage)
     {
-   	FLOG(_L("[BTNOTIF]\t CBTGenericQueryNotifier::ProcessStartParamsL"));
+   	FLOG(_L("[BTNOTIF]\t CBTGenericQueryNotifier::GetParamsL"));
 
-	ProcessParamBufferL(*iParamBuffer);
+   	if (iMessage.Handle())
+   	    {
+   	    aMessage.Complete(KErrInUse);
+   	    return;
+   	    }
+
+	ProcessParamBufferL(aBuffer);
+
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
 
     ShowQueryAndCompleteL();
 
-   	FLOG(_L("[BTNOTIF]\t CBTGenericQueryNotifier::ProcessStartParamsL Complete"));
+   	FLOG(_L("[BTNOTIF]\t CBTGenericQueryNotifier::GetParamsL Complete"));
     }
 
 // ----------------------------------------------------------

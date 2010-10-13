@@ -72,13 +72,21 @@ CBTObexPinNotifier::TNotifierInfo CBTObexPinNotifier::RegisterL()
     }
 
 // ----------------------------------------------------------
-// CBTObexPinNotifier::ProcessStartParamsL
+// CBTObexPinNotifier::GetParamsL
 // Initialize parameters. Jump to RunL as soon as possible.
 // ----------------------------------------------------------
 //
-void CBTObexPinNotifier::ProcessStartParamsL()
+void CBTObexPinNotifier::GetParamsL(const TDesC8& /* aBuffer */, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    FLOG(_L("[BTNOTIF]\t CBTObexPinNotifier::ProcessStartParamsL()"));
+    FLOG(_L("[BTNOTIF]\t CBTObexPinNotifier::GetParamsL()"));
+
+    if( !iMessage.IsNull())
+        {
+        User::Leave(KErrInUse);
+        }
+
+    iMessage = aMessage;
+    iReplySlot = aReplySlot;
 
     if ( AutoLockOnL() )
         {
@@ -90,7 +98,7 @@ void CBTObexPinNotifier::ProcessStartParamsL()
  
     ShowNoteCompleteMessageL();
 
-    FLOG(_L("[BTNOTIF]\t CBTObexPinNotifier::ProcessStartParamsL() completed"));
+    FLOG(_L("[BTNOTIF]\t CBTObexPinNotifier::GetParamsL() completed"));
     }
 
 // ----------------------------------------------------------

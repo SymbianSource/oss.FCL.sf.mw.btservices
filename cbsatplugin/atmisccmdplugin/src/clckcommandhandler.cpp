@@ -719,6 +719,11 @@ TInt CCLCKCommandHandler::ParseCCLCKCommand()
                 }
             break;
             }
+        default:
+            {
+            TRACE_FUNC_EXIT
+            return KErrArgument;
+            }
         }
     
     // if phone password is required it needs to be hashed before verification

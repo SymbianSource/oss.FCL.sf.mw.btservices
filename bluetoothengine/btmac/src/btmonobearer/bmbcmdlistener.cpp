@@ -35,7 +35,6 @@ CBmbCmdListener::~CBmbCmdListener()
    	Cancel();
    	iATCmdProperty.Close();
    	iATRespProperty.Close();
-   	iAtCmdBuf.Close();
     }
 
 // ---------------------------------------------------------------------------
@@ -61,7 +60,6 @@ void CBmbCmdListener::ConstructL()
 	TRACE_FUNC
     LEAVE_IF_ERROR(iATCmdProperty.Attach(KPSUidBluetoothEnginePrivateCategory, KBTHfpATCommand));
 	LEAVE_IF_ERROR(iATRespProperty.Attach(KPSUidBluetoothEnginePrivateCategory, KBTHfpATResponse));
-	iAtCmdBuf.CreateL(KDefaultCmdBufLength);
 	Subscribe();
     }
 

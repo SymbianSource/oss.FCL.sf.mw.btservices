@@ -699,7 +699,6 @@ void CBTEngSrvSettingsMgr::LoadBTPowerManagerL()
     TRACE_INFO( ( _L( "[CBTEngSrvSettingsMgr]\t Using HCI API v2 power manager" ) ) )
     User::LeaveIfError( iPowerMgr.Open() );
 #ifndef __WINS__
-
     TRequestStatus reqStatus;
     iPowerMgr.SetPower( EBTOff, NULL, reqStatus );
     User::WaitForRequest( reqStatus );

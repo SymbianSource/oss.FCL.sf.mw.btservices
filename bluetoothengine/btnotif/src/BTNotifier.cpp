@@ -93,10 +93,6 @@ void CBTNotifierBase::ConstructL()
     iBTEngSettings = CBTEngSettings::NewL();
     iDevMan = CBTEngDevMan::NewL( this );
     iNotifUiUtil = CBTNotifUIUtil::NewL( iIsCoverUI );
-    iAuthoriseDialog = CBTNotifUIUtil::NewL( iIsCoverUI );
-
-    TCallBack processParamsCb(ProcessStartParamsCallBack, this);
-    iProcessStartParamsCallBack = new (ELeave) CAsyncCallBack(processParamsCb, CActive::EPriorityHigh);
     }
 
 // ----------------------------------------------------------
@@ -107,8 +103,6 @@ CBTNotifierBase::~CBTNotifierBase()
     {
     FLOG(_L("[BTNOTIF]\t CBTNotifierBase::~CBTNotifierBase()"));    
     Cancel();
-
-    delete iProcessStartParamsCallBack;
     FLOG(_L("[BTNOTIF]\t CBTNotifierBase::~CBTNotifierBase() -- Done"));    
     }
 
@@ -151,31 +145,16 @@ TPtrC8 CBTNotifierBase::StartL(const TDesC8& /*aBuffer*/)
 //
 void CBTNotifierBase::StartL(const TDesC8& aBuffer, TInt aReplySlot, const RMessagePtr2& aMessage)
     {
-    if (!iMessage.IsNull())
-        {
-        // We're already active. The notifier server will complete the message if we leave.
-        User::Leave(KErrInUse);
-        }
-
-    __ASSERT_DEBUG(!iParamBuffer, BTNOTIF_PANIC(EiParamBufferLeakedFromPreviousActivation));
-
     if( !iNotifUiUtil )
         {
         iNotifUiUtil = CBTNotifUIUtil::NewL( iIsCoverUI );    
         }
-    if( !iAuthoriseDialog )
+    
+    TRAPD(err, GetParamsL(aBuffer, aReplySlot, aMessage));
+    if (err)
         {
-        iNotifUiUtil = CBTNotifUIUtil::NewL( iIsCoverUI );    
+        CompleteMessage(err);
         }
-
-    iParamBuffer    = aBuffer.AllocL(); // ProcessStartParamsCallBack responsible for deallocation
-    iMessage        = aMessage;
-    iReplySlot      = aReplySlot;
-
-    // Return from StartL as soon as possible - processing the parameters involves displaying
-    // waiting dialogs which would block the notifier server thus preventing other notifiers
-    // from running, were we to do it from here.
-    iProcessStartParamsCallBack->CallBack();
     }
 
 // ----------------------------------------------------------
@@ -187,22 +166,8 @@ void CBTNotifierBase::Cancel()
     {
     FLOG(_L("[BTNOTIF]\t CBTNotifierBase::Cancel()"));    
 
-    // In case we are being called before ProcessStartParamsCallBack
-    // had a chance to run:
-    delete iParamBuffer;
-    iParamBuffer = NULL;
-
-    if (iProcessStartParamsCallBack)
-        {
-        iProcessStartParamsCallBack->Cancel();
-        // - the callback object is deleted in the destructor.
-        }
-
     delete iNotifUiUtil;
     iNotifUiUtil = NULL;
-    
-    delete iAuthoriseDialog;
-    iAuthoriseDialog = NULL;
     
 	delete iBTEngSettings;
     iBTEngSettings = NULL;
@@ -232,25 +197,6 @@ TPtrC8 CBTNotifierBase::UpdateL(const TDesC8& /*aBuffer*/)
     {
     TPtrC8 ret(KNullDesC8);
     return (ret);
-    }
-
-TInt CBTNotifierBase::ProcessStartParamsCallBack(TAny* aNotif)
-    {
-    CBTNotifierBase* notif = static_cast<CBTNotifierBase*>(aNotif);
-
-    __ASSERT_DEBUG(notif->iParamBuffer, BTNOTIF_PANIC(EiParamBufferNullInProcessStartParams));
-    __ASSERT_DEBUG(!notif->iMessage.IsNull(), BTNOTIF_PANIC(EiMessageNullInProcessStartParams));
-
-    TRAPD(err, notif->ProcessStartParamsL());
-    if (err)
-        {
-        notif->CompleteMessage(err);
-        }
-
-    delete notif->iParamBuffer;
-    notif->iParamBuffer = NULL;
-
-    return 0;
     }
 
 
