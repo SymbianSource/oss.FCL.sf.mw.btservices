@@ -25,6 +25,8 @@
 #include "btuidevtypemap.h"
 #include <btabstractdelegate.h>
 #include <btdelegatefactory.h>
+#include "btqtconstants.h"
+
 
 /*!
     This constructor constructs new setting and device models.
@@ -33,9 +35,11 @@ BtcpuiBaseView::BtcpuiBaseView(QGraphicsItem *parent) :
     CpBaseSettingView(0, parent), mViewMgr(0), mDelegate(0), mPreviousView(0),
             mBack(0), mQuery(0), mContextMenu(0), mBtuiModelSortFilter(0)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mSettingModel = new BtSettingModel(this);
     mDeviceModel = new BtDeviceModel(this);
     initialise();
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 /*!
@@ -48,9 +52,11 @@ BtcpuiBaseView::BtcpuiBaseView(BtSettingModel &settingModel,
     CpBaseSettingView(0, parent), mViewMgr(0), mDelegate(0), mPreviousView(0),
             mBack(0), mQuery(0), mContextMenu(0), mBtuiModelSortFilter(0)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mSettingModel = new BtSettingModel(settingModel, this);
     mDeviceModel = new BtDeviceModel(deviceModel, this);
     initialise();
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 /*!
@@ -67,16 +73,18 @@ BtcpuiBaseView::~BtcpuiBaseView()
         delete mContextMenu;
     }
 
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::initialise()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ret(false); 
     mMainWindow = hbInstance->allMainWindows().first();
     mContextMenu = new HbMenu();
     ret = connect(mContextMenu, SIGNAL(triggered(HbAction *)), this, SLOT(contextMenuTriggered(HbAction *)));
-    BTUI_ASSERT_X( ret, "bt-main-view", "Context Menu can't connect" );
+    BTUI_ASSERT_X( ret, "BtcpuiBaseView::initialise()", "Context Menu can't connect" );
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::setPreviousView(BtcpuiBaseView *view)
@@ -99,7 +107,7 @@ void BtcpuiBaseView::setPreviousView(BtcpuiBaseView *view)
     else {
         setNavigationAction(0);
     }
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::setViewMgr(BtcpuiViewMgr *mgr)
@@ -113,7 +121,7 @@ void BtcpuiBaseView::backToPreviousView()
     if ( mPreviousView ) {
         viewMgr()->switchView(this, mPreviousView, QVariant(), true);
     }
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 BtSettingModel *BtcpuiBaseView::settingModel()
@@ -139,28 +147,31 @@ bool BtcpuiBaseView::createDelegate(BtDelegate::EditorType type,
         mDelegate = BtDelegateFactory::newDelegate(type, mSettingModel, mDeviceModel); 
         ok = connect(mDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)),
                 receiver, member);
-        BOstraceExt1(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiBaseView::createDelegate signal connect %d", ok);
+        BOstraceExt1(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiBaseView::createDelegate new: signal connect %d", ok);
         if (!ok) {
             delete mDelegate;
             mDelegate = 0;
         }
     }
-    BOstraceExt2(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiBaseView::createDelegate: mDe: 0x%08X, ret %d", mDelegate, ok);
+    BOstraceExt2(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiBaseView::createDelegate(): mDe: 0x%08X, ret %d", mDelegate, ok);
     return ok;
 }
 
 bool BtcpuiBaseView::createExecuteDelegate(BtDelegate::EditorType type,
         QObject *receiver, const char *member, const QVariant &param)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     bool ok = createDelegate(type, receiver, member);
     if (ok) {
         mDelegate->exec(param);
     }
+    BOstraceFunctionExitExt(DUMMY_DEVLIST, this, ok);
     return ok;
 }
 
 void BtcpuiBaseView::viewByDeviceTypeDialog()
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if ( !mQuery ) {
         mQuery = new HbSelectionDialog();
         QStringList devTypeList;
@@ -183,6 +194,7 @@ void BtcpuiBaseView::viewByDeviceTypeDialog()
         mQuery->setHeadingWidget(headingLabel);
     }
     mQuery->open(this,SLOT(viewByDialogClosed(HbAction*)));
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::viewByDialogClosed(HbAction* action)
@@ -193,6 +205,7 @@ void BtcpuiBaseView::viewByDialogClosed(HbAction* action)
 
 int BtcpuiBaseView::selectedDeviceTypes(HbAction* action)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     int devTypesWanted = 0;
     
     disconnect( mQuery, 0, this, 0);  // remove signal
@@ -231,10 +244,11 @@ int BtcpuiBaseView::selectedDeviceTypes(HbAction* action)
         }
     }
     
+    BOstraceFunctionExitExt(DUMMY_DEVLIST, this, devTypesWanted);
     return devTypesWanted;
 }
 
-void BtcpuiBaseView::deviceSelected(const QModelIndex& modelIndex)
+void BtcpuiBaseView::openDeviceView(const QModelIndex& modelIndex)
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     BtcpuiBaseView *devView = viewMgr()->deviceView();
@@ -244,7 +258,7 @@ void BtcpuiBaseView::deviceSelected(const QModelIndex& modelIndex)
     QVariant params;
     params.setValue(index);
     viewMgr()->switchView(this, devView, params, false);
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::createContextMenuActions(int majorRole)
@@ -255,23 +269,38 @@ void BtcpuiBaseView::createContextMenuActions(int majorRole)
 
 void BtcpuiBaseView::take(BtAbstractDelegate *delegate)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mDelegate = delegate;
     if (mDelegate) {
         disconnect(mDelegate, 0, 0, 0);
         connect(mDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)),
                 this, SLOT(handleDelegateCompleted(int)));
     }
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
+//  this could be made virtual if derived classes need different functionality
 void BtcpuiBaseView::contextMenuTriggered(HbAction *action)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if(!(action->text().compare(hbTrId("txt_common_menu_open")))) {
-            deviceSelected(mLongPressedItem->modelIndex());
-        }
+        openDeviceView(mLongPressedItem->modelIndex());
+    } 
+    else if (!(action->text().compare(hbTrId("txt_bt_menu_connect_audio")))
+            || !(action->text().compare(hbTrId("txt_bt_menu_connect"))))  {
+        connectToDevice(mLongPressedItem->modelIndex());
+    }
+    else if (!(action->text().compare(hbTrId("txt_bt_menu_disconnect_audio")))
+            || !(action->text().compare(hbTrId("txt_bt_menu_disconnect"))))  {
+        disconnectFromDevice(mLongPressedItem->modelIndex());
+    }
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
+
 
 void BtcpuiBaseView::showContextMenu(HbAbstractViewItem *item, const QPointF &coords)
 {
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     mLongPressedItem = item;
     mContextMenu->clearActions();
     
@@ -285,13 +314,46 @@ void BtcpuiBaseView::showContextMenu(HbAbstractViewItem *item, const QPointF &co
     }
     mContextMenu->setPreferredPos(coords);
     mContextMenu->open();
+    
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
+}
+
+void BtcpuiBaseView::connectToDevice(const QModelIndex& modelIndex)
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    QModelIndex index = mBtuiModelSortFilter->mapToSource(modelIndex);
+    
+    QVariant param;
+    param.setValue(index);
+
+    (void) createExecuteDelegate(BtDelegate::ConnectService, 
+            this, SLOT(handleDelegateCompleted(int,BtAbstractDelegate*)), param);    
+    
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
+}
+
+void BtcpuiBaseView::disconnectFromDevice(const QModelIndex& modelIndex)
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    QModelIndex index = mBtuiModelSortFilter->mapToSource(modelIndex);   
+    QVariant deviceBtAddress = mDeviceModel->data(index, BtDeviceModel::ReadableBdaddrRole); 
+            
+    QList<QVariant>paramList;
+    paramList.append(QVariant(ServiceLevel));
+    paramList.append(deviceBtAddress);
+
+    (void) createExecuteDelegate(BtDelegate::DisconnectService, 
+            this, SLOT(handleDelegateCompleted(int,BtAbstractDelegate*)), QVariant(paramList));
+    
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }
 
 void BtcpuiBaseView::handleDelegateCompleted(int error, BtAbstractDelegate* delegate)
 {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, error );
+    Q_UNUSED(delegate);
     Q_UNUSED(error);
     delete mDelegate;
     mDelegate = 0;
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
+    BOstraceFunctionExit1(DUMMY_DEVLIST, this);
 }

@@ -560,7 +560,13 @@ TInt CCLCKCommandHandler::ParseCCLCKCommand()
         return KErrArgument;
         }
     
-    iPassword.Create(tmpPwd);
+    ret = iPassword.Create(tmpPwd);
+    if (ret != KErrNone)
+        {
+        TRACE_FUNC_EXIT
+        return ret;
+        }
+        
     if (iPassword.Length() != 0)
         {
         ret = iATCmdParser.NextIntParam(iInfoClass);;

@@ -1,0 +1,5 @@
+EXPORTS
+	?NewL@CBtConversationViewLauncher@@SAPAV1@XZ @ 1 NONAME ; class CBtConversationViewLauncher * CBtConversationViewLauncher::NewL(void)
+	??1CBtConversationViewLauncher@@UAE@XZ @ 2 NONAME ; CBtConversationViewLauncher::~CBtConversationViewLauncher(void)
+	?LaunchConversationViewL@CBtConversationViewLauncher@@QAEXXZ @ 3 NONAME ; void CBtConversationViewLauncher::LaunchConversationViewL(void)
+

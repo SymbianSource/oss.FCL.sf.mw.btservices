@@ -15,15 +15,10 @@
 *
 */
 #include "btcpuidevicedetailsview.h"
-#include <QtGlobal>
-#include <QGraphicsLinearLayout>
-#include <HbInstance>
-#include <hblabel.h>
-#include <hbmenu.h>
+#include <hbdataform.h>
 #include <hbaction.h>
-#include <hbcombobox.h>
-#include <hbgroupbox.h>
 #include <bluetoothuitrace.h>
+#include <HbParameterLengthLimiter>
 
 // docml to load
 const char* BTUI_DEVICEDETAILSVIEW_DOCML = ":/docml/bt-device-details-view.docml";
@@ -69,12 +64,12 @@ BtCpUiDeviceDetailsView::~BtCpUiDeviceDetailsView()
 void BtCpUiDeviceDetailsView::setDeviceName(const QString &deviceName)
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
-    //todo: use Localised string Id,If Loc ID is used
-    //wrong string is displayed. Need to correct text map file.
-    QString heading(hbTrId("%1 details"));
     
-    if(mGroupBox) {
-        mGroupBox->setHeading(heading.arg(deviceName));
+    if(mGroupBox) {        
+        QString heading = HbParameterLengthLimiter(hbTrId(
+                "txt_bt_subhead_1_details")).arg(deviceName);
+
+        mGroupBox->setHeading(heading);
     }
     BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
@@ -92,7 +87,7 @@ void BtCpUiDeviceDetailsView::removeItem(HbDataForm *item)
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (item && mLayout) {
-        //todo: with out this item is not removed from the view.
+        //With out this item is not removed from the view.
         item->setVisible(false);
         mLayout->removeItem(item);
         delete item;

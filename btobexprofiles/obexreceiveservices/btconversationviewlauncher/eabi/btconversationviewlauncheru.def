@@ -1,0 +1,7 @@
+EXPORTS
+	_ZN27CBtConversationViewLauncher23LaunchConversationViewLEv @ 1 NONAME
+	_ZN27CBtConversationViewLauncher4NewLEv @ 2 NONAME
+	_ZN27CBtConversationViewLauncherD0Ev @ 3 NONAME
+	_ZN27CBtConversationViewLauncherD1Ev @ 4 NONAME
+	_ZN27CBtConversationViewLauncherD2Ev @ 5 NONAME
+

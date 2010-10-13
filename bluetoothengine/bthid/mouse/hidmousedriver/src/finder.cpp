@@ -135,12 +135,13 @@ TBool TMouseFinder::IsButtons(const CField* aField) const
     if (aField->IsInput() && aField->IsData() &&
             (aField->UsagePage() == EUsagePageButton))
         {
-        const TInt KMinButtons = 1;
-        const TInt KMaxButtons = 15;
-
-        // Test for a field containing at least num lock or caps lock
-        if ( (aField->UsageMin() >= KMinButtons)
-                && (aField->UsageMax() <= KMaxButtons) )
+        const TInt KButton1 = 1; 
+        const TInt KButton2 = 2;
+        const TInt KButton3 = 3;
+        // Test for fields containing mouse buttons, only three mouse buttons event are handled
+        // in mouse driver anyway, detecting for KButton1, KButton2 & KButton3 here.
+        if ( (aField->UsageMin() <= KButton1)
+                && (aField->UsageMax() >= KButton3) )
             {
             DBG(RDebug::Print(_L("[HID]\tButtons field found")));
             found = ETrue;

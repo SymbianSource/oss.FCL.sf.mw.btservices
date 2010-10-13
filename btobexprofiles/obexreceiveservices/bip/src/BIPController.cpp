@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2007-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -34,6 +34,7 @@
 #include    <msvids.h>
 #include    "debug.h"
 #include    <bluetoothdevicedialogs.h>
+#include    "btconversationviewlauncher.h"
         
 // CONSTANTS
 _LIT8(KBipCapabilityType, "x-bt/img-capabilities\0");
@@ -77,6 +78,7 @@ void CBIPController::ConstructL()
     iResultArray = new(ELeave) CBTDeviceArray(1);
     // Get default folder from CenRep 
     TObexUtilsMessageHandler::GetCenRepKeyStringValueL(KCRUidBluetoothEngine, KLCReceiveFolder, iCenRepFolder);
+    iBtCnvViewLauncher = CBtConversationViewLauncher::NewL();
     TRACE_FUNC_EXIT
     }
 
@@ -106,6 +108,7 @@ CBIPController::~CBIPController()
     delete iFailureDialog;
     delete iRecvDoneDialog;
     delete iMemoryFullDailog;
+    delete iBtCnvViewLauncher;
     
     TRACE_FUNC_EXIT    
     }
@@ -1056,6 +1059,10 @@ void CBIPController::CloseReceivingIndicator(TBool aResetDisplayedState)
                  }break;
                  
              case TBluetoothDialogParams::EShow:
+                 {
+                 TRAP_IGNORE(iBtCnvViewLauncher->LaunchConversationViewL());
+                 }
+             //No break statement after the preview case since the receive dialog must be closed anyway    
              case TBluetoothDialogParams::ECancelShow:
                  {
                  //In case of Show, the device dialog will handle the opening of conversation view.

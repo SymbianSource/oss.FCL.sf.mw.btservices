@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -19,16 +19,12 @@
 #ifndef BTSENDDIALOGWIDGET_H
 #define BTSENDDIALOGWIDGET_H
 
-#include <QObject>
 #include <QVariantMap>
 #include <hbdialog.h>
 #include <hbdevicedialoginterface.h>
-#include <hbpopup.h>
 #include <hbdocumentloader.h>
-#include <qstandarditemmodel.h>
 #include <hbprogressbar.h>
 #include <hblabel.h>
-#include <hblistview.h>
 #include <hbaction.h>
 
 
@@ -49,31 +45,25 @@ public: // from HbDeviceDialogInterface
     virtual QObject *signalSender() const;
     
 public slots:
-//    void hideClicked();
     void cancelClicked();
-//    void inputClosed(HbAction* action);
 private:
-    bool constructDialog(const QVariantMap &parameters);
-    void hideEvent(QHideEvent *event);
-    void showEvent(QShowEvent *event);
+    void constructDialog(const QVariantMap &parameters);
     
 signals:
     void deviceDialogClosed();
     
 private:
     HbDocumentLoader *mLoader;
- //   QStandardItemModel* mContentItemModel;
-    HbProgressBar*      mProgressBar;
-    HbLabel*            mDialogHeading;
-    HbLabel*            mFileIconLabel;
-	HbLabel*			mFileNameLabel;
-	HbLabel*			mFileSizeLabel;
-    
-//    HbListView*         mListView;
+    HbProgressBar    *mProgressBar;
+    HbLabel *mDialogHeading;
+    HbLabel *mFileIconLabel;
+	HbLabel	*mFileNameLabel;
+	HbLabel	*mFileSizeLabel;
     HbDialog *mSendDialog;
     HbAction *mHideAction;
     HbAction *mCancelAction;
     int       mFileIndex;
+    int 			mLastError;
 
     
     Q_DISABLE_COPY(BTSendDialogWidget)

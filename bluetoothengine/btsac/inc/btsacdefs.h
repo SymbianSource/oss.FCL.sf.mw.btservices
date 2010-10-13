@@ -67,7 +67,8 @@ enum TBTSACResetGavdp
 enum TBTPanicCode 
     {
 	EBTPanicNullPointer = 33400,
-    EBTPanicSocketExists 
+    EBTPanicSocketExists,
+    EBTPanicCouldntOpenGavdp
     };
     
 #endif      // BTSACDEFS_H

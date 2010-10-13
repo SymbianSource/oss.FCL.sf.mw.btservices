@@ -17,9 +17,6 @@
 #ifndef BTCPUIDEVICEDETAILSVIEW_H
 #define BTCPUIDEVICEDETAILSVIEW_H
 
-#include <hbview.h>
-#include <qglobal.h>
-#include <hbdataform.h>
 #include <hbgroupbox.h>
 #include <hbdocumentloader.h>
 #include <cpbasesettingview.h>

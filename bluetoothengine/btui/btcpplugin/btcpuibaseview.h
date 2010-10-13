@@ -58,7 +58,7 @@ public slots:
     void viewByDeviceTypeDialog();
     virtual void viewByDialogClosed(HbAction* action);
     void contextMenuTriggered(HbAction *action);
-    void deviceSelected(const QModelIndex& modelIndex);
+    void openDeviceView(const QModelIndex& modelIndex);
     void showContextMenu(HbAbstractViewItem *item, const QPointF &coords);
     void handleDelegateCompleted(int error, BtAbstractDelegate* delegate);
     
@@ -89,6 +89,10 @@ protected:
     
     virtual void createContextMenuActions(int majorRole);
 
+    virtual void connectToDevice(const QModelIndex& modelIndex);
+    
+    virtual void disconnectFromDevice(const QModelIndex& modelIndex);
+    
 protected:
 
     enum devTypeSelectionList {

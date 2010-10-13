@@ -140,6 +140,9 @@
    <component id="btctrldcmoadapter" filter="s60" name="Bluetooth Control DCMO Adapter" class="plugin" introduced="^3">
     <unit bldFile="bluetoothengine/btctrldcmoadapter/group"/>
    </component>
+   <component id="btxqservice" filter="s60" name="Bluetooth Indicator" introduced="^4">
+    <unit bldFile="bluetoothengine/btxqservice" qt:proFile="btxqservice.pro"/>
+   </component>
   </collection>
   <collection id="bluetoothappprofiles" name="Bluetooth Application Profiles" level="plugin">
    <component id="avrcp" name="Bluetooth AVRCP" introduced="9.1" purpose="optional">
@@ -166,6 +169,10 @@
      <!-- Move this up to btobexprofiles/btmsgviewer, because obexreceiveservices is already a cpt and you can't have components inside components -->
      <component id="btmsgviewer" name="BT message viewer"  filter="s60" introduced="^4">
       <unit bldFile="btobexprofiles/obexreceiveservices/btmsgviewer" qt:proFile="btmsgviewer.pro"/>
+     </component>
+     <!-- Move this up to btobexprofiles/btconversationviewlauncher, because obexreceiveservices is already a cpt and you can't have components inside components -->
+     <component id="btconversationviewlauncher" name="BT conversation view launcher"  filter="s60" introduced="^4">
+      <unit bldFile="btobexprofiles/obexreceiveservices/btconversationviewlauncher" qt:proFile="btconversationviewlauncher.pro"/>
      </component>
      <component id="obexsendservices" name="OBEX Send Services"  filter="s60">
       <unit bldFile="btobexprofiles/obexsendservices/group"/>

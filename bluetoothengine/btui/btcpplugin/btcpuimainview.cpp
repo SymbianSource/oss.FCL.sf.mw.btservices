@@ -598,13 +598,13 @@ void BtcpuiMainView::loadDocument()
     mDeviceList = qobject_cast<HbGridView *>( mLoader->findWidget( "deviceList" ) );
     BTUI_ASSERT_X( mDeviceList != 0, "bt-main-view", "Device List (grid view) not found" );   
     
-    ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
-    BTUI_ASSERT_X( ret, "bt-main-view", "deviceSelected can't connect" ); 
+    ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(openDeviceView(QModelIndex)));
+    BTUI_ASSERT_X( ret, "bt-main-view", "openDeviceView can't connect" ); 
 
     ret = connect(mDeviceList,
             SIGNAL(longPressed(HbAbstractViewItem*, QPointF)), this,
             SLOT(showContextMenu(HbAbstractViewItem*, QPointF)));
-    BTUI_ASSERT_X( ret, "bt-main-view", "deviceSelected can't connect" ); 
+    BTUI_ASSERT_X( ret, "bt-main-view", "showContextMenu can't connect" ); 
 
     mOrientation = mMainWindow->orientation();
     
@@ -642,9 +642,6 @@ void BtcpuiMainView::loadDocument()
     mVisibilityMode = qobject_cast<HbComboBox *>( mLoader->findWidget( "visibilityMode" ) );
     BTUI_ASSERT_X( mVisibilityMode != 0, "bt-main-view", "visibility combobox not found" );
     // add new item for temporary visibility
-    // NOTE:  translation (at least default english) gives string "(p)Visible for 5 min", 
-    // if setting 1 min --> "(s)Visible for 1 min", ie p=plural, s=singular, but these should
-    // not be shown to the user!
     // ToDo:  change this to use translation once it starts working
     QString tempVis(hbTrId("txt_bt_setlabel_visibility_val_visible_for_l1_min", 5));  
     //QString tempVis(hbTrId("Visible for 5 min"));  
@@ -771,10 +768,15 @@ int BtcpuiMainView::visibilityModeToIndex(VisibilityMode mode)
 
 void BtcpuiMainView::createContextMenuActions(int majorRole)
 {  
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     if (majorRole & BtuiDevProperty::Connected) {
         mContextMenu->addAction(hbTrId("txt_bt_menu_disconnect"));
     }
     else {
         mContextMenu->addAction(hbTrId("txt_bt_menu_connect"));
-    }   
+    }  
+    BOstraceFunctionExit0(DUMMY_DEVLIST); 
 }
+
+
+

@@ -42,12 +42,17 @@ public:
     virtual void activateView( const QVariant& value, bool backNavi);
     virtual void deactivateView();
     virtual void createContextMenuActions(int majorRole);
+    virtual void connectToDevice(const QModelIndex& modelIndex); 
+    virtual void disconnectFromDevice(const QModelIndex& modelIndex);
+
+    
 public slots:
     void changeOrientation( Qt::Orientation orientation );
     void stopSearching();
     void retrySearch();
     virtual void viewByDialogClosed(HbAction* action);
     void deviceSearchCompleted(int error);
+    void secondaryDelegateCompleted(int error, BtAbstractDelegate* delegate);
         
 private:
     virtual void take(BtAbstractDelegate *delegate);
@@ -65,6 +70,12 @@ private:
     HbAction* mViewBy;
     HbAction* mStop;
     HbAction* mRetry;
+    
+    //This is used to perform connect/disconnect operations.
+    //Inquiry delegate will be primary delegate, since Inquiry 
+    //delegate is active most of the time, this secondary
+    //delegate is used to perform connect/disconnect.
+    BtAbstractDelegate* mSecondaryDelegate;
 
 };
 

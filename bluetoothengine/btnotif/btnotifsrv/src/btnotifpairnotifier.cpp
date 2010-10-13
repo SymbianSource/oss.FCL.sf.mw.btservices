@@ -163,7 +163,7 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
             }
         else
             {
-            // We don't have any friendly name then chek if we have the device name
+            // We don't have any friendly name then check if we have the device name
             // otherwise use the Alias
             if(0 >= iCurrentDeviceName.Length())
                 {

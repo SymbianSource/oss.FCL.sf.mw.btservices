@@ -30,9 +30,9 @@
 #include <hblineedit.h>
 #include <hblistview.h>
 #include <hbmenu.h>
-#include <qstring>
-#include <qstringlist>
-#include <qdebug>
+#include <QString>
+#include <QStringList>
+#include <QDebug>
 #include <bluetoothuitrace.h>
 #include <btabstractdelegate.h>
 #include <btdelegatefactory.h>
@@ -44,6 +44,10 @@
 
 // docml to load
 const char* BTUI_DEVICEVIEW_DOCML = ":/docml/bt-device-view.docml";
+
+
+// ToDo:  should use base class delegate instead of mAbstractDelegate, also base class createDelegate()
+// and createExecuteDelegate()
 
 BtcpuiDeviceView::BtcpuiDeviceView(BtSettingModel &settingModel, 
         BtDeviceModel &deviceModel, 
@@ -562,7 +566,7 @@ void BtcpuiDeviceView::pairDevice()
 
 void BtcpuiDeviceView::pairDelegateCompleted(int status)
 {
-    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, status );
     Q_UNUSED(status);
     //TODO: handle the error here
     if (mAbstractDelegate)
@@ -641,7 +645,8 @@ void BtcpuiDeviceView::disconnectDevice()
         mAbstractDelegate = BtDelegateFactory::newDelegate(
                 BtDelegate::DisconnectService, mSettingModel, mDeviceModel); 
         // todo: check return value of connect
-        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, SLOT(disconnectDelegateCompleted(int)) );
+        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this, 
+                SLOT(disconnectDelegateCompleted(int)) );
         mAbstractDelegate->exec(QVariant(list));
     }
     BOstraceFunctionExit0(DUMMY_DEVLIST);

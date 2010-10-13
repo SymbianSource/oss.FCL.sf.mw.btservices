@@ -663,15 +663,25 @@ void CBTSACGavdp::GAVDP_BearerReady(RSocket aNewSocket, const TAvdtpSockAddr& aA
 	TRACE_INFO((_L("CBTSACGavdp::GAVDP_BearerReady() Got a bearer, for session %d"), aAddr.Session()))
 
 	// AV sockets don't foward opts yet so use addr version
+	TBTDevAddr RemoteBDAddr = aAddr.BTAddr();
 	RBTPhysicalLinkAdapter phy;
-	TBTDevAddr RemoteBDAddr = aAddr.BTAddr(); 
 	TInt err = phy.Open(iSockServ, RemoteBDAddr);
-	TUint16 packets = EAnyACLPacket;
-	err = phy.RequestChangeSupportedPacketTypes(packets);
-	TRACE_INFO((_L("CBTSACGavdp::GAVDP_BearerReady() Modified PHY, result %d"), err))
-
-	// state handles the call-back
-	iObserver->GAVDP_BearerReady(aNewSocket, aAddr);
+	TRACE_INFO((_L("CBTSACGavdp::GAVDP_BearerReady() RBTPhysicalLinkAdapter::Open returned %d"), err))
+	if ( !err )
+		{
+		TUint16 packets = EAnyACLPacket;
+		err = phy.RequestChangeSupportedPacketTypes(packets);
+		TRACE_INFO((_L("CBTSACGavdp::GAVDP_BearerReady() Modified PHY, result %d"), err))
+		phy.Close();
+		}
+	if ( err )
+		{
+		iObserver->GAVDP_Error(err, KNullDesC8());
+		}
+	else
+		{
+		iObserver->GAVDP_BearerReady(aNewSocket, aAddr);
+		}
 	}
 ///////////////////// Call Backs from GAVDP End.///////////////////	
 

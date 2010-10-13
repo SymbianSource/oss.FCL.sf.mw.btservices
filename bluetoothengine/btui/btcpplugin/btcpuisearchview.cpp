@@ -38,14 +38,15 @@
 #include "btuimodelsortfilter.h"
 #include "btuiviewutil.h"
 #include "btcpuiviewmgr.h"
+#include <btdelegatefactory.h>
+#include "btqtconstants.h"
 
 // docml to load
 const char* BTUI_SEARCHVIEW_DOCML = ":/docml/bt-search-view.docml";
 
-BtcpuiSearchView::BtcpuiSearchView(BtSettingModel &settingModel, 
-        BtDeviceModel &deviceModel, 
-        QGraphicsItem *parent) :
-    BtcpuiBaseView(settingModel,deviceModel, parent)
+BtcpuiSearchView::BtcpuiSearchView(BtSettingModel &settingModel,
+        BtDeviceModel &deviceModel, QGraphicsItem *parent) :
+    BtcpuiBaseView(settingModel, deviceModel, parent), mSecondaryDelegate(0)
 {
     bool ret(false);
 
@@ -96,7 +97,7 @@ BtcpuiSearchView::BtcpuiSearchView(BtSettingModel &settingModel,
     ret = connect(mDeviceList,
             SIGNAL(longPressed(HbAbstractViewItem*, QPointF)), this,
             SLOT(showContextMenu(HbAbstractViewItem*, QPointF)));
-    BTUI_ASSERT_X( ret, "bt-search-view", "deviceSelected can't connect" ); 
+    BTUI_ASSERT_X( ret, "bt-search-view", "showContextMenu can't connect" ); 
 
     mDeviceList->setSelectionMode( HbAbstractItemView::SingleSelection );
     
@@ -140,8 +141,8 @@ BtcpuiSearchView::BtcpuiSearchView(BtSettingModel &settingModel,
     BTUI_ASSERT_X( optionsMenu != 0, "BtcpuiSearchView::BtcpuiSearchView", "Options menu not found" );   
     this->setMenu(optionsMenu);      
     
-    ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(deviceSelected(QModelIndex)));
-    BTUI_ASSERT_X( ret, "BtcpuiSearchView::BtcpuiSearchView", "deviceSelected can't connect" ); 
+    ret = connect(mDeviceList, SIGNAL(activated(QModelIndex)), this, SLOT(openDeviceView(QModelIndex)));
+    BTUI_ASSERT_X( ret, "BtcpuiSearchView::BtcpuiSearchView", "openDeviceView can't connect" ); 
     
     bool regStatus(false);
     regStatus = HbStyleLoader::registerFilePath(":/docml/btcpuisearchlistviewitem.widgetml");
@@ -172,6 +173,7 @@ BtcpuiSearchView::~BtcpuiSearchView()
 {
     delete mLoader; // Also deletes all widgets that it constructed.
     delete mBtuiModelSortFilter;
+    delete mSecondaryDelegate;
     HbStyleLoader::unregisterFilePath(":/docml/btcpuisearchlistviewitem.widgetml");
     HbStyleLoader::unregisterFilePath(":/docml/btcpuisearchlistviewitem.css");
 }
@@ -299,4 +301,72 @@ void BtcpuiSearchView::createContextMenuActions(int majorRole)
             mContextMenu->addAction(hbTrId("txt_bt_menu_connect"));
         }
     }  
+}
+
+void BtcpuiSearchView::connectToDevice(const QModelIndex& modelIndex)
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    
+    bool ok(false);
+    if(!mSecondaryDelegate) {
+        mSecondaryDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::ConnectService, mSettingModel, mDeviceModel);
+        ok = connect(mSecondaryDelegate,
+                SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this,
+                SLOT(secondaryDelegateCompleted(int,BtAbstractDelegate*)));
+        BOstraceExt1(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiSearchView::connectToDevice signal connect %d", ok);
+        if (!ok) {
+            delete mSecondaryDelegate;
+            mSecondaryDelegate = 0;
+        }
+        else {
+            QModelIndex index = mBtuiModelSortFilter->mapToSource(modelIndex);
+            QVariant param;
+            param.setValue(index);                
+            mSecondaryDelegate->exec(param);
+        }
+    }
+    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiSearchView::secondaryDelegateCompleted(int error, BtAbstractDelegate* delegate)
+{
+    BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, error );
+    Q_UNUSED(error);
+    Q_UNUSED(delegate);
+    
+    delete mSecondaryDelegate;
+    mSecondaryDelegate = 0;
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
+}
+
+void BtcpuiSearchView::disconnectFromDevice(const QModelIndex& modelIndex)
+{
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    
+    bool ok(false);
+    if(!mSecondaryDelegate) {
+        mSecondaryDelegate = BtDelegateFactory::newDelegate(
+                BtDelegate::DisconnectService, mSettingModel, mDeviceModel);
+        ok = connect(mSecondaryDelegate,
+                SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), this,
+                SLOT(secondaryDelegateCompleted(int,BtAbstractDelegate*)));
+        BOstraceExt1(TRACE_DEBUG, DUMMY_DEVLIST, "BtcpuiSearchView::connectToDevice signal connect %d", ok);
+        if (!ok) {
+            delete mSecondaryDelegate;
+            mSecondaryDelegate = 0;
+        }
+        else {
+            QModelIndex index = mBtuiModelSortFilter->mapToSource(modelIndex);   
+            QVariant deviceBtAddress = mDeviceModel->data(index, BtDeviceModel::ReadableBdaddrRole); 
+                    
+            QList<QVariant>paramList;
+            paramList.append(QVariant(ServiceLevel));
+            paramList.append(deviceBtAddress);
+            
+            mSecondaryDelegate->exec(paramList);
+        }
+    }
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }

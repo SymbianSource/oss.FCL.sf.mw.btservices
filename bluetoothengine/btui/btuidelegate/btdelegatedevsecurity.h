@@ -74,7 +74,7 @@ private:
     CBTDevice *mNewDev;
     int mActiveHandling;
     QModelIndex mIndex;
-    bool mAddingBlockedDev;
+    bool mAddingDevToRegistry;
     Q_DISABLE_COPY(BtDelegateDevSecurity)
 
 };

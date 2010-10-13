@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -16,46 +16,13 @@
 */
 
 #include "btrecvcompleteddialogwidget.h"
-#include <xqaiwrequest.h>
-#include <xqappmgr.h>
-#include <QThreadPool>
 #include "bluetoothdevicedialogs.h"
 
 const char* DOCML_BT_RECV_CMPLTD_DIALOG = ":/docml/bt-receive-done-dialog.docml";
-const qint64 KBluetoothMsgsConversationId = 0x01;
-
-
-CoversationViewServiceStarter::CoversationViewServiceStarter(qint64 conversationId)
-:mCnvId(conversationId)
-    {
-    
-    }
-
-CoversationViewServiceStarter::~CoversationViewServiceStarter()
-    {
-    
-    }
-
-void CoversationViewServiceStarter::run()
-    {
-    QList<QVariant> args;
-    QString serviceName("com.nokia.services.hbserviceprovider");
-    QString operation("open(qint64)");
-    XQAiwRequest* request;
-    XQApplicationManager appManager;
-    request = appManager.create(serviceName, "conversationview", operation, false); // not embedded
-    if ( request == NULL )
-        {
-        return;       
-        }
-    args << QVariant(mCnvId);
-    request->setArguments(args);
-    request->send();
-    delete request;
-    }
 
 
 BTRecvcompletedDialogWidget::BTRecvcompletedDialogWidget(const QVariantMap &parameters)
+
 :mLoader(0),
  mOpenConversationView(false)
 {
@@ -190,14 +157,6 @@ bool BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
 
 void BTRecvcompletedDialogWidget::showClicked()
 {   
-    if(mOpenConversationView)
-        {
-        CoversationViewServiceStarter* service = new CoversationViewServiceStarter(KBluetoothMsgsConversationId);
-        service->setAutoDelete(true);
-        
-        QThreadPool::globalInstance()->start(service);
-        }
-          
     QVariantMap data;
     data.insert(QString("actionResult"), QVariant(TBluetoothDialogParams::EShow));
     emit deviceDialogData(data);

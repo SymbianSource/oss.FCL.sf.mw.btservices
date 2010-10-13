@@ -21,6 +21,8 @@ DEFINES += BUILD_BTUIDELEGATE
 INCLUDEPATH += . \
     ../inc
 
+TRANSLATIONS = btdialogs.ts
+# Only one .ts file allowed for a .pro file. btviews.ts is in btcpplugin.pro
 RESOURCES += btuidelegate.qrc
 
 CONFIG += qt \

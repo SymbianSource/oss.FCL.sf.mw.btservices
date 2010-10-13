@@ -109,13 +109,13 @@ void BtDelegatePair::exec_pair()
         addrReadbleStringToSymbian( strBtAddr, btEngddr );
         TBTDeviceClass btEngDeviceClass(cod);
         error = mBtengConnMan->PairDevice(btEngddr, btEngDeviceClass);
-        launchWaitDialog();
     }
     
     if(error) {
         emitCommandComplete(error);
+        return;
     }
-
+    launchWaitDialog();
 }
 
 

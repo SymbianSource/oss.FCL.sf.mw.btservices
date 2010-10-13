@@ -22,7 +22,7 @@
 #include <bluetooth/pairing.h>
 #include <e32property.h>
 #include "btnotifclientserver.h"
-#include "btnotifBasePairingHandler.h"
+#include "btnotifbasepairinghandler.h"
 #include <hb/hbcore/hbsymbianvariant.h>
 #include "btnotificationresult.h"
 #include "bluetoothdevicedialogs.h"

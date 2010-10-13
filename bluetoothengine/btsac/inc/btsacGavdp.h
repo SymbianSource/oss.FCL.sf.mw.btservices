@@ -244,9 +244,7 @@ NONSHARABLE_CLASS(CBTSACGavdp) : public CBase, public MGavdpUser
 		
     private:    // Data
         
-	    MInternalGavdpUser* iObserver; 
-      
-	    CBTSACStreamerController* iStreamer;
+	    MInternalGavdpUser* iObserver;       
 		RSocketServ	iSockServ;
 		RGavdp iGavdp;	
 

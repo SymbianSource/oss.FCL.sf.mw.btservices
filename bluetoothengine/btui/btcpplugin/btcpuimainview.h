@@ -61,11 +61,8 @@ public slots:
     void changePowerState();
     void changeVisibility(int index);
     void changeBtLocalName();
-    
     void updateSettingItems(const QModelIndex &topLeft, const QModelIndex &bottomRight);
-
     void launchDeviceDiscovery();
-    
     void goToSearchView();
 
     //from delegate classes
@@ -111,6 +108,7 @@ private:
     
     void updateOptionsMenu();
     
+   
 private:
 
     // search view. Owned

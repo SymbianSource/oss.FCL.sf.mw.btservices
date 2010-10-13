@@ -39,6 +39,7 @@ END
 
 
 USERINCLUDE ../inc
+USERINCLUDE ../../btconversationviewlauncher/inc
 SYSTEMINCLUDE	../../../obexserviceman/utils/inc
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE  /epoc32/include/mw/hb/hbcore
@@ -67,6 +68,7 @@ LIBRARY 		btengsettings.lib			//btengsettings.dll
 LIBRARY 		btengconnman.lib			//btengconnman.dll
 LIBRARY			HbCore.lib		
 LIBRARY			HbWidgets.lib
+LIBRARY         btconversationviewlauncher.lib
 
 DEBUGLIBRARY 	flogger.lib         // For logging
 

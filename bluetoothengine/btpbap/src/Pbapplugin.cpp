@@ -142,7 +142,7 @@ void CPBAPplugin::CancelConnect( const TBTDevAddr& /*aAddr*/ )
 //
 TInt CPBAPplugin::Disconnect( const TBTDevAddr& aAddr, TBTDisconnectType /*aDiscType*/ )
     {   
-    if ( iObserver )   
+    if ( !iObserver )   
         {
         return KErrGeneral;    
         }

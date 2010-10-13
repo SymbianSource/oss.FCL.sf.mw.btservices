@@ -433,12 +433,15 @@ TInt CATMiscCmdPlugin::CreatePartOfReply( RBuf8& aBuffer )
             }
         else if (ret == KErrNone)
 			{
-			aBuffer.Create( iReplyBuffer, partLength );
-			iReplyBuffer.Delete( 0, partLength );
-			if ( iReplyBuffer.Length() == 0 )
-				{
-				iReplyBuffer.Close();
-				}
+			
+			if((ret = aBuffer.Create( iReplyBuffer, partLength )) == KErrNone)
+			    {
+                iReplyBuffer.Delete( 0, partLength );
+                if ( iReplyBuffer.Length() == 0 )
+                    {
+                    iReplyBuffer.Close();
+                    }
+                }
 			}
         }
 
@@ -477,35 +480,42 @@ TInt CATMiscCmdPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
     Trace(KDebugPrintD, "iQuietMode: ", iQuietMode);
     if ( iQuietMode )
         {
-        iReplyBuffer.Create( KNullDesC8 );
+        aError = iReplyBuffer.Create( KNullDesC8 );
         }
     else
         {
-        iReplyBuffer.Create( aSrcBuffer );
+        aError = iReplyBuffer.Create( aSrcBuffer );
         }
     
-    Trace(KDebugPrintD, "aReplyType: ", aReplyType);
-    switch ( aReplyType )
+    if(aError == KErrNone)
         {
-        case EReplyTypeOther:
-            break;
-#ifdef PROTOCOL_TDSCDMA
-        case EReplyTypeEditor:
-            CreateEditModeBuffer( iReplyBuffer );
-            break;
-#endif
-        case EReplyTypeOk:
-            CreateOkOrErrorReply( iReplyBuffer, ETrue );
-            break;
-        case EReplyTypeError:
-            CreateOkOrErrorReply( iReplyBuffer, EFalse );
-            break;
-        default:
-            TRACE_FUNC_EXIT
-            return KErrGeneral;
+        Trace(KDebugPrintD, "aReplyType: ", aReplyType);
+        switch ( aReplyType )
+            {
+            case EReplyTypeOther:
+                break;
+    #ifdef PROTOCOL_TDSCDMA
+            case EReplyTypeEditor:
+                aError = CreateEditModeBuffer( iReplyBuffer );
+                break;
+    #endif
+            case EReplyTypeOk:
+                aError = CreateOkOrErrorReply( iReplyBuffer, ETrue );
+                break;
+            case EReplyTypeError:
+                aError = CreateOkOrErrorReply( iReplyBuffer, EFalse );
+                break;
+            default:
+                TRACE_FUNC_EXIT
+                return KErrGeneral;
+            }
+        
+        if(aError == KErrNone)
+            {
+            CreatePartOfReply( *iHcReply );
+            } 
         }
-    CreatePartOfReply( *iHcReply );
-    HandleCommandCompleted( KErrNone, aReplyType );
+    HandleCommandCompleted( aError, aError ? EReplyTypeUndefined : aReplyType );
     if ( EReplyTypeEditor != aReplyType )
         {
         iHcCmd = NULL;
@@ -513,7 +523,7 @@ TInt CATMiscCmdPlugin::CreateReplyAndComplete( TATExtensionReplyType aReplyType,
         iCurrentHandler = NULL;
         }
     TRACE_FUNC_EXIT
-    return KErrNone;
+    return aError;
     }
 
 /**
@@ -528,6 +538,8 @@ TInt CATMiscCmdPlugin::CreateOkOrErrorReply( RBuf8& aReplyBuffer,
     _LIT8( KErrorReplyNumeric, "4" );
     _LIT8( KOkReplyNumeric,    "0" );
     TBuf8<KErrorReplyLength> replyBuffer;
+    TInt ret = KErrNone;
+    
     if ( iVerboseMode )
         {
         replyBuffer.Append( iCarriageReturn );
@@ -556,10 +568,14 @@ TInt CATMiscCmdPlugin::CreateOkOrErrorReply( RBuf8& aReplyBuffer,
         replyBuffer.Append( iCarriageReturn );
         }
 
-    aReplyBuffer.ReAlloc(aReplyBuffer.Length() + replyBuffer.Length());
-    aReplyBuffer.Append( replyBuffer );
+    ret = aReplyBuffer.ReAlloc(aReplyBuffer.Length() + replyBuffer.Length());
+    if(ret == KErrNone)
+        {
+        aReplyBuffer.Append( replyBuffer );    
+        }
+   
     TRACE_FUNC_EXIT
-    return KErrNone;
+    return ret;
     }
 
 /**
@@ -648,7 +664,12 @@ void CATMiscCmdPlugin::CreateCMEReplyAndComplete(TInt aError)
         {
         // return error code to AT client
         RBuf8 response;
-        response.Create(KDefaultCmdBufLength);
+        if (KErrNone != response.Create(KDefaultCmdBufLength))
+            {
+            CreateReplyAndComplete(EReplyTypeError);
+            return;
+            }
+        
         response.Append(KCRLF);
         switch(aError)
             {

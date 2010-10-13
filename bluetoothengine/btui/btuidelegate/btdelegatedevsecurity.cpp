@@ -32,7 +32,7 @@ BtDelegateDevSecurity::BtDelegateDevSecurity(
         QObject *parent) :
     BtAbstractDelegate(settingModel, deviceModel, parent), mBtEngDevMan(0),
     mDisconnectDelegate(0), mBtEngAddr(0), mRegDevArray(0), mOperation(0), 
-    mDevice(0),mNewDev(0), mActiveHandling(false),mAddingBlockedDev(false)
+    mDevice(0),mNewDev(0), mActiveHandling(false),mAddingDevToRegistry(false)
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this ); 
     mRegDevArray = new CBTDeviceArray(1);
@@ -187,7 +187,6 @@ void BtDelegateDevSecurity::cancel()
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this ); 
     if ( mActiveHandling ) {
-        mAddingBlockedDev = false;
         emitCommandComplete(KErrNone);
     }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
@@ -213,9 +212,9 @@ void BtDelegateDevSecurity::HandleDevManComplete( TInt err )
         return;
     }
     if ( !err ) {
-        if ( mAddingBlockedDev ) {
+        if ( mAddingDevToRegistry ) {
             // blocked a device which was not in the registry originally
-            mAddingBlockedDev = false;
+            mAddingDevToRegistry = false;
             delete mNewDev;
             mNewDev = 0;
         }
@@ -271,8 +270,9 @@ void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt err, CBTDeviceArray* 
                 emitCommandComplete( KErrArgument );
             }
         }
-        else if ( err == KErrNotFound && mOperation == BtBlock) {  // device not in registry, need to add it
-            mAddingBlockedDev = true;
+        else if ( err == KErrNotFound && ((mOperation == BtBlock) ||
+                (mOperation == BtAuthorize))) {  // device not in registry, need to add it
+            mAddingDevToRegistry = true;
             TRAP( err, {
                     mNewDev = CBTDevice::NewL( mBtEngAddr );
             });
@@ -293,17 +293,21 @@ void BtDelegateDevSecurity::HandleGetDevicesComplete( TInt err, CBTDeviceArray* 
                     int cod = (index.data(BtDeviceModel::CoDRole)).toInt();
                     mNewDev->SetDeviceClass(cod);
                     TBTDeviceSecurity security = mNewDev->GlobalSecurity();
-                    security.SetBanned( ETrue );
-                    security.SetNoAuthorise( EFalse ); // set trust status to false
+                    if (mOperation == BtBlock) {
+                        security.SetBanned( ETrue );
+                        security.SetNoAuthorise( EFalse ); // set trust status to false
+                        mNewDev->DeleteLinkKey();
+                        mNewDev->SetPaired(EFalse);
+                    } else {  // BtAuthorize
+                        security.SetNoAuthorise( ETrue ); // set trust status to true
+                        security.SetBanned( EFalse );
+                    }
                     mNewDev->SetGlobalSecurity( security );
-                    mNewDev->DeleteLinkKey();
-                    mNewDev->SetPaired(EFalse);
                     err = mBtEngDevMan->AddDevice( *mNewDev );  // see callback HandleDevManComplete()
                 }
             }
         }
         if (err) {
-            mAddingBlockedDev = false;
             emitCommandComplete( err );
         }
     }
@@ -316,7 +320,7 @@ void BtDelegateDevSecurity::emitCommandComplete(int error)
     // no dialogs here since stack provides "unpaired to %1" dialog
     // and failures are not reported
     mActiveHandling = false;
-    mAddingBlockedDev = false;
+    mAddingDevToRegistry = false;
     if ( mNewDev ) {
         delete mNewDev;
         mNewDev = 0;

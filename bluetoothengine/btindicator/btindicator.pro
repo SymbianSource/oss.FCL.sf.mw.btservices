@@ -28,6 +28,9 @@ SOURCES += src/btindicatorplugin.cpp \
 MOC_DIR = moc
 OBJECTS_DIR = obj    
 
+TRANSLATIONS = btindimenu.ts
+# Only one .ts file allowed for a .pro file.
+
 LIBS += -lxqservice -lcpframework
 symbian { 
     TARGET.EPOCALLOWDLLDATA = 1

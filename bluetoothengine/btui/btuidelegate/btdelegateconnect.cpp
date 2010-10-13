@@ -29,6 +29,7 @@
 #include <bluetoothuitrace.h>
 #include <e32property.h>
 #include <ctsydomainpskeys.h>  
+#include <hbparameterlengthlimiter.h>
 
 BtDelegateConnect::BtDelegateConnect(
         BtSettingModel* settingModel, 
@@ -137,6 +138,8 @@ void BtDelegateConnect::exec_connect()
     }
     
     if( error ) {
+    		QString prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_unable_to_connect_with_bluetooth")).arg(mDeviceName);
+    		HbMessageBox::warning(prompt);
         emitCommandComplete(error);
     }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
@@ -195,6 +198,10 @@ void BtDelegateConnect::ConnectComplete( TBTDevAddr& aAddr, TInt aErr,
     }
     else {
         // command is finished
+        if(aErr){
+        		QString prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_unable_to_connect_with_bluetooth")).arg(mDeviceName);
+    				HbMessageBox::warning(prompt);
+        }
         emitCommandComplete(aErr);
     }
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );

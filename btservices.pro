@@ -25,6 +25,7 @@ SUBDIRS += btservices_plat \
            btobexprofiles/obexsendservices/obexhighway \
            btobexprofiles/obexreceiveservices/btmsgviewer \
            bluetoothengine/btxqservice \
-
+		   btobexprofiles/obexreceiveservices/btconversationviewlauncher
+		   
 CONFIG += ordered
 

@@ -25,9 +25,8 @@ LIBS += -lcpframework -lbtuimodel -lbtuidelegate
 MOC_DIR = moc
 OBJECTS_DIR = obj
 
-TRANSLATIONS += btviews.ts \
-                btdialogs.ts \
-                btindimenu.ts
+TRANSLATIONS = btviews.ts
+# Removed btdialogs.ts and btindimenu.ts since only one .ts file allowed for a .pro file. btdialogs.ts moved to btuidelegate.pro
 RESOURCES += btcpplugin.qrc
 
 # Input

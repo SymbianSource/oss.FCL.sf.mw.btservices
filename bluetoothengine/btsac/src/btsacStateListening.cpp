@@ -318,16 +318,12 @@ void CBtsacListening::GoListen()
 		{					
 		Parent().SetRemoteAddr(TBTDevAddr());
 		}
-	TInt err = Parent().iGavdp->Shutdown();
-	if(!err)
-		{
-		TRACE_INFO((_L("CBtsacListening::GoListen(), Signalling disconnected, Re-listen...")))
-		// Starts to listen for inbound signalling channel connections.
-		err = Parent().iGavdp->Listen();
-		}
+	TRACE_INFO((_L("CBtsacListening::GoListen(), Signalling disconnected, Re-listen...")))
+	// Starts to listen for inbound signalling channel connections.
+	TInt err = Parent().iGavdp->Listen();
 	if(err)
 		{
-		// Shutdown failed, reset gavdp
+		// Listen request failed, reset gavdp
 		TRACE_INFO((_L("CBtsacListening::GoListen(), error = %d."), err))
 		ResetGavdp();
 		}		
@@ -341,7 +337,8 @@ TInt CBtsacListening::ResetGavdp()
 	{
 	TRACE_FUNC
 	Parent().iGavdp->Close();
-	if( Parent().iGavdp->Open() == KErrNone )
+	TInt err = Parent().iGavdp->Open();
+	if( !err )
 		{
 		iInitializationProcedure = EInitProcedureWaitingConfConfirmed;
         if(iPendingRequests == KRequestNone)
@@ -353,7 +350,8 @@ TInt CBtsacListening::ResetGavdp()
 		}
 	else
 		{
-		TRACE_INFO((_L("CBtsacListening::ResetGavdp() Couldn't open gavdp.")))
+		TRACE_INFO((_L("CBtsacListening::ResetGavdp() Couldn't open gavdp, err %d"), err))
+		__ASSERT_DEBUG(err != KErrNone, PANIC(EBTPanicCouldntOpenGavdp));
 		return KErrGeneral;
 		}		
 	}
