@@ -196,7 +196,7 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 		// a service connection with phone. We won't take any action (e.g. remove 
 		// link key) in this case. As the result, this device can't be seen in our UI, 
 		// however other applications are still freely to use its services.
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: JW pairing with no IO device");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]: JW pairing with no IO device"));
 		TBTEngConnectionStatus status = iParent.ConnectStatus( aDev.Address() );
 		if ( status == EBTEngConnecting || status == EBTEngConnected )
 			{
@@ -211,7 +211,7 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 		{
 		// The linkkey has been created  by an incoming OBEX service request
 		// which resulted a pairing event received from pair server.
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: JW pairing with IO device");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]: JW pairing with IO device"));
 		iParent.RenewPairingHandler( NULL );
 		}
     else
@@ -221,7 +221,7 @@ void CBTNotifIncomingPairingHandler::DoHandleRegistryNewPairedEvent( const TBTNa
 			// The user was involved in the pairing, so display in the paired devices list
 			(void) iParent.AddUiCookieJustWorksPaired(aDev);
 			}
-		BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]: Non-JW pairing");
+		BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]: Non-JW pairing"));
 		// Other pairing model than Just Works:
 		CancelPlaNotification();
 		SetPairResult( KErrNone );
@@ -347,7 +347,7 @@ TInt CBTNotifIncomingPairingHandler::OpenPhysicalLinkAdaptor()
         // though the link has dropped because of a time-out.
         err = iPla.Open( iParent.SocketServ(), iAddr );
         }
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:HasPhysicalLink ? %d", iPla.IsOpen() );
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:HasPhysicalLink ? %d"), iPla.IsOpen() );
     BOstraceFunctionExit0( DUMMY_DEVLIST );
     return err;
     }

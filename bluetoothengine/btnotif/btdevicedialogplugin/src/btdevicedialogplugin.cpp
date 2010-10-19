@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -33,6 +33,8 @@
 #include "btdevicedialogrecvquerywidget.h"
 #include "btrecvcompleteddialogwidget.h"
 #include "btdeviceinfowidget.h"
+#include "btdevicedialogwaitingwidget.h"
+#include "btdeviceokonlydialogwidget.h"
 #include <hbtranslator.h>
 
 Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
@@ -210,6 +212,7 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
     HbDeviceDialogInterface *deviceDialog = NULL;
     switch ( i.value().toInt() ) {
         case TBluetoothDialogParams::ENote:
+        case TBluetoothDialogParams::bt_054_d_entered_popup:
             deviceDialog =
                 new BtDeviceDialogNotifWidget(parameters);
             break;
@@ -243,6 +246,14 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             break;
         case TBluetoothDialogParams::EInformationDialog:
             deviceDialog = new BtDeviceInfoWidget(parameters);
+            break;
+        case TBluetoothDialogParams::bt_052_d_entering:
+            deviceDialog = new BtDeviceDialogWaitingWidget(parameters);
+            break;
+        case TBluetoothDialogParams::bt_053_d_unable_to_use_no_sim:
+        case TBluetoothDialogParams::bt_053_d_unable_to_use:
+            deviceDialog =
+                new BtDeviceOkOnlyDialogWidget(HbMessageBox::MessageTypeWarning,parameters);
             break;
         default:
             d->mError = UnknownDeviceDialogError;

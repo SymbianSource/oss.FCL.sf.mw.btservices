@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -21,6 +21,7 @@
 #include <bluetoothdevicedialogs.h>
 #include <hbaction.h>
 #include <hbdialog.h>
+#include <hbparameterlengthlimiter.h>
 #include "btdevicedialogpluginerrors.h"
 #include <btuiiconutil.h>
 #include <btnotif.h>
@@ -126,8 +127,10 @@ bool BtDeviceDialogNotifWidget::constructNotifDialog(const QVariantMap &paramete
 void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
-    QString keyStr, prompt,title;
-    QVariant classOfDevice, notifType;
+    QString keyStr,prompt,title,devName;
+    QVariant classOfDevice, notifType, param;
+    HbIcon icon;
+    
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -136,15 +139,20 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         mLastError = UnknownDeviceDialogError;
         return;
     }
-    HbIcon icon;
-    QString textStr;
-    QString devName;
-    QVariant param = parameters.value( keyStr );
+    param = parameters.value( keyStr );
     int key = param.toInt();
+    
+    keyStr.setNum( TBluetoothDeviceDialog::EDeviceName );
+    i = parameters.constFind( keyStr );
+    if ( i != parameters.constEnd() )
+        {
+        devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+        }
+
     switch ( key ) {
         case EPairingSuccess:
             title = QString(hbTrId( "txt_bt_dpophead_paired" ));
-            prompt = QString( hbTrId( "txt_bt_dpopinfo_paired_to_1" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_paired_to_1" )).arg(devName);
             classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
             icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
             mNotificationDialog->setIcon(icon);
@@ -152,7 +160,7 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         // todo: remove this Unpaired notification if not used
         case EUnpairedDevice:
             title = QString(hbTrId( "txt_bt_dpophead_unpaired" ));
-            prompt = QString( hbTrId( "txt_bt_dpopinfo_with_1" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_with_1" )).arg(devName);
             classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
             icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
             mNotificationDialog->setIcon(icon);
@@ -170,29 +178,24 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
                 {
                 case EBTConnected:
                     title = QString(hbTrId( "txt_bt_dpophead_connected" ));
-                    prompt = QString( hbTrId( "txt_bt_dpopinfo_connected_to_1" ) );
+                    prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_connected_to_1" )).arg(devName);
                     classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
                     icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
                     mNotificationDialog->setIcon(icon);
                     break;
                 case EBTClosed:
                     title = QString(hbTrId( "txt_bt_dpophead_disconnected" ));
-                    prompt = QString( hbTrId( "txt_bt_dpopinfo_disconnected_from_1" ) );
+                    prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_disconnected_from_1" )).arg(devName);
                     classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
                     icon = getBadgedDeviceTypeIcon(classOfDevice.toInt());
                     mNotificationDialog->setIcon(icon);
                     break;
-                case EBTDisconnected:
-                case EBTDeviceNotAvailable:
-                case EBTOfflineDisabled:
-                case EBTEnterSap:
                 case EBTSapOk:
-                case EBTSapFailed:
-                case EBTSapNoSim:
-                case EBTDeviceBusy:
-                case ECmdShowBtBatteryLow:
-                case ECmdShowBtBatteryCritical:
-                case EBTStayPowerOn:
+                    title = QString(hbTrId( "txt_bt_dpophead_sim_access_profile" ));
+                    prompt = QString( hbTrId( "txt_bt_dpopinfo_in_use" ) );
+                    classOfDevice = parameters.value(QString::number( TBluetoothDeviceDialog::EDeviceClass ));
+                    icon = QString("qtg_large_bluetooth");
+                    mNotificationDialog->setIcon(icon);
                     break;
                 case EBTSwitchedOn:
                     title = QString(hbTrId("txt_bt_dpophead_bluetooth"));
@@ -207,11 +210,24 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
                     mNotificationDialog->setIcon(icon);
                     break;
                 // not used anymore?
+                case EBTEnterSap:
+                // EnterSAP is handled in another dialog type
+                case EBTSapNoSim:
+                case EBTSapFailed:
+                // SapNoSIM and SAP Failed handled in another dialog type
                 case EIRNotSupported:
                 case EBTVisibilityTimeout:                    
                 case EBTAudioAccessory:
                 case EBTAudioHandset:
+                case EBTDisconnected:
+                case EBTDeviceNotAvailable:
+                case EBTOfflineDisabled:
+                case EBTDeviceBusy:
+                case ECmdShowBtBatteryLow:
+                case ECmdShowBtBatteryCritical:
+                case EBTStayPowerOn:
                 default:
+                    mLastError = ParameterError;
                     break;
                 }
             break;
@@ -225,9 +241,7 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
             
         case ESendCompleted:
             title = QString(hbTrId("txt_bt_dpophead_all_files_sent"));
-            textStr = QString(hbTrId("txt_bt_dpopinfo_sent_to_1"));
-            devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
-            prompt = QString(textStr.arg(devName));
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_sent_to_1")).arg(devName);
             icon = getBadgedDeviceTypeIcon(parameters.value(
                     QString::number(TBluetoothDeviceDialog::EDeviceClass)).toDouble());
             mNotificationDialog->setIcon(icon);
@@ -235,9 +249,7 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         
         /*case ESendCancelled:
             title = QString(hbTrId("txt_bt_dpophead_sending_cancelled"));
-            textStr = QString(hbTrId("txt_bt_dpopinfo_sent_to_1"));
-            devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
-            prompt = QString(textStr.arg(devName));
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dpopinfo_sent_to_1")).arg(devName);
             icon = getBadgedDeviceTypeIcon(parameters.value(QString::number(
                     TBluetoothDeviceDialog::EDeviceClass)).toDouble());
             mNotificationDialog->setIcon(icon);
@@ -246,11 +258,6 @@ void BtDeviceDialogNotifWidget::processParam(const QVariantMap &parameters)
         default:
             mLastError = ParameterError;
             break;
-    }
-    int repls = prompt.count( QString( "%" ) );
-    if ( repls > 0 ) {
-        QVariant name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
-        prompt = prompt.arg( name.toString() );
     }
     mNotificationDialog->setTitle( title );
     mNotificationDialog->setText( prompt );

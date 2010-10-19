@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -20,6 +20,7 @@
 #include "bluetoothdevicedialogs.h"
 #include "btdevicedialogpluginerrors.h"
 #include <btuiiconutil.h>
+#include <HbLabel>
 
 const int timeOut = 30000;
 
@@ -86,7 +87,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     HbIcon icon(QString("qtg_large_bluetooth"));
                     mMessageBox->setIcon(icon);
                     mMessageBox->setTimeout(timeOut);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                 //TODO: Remove this piece of code if notifier is used in toggle
                 case TBluetoothDialogParams::EOfflineQuery:
@@ -98,7 +99,6 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     mMessageBox->setIcon(icon);
                     mMessageBox->setTimeout(timeOut);
                     connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
                 }break;
                 
                 case TBluetoothDialogParams::ERecvFailed:
@@ -111,7 +111,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     HbIcon icon = getBadgedDeviceTypeIcon(classOfDevice);
                     mMessageBox->setIcon(icon);
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
         
                 case TBluetoothDialogParams::ESendFailed:
@@ -124,7 +124,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     HbIcon icon = getBadgedDeviceTypeIcon(classOfDevice);
                     mMessageBox->setIcon(icon);
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                 
                 case TBluetoothDialogParams::EMemoryFull:
@@ -135,7 +135,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     QString driveName(parameters.value(QString::number(TBluetoothDeviceDialog::EDriveName)).toString());
                     mMessageBox->setText(textStr.arg(driveLetter).arg(driveName));
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                 
                 case TBluetoothDialogParams::EDriveNotFound:
@@ -143,7 +143,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     mMessageBox = new HbMessageBox(HbMessageBox::MessageTypeWarning);
                     mMessageBox->setText(hbTrId("txt_bt_info_file_not_fould_memory_card_has_been_r"));
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                 
                 case TBluetoothDialogParams::EFileMoved:
@@ -151,7 +151,7 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     mMessageBox = new HbMessageBox(HbMessageBox::MessageTypeWarning);
                     mMessageBox->setText(hbTrId("txt_bt_info_file_not_fould_it_may_be_removed_or_d"));
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
-                    connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                 
                 case TBluetoothDialogParams::EUnsupportedImages:
@@ -164,6 +164,37 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                     HbIcon icon = getBadgedDeviceTypeIcon(classOfDevice);
                     mMessageBox->setIcon(icon);
                     mMessageBox->setDismissPolicy(HbPopup::NoDismiss);
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
+                }break;
+                
+                case TBluetoothDialogParams::ECannotUseSAPTemporarily:
+                {
+                    mMessageBox = new HbMessageBox(HbMessageBox::MessageTypeInformation);
+                    mMessageBox->setText(hbTrId("txt_bt_info_sim_access_profile_is_used_next_time_t"));
+                    mMessageBox->setDismissPolicy(HbPopup::TapOutside);
+                    mMessageBox->setTimeout(HbPopup::StandardTimeout);
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
+                }break;
+                
+                case TBluetoothDialogParams::ENoSimInDevice:
+                {
+                    mMessageBox = new HbMessageBox(HbMessageBox::MessageTypeQuestion);
+                    mMessageBox->setHeadingWidget(new HbLabel(hbTrId("txt_bt_title_no_sim_card_in_the_device")));
+                    mMessageBox->setText(hbTrId("txt_bt_info_do_you_still_want_to_enable_sim_access"));
+                    mMessageBox->setStandardButtons(HbMessageBox::Yes | HbMessageBox::No);
+                    mMessageBox->setDismissPolicy(HbPopup::TapOutside);
+                    mMessageBox->setTimeout(HbPopup::StandardTimeout);
+                    connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
+                }break;
+                
+                case TBluetoothDialogParams::EUnableToUseSAP:
+                {
+                    mMessageBox = new HbMessageBox(HbMessageBox::MessageTypeQuestion);
+                    mMessageBox->setHeadingWidget(new HbLabel(hbTrId("txt_bt_title_unable_to_enter_sim_access_profile")));
+                    mMessageBox->setText(hbTrId("txt_bt_info_try_entering_the_sim_access_profile_ag"));
+                    mMessageBox->setStandardButtons(HbMessageBox::Yes | HbMessageBox::No);
+                    mMessageBox->setDismissPolicy(HbPopup::TapOutside);
+                    mMessageBox->setTimeout(HbPopup::StandardTimeout);
                     connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
                 }break;
                     
@@ -188,7 +219,6 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
                 mMessageBox->setIcon(icon);
                 mMessageBox->setTimeout(timeOut);
                 connect(mMessageBox, SIGNAL(finished(int)), this, SLOT(messageBoxClosed(int)));
-                connect(mMessageBox, SIGNAL(finished(HbAction*)), this, SLOT(messageBoxClosed(HbAction*)));
                 }break;
                 
             default:
@@ -211,16 +241,10 @@ bool BtDeviceInfoWidget::constructDialog(const QVariantMap &parameters)
     return false;
 }
 
-void BtDeviceInfoWidget::messageBoxClosed(HbAction *action)
-{
-    Q_UNUSED(action);
-    emit deviceDialogClosed();
-}
-
 void BtDeviceInfoWidget::messageBoxClosed(int action)
     {
     QVariantMap data;
-    if((action == HbMessageBox::Yes) || (action == HbMessageBox::Continue))
+    if((action == HbMessageBox::Yes) || (action == HbMessageBox::Continue) || (action == HbMessageBox::Ok))
         {
         data.insert(QString("actionResult"), QVariant(true));
         }

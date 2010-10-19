@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 //
 CBTNotifGenInfoNotifier::CBTNotifGenInfoNotifier( CBTNotifServer* aServer )
-:   iServer( aServer )
+:   iServer( aServer ),iNotification(NULL),iEnterSAPNotification(NULL)
     {
     }
 
@@ -148,16 +148,6 @@ void CBTNotifGenInfoNotifier::MBRNotificationClosed( TInt aError, const TDesC8& 
 void CBTNotifGenInfoNotifier::ShowNotificationL(const RMessage2& aMessage )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    if(iNotification)
-        {
-        iNotification->RemoveObserver();
-        iNotification = NULL;
-        }
-    iNotification = iServer->NotificationManager()->GetNotification();
-    User::LeaveIfNull( iNotification ); // For OOM exception, leaves with KErrNoMemory
-    iNotification->SetObserver( this );
-    iNotification->SetNotificationType( TBluetoothDialogParams::ENote, EGenericInfo );
-    
     // read the message parameters
     RBuf8 params;
     params.CreateL( aMessage.GetDesLengthL( EBTNotifSrvParamSlot ) );
@@ -166,6 +156,17 @@ void CBTNotifGenInfoNotifier::ShowNotificationL(const RMessage2& aMessage )
     TPckgC<TBTGenericInfoNotifierParams> paramsPckg( notifparams );
     paramsPckg.Set( params );
     TInt notifType = paramsPckg().iMessageType;
+
+    TInt err = KErrNone;
+
+    if(iNotification)
+        {
+        iNotification->RemoveObserver();
+        iNotification = NULL;
+        }
+    iNotification = iServer->NotificationManager()->GetNotification();
+    User::LeaveIfNull( iNotification ); // For OOM exception, leaves with KErrNoMemory
+    iNotification->SetObserver( this );
     
     switch(notifType)
         {
@@ -173,15 +174,32 @@ void CBTNotifGenInfoNotifier::ShowNotificationL(const RMessage2& aMessage )
         case EBTSwitchedOff:
             {
             User::LeaveIfError(iNotification->SetData( TBluetoothDeviceDialog::EAdditionalInt, notifType));
+            iNotification->SetNotificationType( TBluetoothDialogParams::ENote, EGenericInfo );
             }break;
-            
+        case EBTEnterSap:
+            // save the pointer in order to dismiss the dialog later on
+            iEnterSAPNotification = iNotification;
+            iNotification->SetNotificationType( TBluetoothDialogParams::bt_052_d_entering, EUnusedResource );
+            break;
+        case EBTSapNoSim:
+            iNotification->SetNotificationType( TBluetoothDialogParams::bt_053_d_unable_to_use_no_sim, EUnusedResource );
+            break;
+        case EBTSapFailed:
+            iNotification->SetNotificationType( TBluetoothDialogParams::bt_053_d_unable_to_use, EUnusedResource );
+            break;
+        case EBTSapOk:
+            if(iEnterSAPNotification)
+                iEnterSAPNotification->Close();
+            iNotification->SetNotificationType( TBluetoothDialogParams::bt_054_d_entered_popup, EGenericInfo );
+            // Todo: handler err in a proper way
+            err = iNotification->SetData( TBluetoothDeviceDialog::EAdditionalInt, notifType);
+            break;
         default:
             {
+            iNotification->SetNotificationType( TBluetoothDialogParams::ENote, EGenericInfo );
             TBTDevAddr addr(paramsPckg().iRemoteAddr);
 
             // Get the device name
-            TInt err = KErrNone;
-
             const CBtDevExtension* dev = iServer->DevRepository().Device(addr);
             if(dev)
                 {

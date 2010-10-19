@@ -8,5 +8,6 @@
         <file>docml/bt-receive-auth-dialog.docml</file>
         <file>docml/bt-recv-progress-dialog.docml</file>
         <file>docml/bt-receive-done-dialog.docml</file>
+        <file>docml/bt-waiting-dialog.docml</file>
     </qresource>
 </RCC>

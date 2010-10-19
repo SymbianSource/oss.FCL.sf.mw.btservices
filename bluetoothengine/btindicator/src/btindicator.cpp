@@ -16,34 +16,28 @@
  */
 #include "btindicator.h" 
 #include <QVariant.h>
-//#include <hbmessagebox.h>
-//#include <xqaiwrequest.h>
 #include "btindicatorconstants.h"
-//#include <XQServiceRequest.h>
-//#include <cpbasesettingview.h>
-//#include <cppluginlauncher.h>
-#define LOC_BLUETOOTH hbTrId("txt_bt_dblist_bluetooth")
-#define LOC_BLUETOOTH_OFF hbTrId("txt_bt_dblist_bluetooth_val_off")
-#define LOC_BLUETOOTH_ON_VISIBLE hbTrId("txt_bt_dblist_bluetooth_val_on_and_visible")
-#define LOC_BLUETOOTH_VISIBLE_CONNECTED hbTrId("txt_bt_dblist_bluetooth_val_visible_and_connected")
-#define LOC_BLUETOOTH_ON_HIDDEN hbTrId("txt_bt_dblist_bluetooth_val_on_and_hidden")
-#define LOC_BLUETOOTH_HIDDEN_CONNECTED hbTrId("txt_bt_dblist_bluetooth_val_hidden_and_connected")
+
+
+#define LOC_BLUETOOTH hbTrId("txt_bt_dblist_bluetooth") 
+
+const QString BT_APPLICATION("btcpplugin.dll");
 
 struct BTIndicatorInfo
-    {
-     QString icon;
-     QString secondaryText;
-    };
+{
+    QString DecorationIcon;
+    QString MonoDecorationIcon;
+};
 
 static const int BTIndicatorCount = 5;
 
 
 static const BTIndicatorInfo IndicatorInfo[BTIndicatorCount] = { 
-     { "qtg_large_bluetooth_off", "LOC_BLUETOOTH_OFF" }, 
-     { "qtg_large_bluetooth", "LOC_BLUETOOTH_ON_VISIBLE" }, 
-     { "qtg_large_bluetooth_hide","LOC_BLUETOOTH_ON_HIDDEN" },
-     { "qtg_large_bluetooth_active_connection", "LOC_BT_VISIBLE_CONNECT" }, 
-     { "qtg_large_bluetooth_hide_connection","LOC_BT_HIDDEN_CONNECT"  }
+     { "qtg_large_bluetooth_off", "qtg_status_bluetooth_off" },
+     { "qtg_large_bluetooth","qtg_status_bluetooth" },
+     { "qtg_large_bluetooth_hide","qtg_status_bluetooth_hide" },
+     { "qtg_large_bluetooth_active_connection", "qtg_status_bluetooth_connection"},
+     { "qtg_large_bluetooth_hide_connection", "qtg_status_bluetooth_hide_connection"}
  };
 
 
@@ -53,33 +47,40 @@ static const BTIndicatorInfo IndicatorInfo[BTIndicatorCount] = {
 BTIndicator::BTIndicator(const QString &indicatorType) :
 HbIndicatorInterface(indicatorType,
         HbIndicatorInterface::SettingCategory ,
-        InteractionActivated)
-    {
-    mIndicatorStatus = 0;
-    }
+        InteractionActivated),mRequest(0),mIndicatorStatus(0),mIndicatorlaunch(false)
+{
+    mSecondaryText << hbTrId("txt_bt_dblist_bluetooth_val_off")
+            << hbTrId("txt_bt_dblist_bluetooth_val_on_and_visible")
+            << hbTrId("txt_bt_dblist_bluetooth_val_on_and_hidden")
+            << hbTrId("txt_bt_dblist_bluetooth_val_visible_and_connected")
+            << hbTrId("txt_bt_dblist_bluetooth_val_hidden_and_connected");
+}
 
 // ----------------------------------------------------------------------------
 // BTIndicator::~BTIndicator
 // ----------------------------------------------------------------------------
 BTIndicator::~BTIndicator()
-    {
-    }
+{
+	delete mRequest;
+}
 
 
 // ----------------------------------------------------------------------------
 // BTIndicator::handleInteraction
 // ----------------------------------------------------------------------------
 bool BTIndicator::handleInteraction(InteractionType type)
-    {
-  //  bool handled = false;
+{
     if (type == InteractionActivated) 
-        {
-    //@TODO need to code for launching the BT Control Panel Plugin is available
-
- //       launchBTCpSettingView();
-        }
+	{
+ /*       if(!mIndicatorlaunch)
+            {
+            launchBTCpSettingView();
+            mIndicatorlaunch = true;
+            }*/
+        
+	}
     return true;
-    }
+}
 
 // ----------------------------------------------------------------------------
 // BTIndicator::indicatorData
@@ -87,31 +88,33 @@ bool BTIndicator::handleInteraction(InteractionType type)
 // ----------------------------------------------------------------------------
 QVariant BTIndicator::indicatorData(int role) const
 {
-    switch(role)
-    {
-    case PrimaryTextRole: 
-        {
-        QString text(LOC_BLUETOOTH);
-        return text;
-        }
-    case SecondaryTextRole:
-        {
-        return IndicatorInfo[mIndicatorStatus].secondaryText;//mSecDisplayName;
-        }
-    case DecorationNameRole:
-        {
-        //QString iconName("qtg_large_bluetooth");
-        return IndicatorInfo[mIndicatorStatus].icon;//iconName;
-        }
-    case MonoDecorationNameRole :
-        {
-       // QString iconName("qtg_large_bluetooth");
-        return IndicatorInfo[mIndicatorStatus].icon;//iconName;
-        }
+	QVariant data("");
 
-    default: 
-        return QVariant();      
-     }
+    if(mIndicatorStatus == 0)
+	{
+		data = QString();
+	}
+    else
+	{
+        switch(role) {
+            case PrimaryTextRole: 
+				data = QString(LOC_BLUETOOTH);
+				break;
+            case SecondaryTextRole:
+				data = mSecondaryText[mIndicatorStatus];
+				break;
+            case DecorationNameRole:
+				data = IndicatorInfo[mIndicatorStatus].DecorationIcon;
+				break;
+            case MonoDecorationNameRole :
+				data =  IndicatorInfo[mIndicatorStatus].MonoDecorationIcon;
+				break;
+            default: 
+                data = QString();      
+				break;
+		}
+	}
+	return data;
 }
 
 // ----------------------------------------------------------------------------
@@ -120,76 +123,105 @@ QVariant BTIndicator::indicatorData(int role) const
 // ----------------------------------------------------------------------------
 bool BTIndicator::handleClientRequest( RequestType type, 
         const QVariant &parameter)
-    {
+{
     bool handled(false);
     switch (type) {
         case RequestActivate:
             {
-            mSecDisplayName.clear();
-/*            if(parameter.toInt() == EBTIndicatorOff)
-                mSecDisplayName.append("LOC_BLUETOOTH_OFF");
-            else if(parameter.toInt() == EBTIndicatorOnVisible)
-                mSecDisplayName.append("LOC_BLUETOOTH_ON_VISIBLE");
-            else if(parameter.toInt() == EBTIndicatorOnHidden)
-                mSecDisplayName.append("LOC_BLUETOOTH_ON_HIDDEN");
-            else if(parameter.toInt() == EBTIndicatorVisibleConnected)
-                mSecDisplayName.append("LOC_BT_VISIBLE_CONNECT");
-            else if(parameter.toInt() == EBTIndicatorHiddenConnected)
-                mSecDisplayName.append("LOC_BT_HIDDEN_CONNECT");*/
             mIndicatorStatus = parameter.toInt();
-            emit dataChanged();
+            if(( !mIndicatorStatus )&&( !mIndicatorlaunch ))
+                {
+	            mSecondaryText = QStringList();
+                emit deactivate();
+                }
+            else
+                {
+                emit dataChanged();
+                }
             handled =  true;
             }
             break;
-        default:
+        case RequestDeactivate:
             {
-            mSecDisplayName.clear();
+            mSecondaryText = QStringList();
+            mIndicatorStatus  = 0;
             emit deactivate();
             }
             break;
+        default:
+            break;
     }
     return handled;
-    }
+}
 
 
-/*void BTIndicator::launchBTCpSettingView()
+void BTIndicator::launchBTCpSettingView()
+{
+    if(!mRequest)
     {
-    XQAiwRequest *request = mAppMgr.create("obexhighway","com.nokia.symbian.IFileShare","send(QVariant)",true);
+        mRequest = mAppMgr.create("com.nokia.symbian.ICpPluginLauncher","launchSettingView(QString,QVariant)",false);
 
-    if (!request)
-    {
-       qDebug("BTIndicator request returned with NULL");
-        return;
+        if (!mRequest)
+        {
+           qDebug("BTIndicator request returned with NULL");
+            return;
+        }
+        else
+        {
+            connect(mRequest, SIGNAL(requestOk(QVariant)), SLOT(handleReturnValue(QVariant)));
+            connect(mRequest, SIGNAL(requestError(int,QString)), SLOT(handleError(int,QString)));
+            // Set arguments for request 
+            QList<QVariant> args;
+            args << QVariant(BT_APPLICATION);
+            mRequest->setArguments(args);
+            mRequest->setSynchronous(false);
+        }
     }
-    else
-    {
-        connect(request, SIGNAL(requestOk(QVariant)), SLOT(handleReturnValue(QVariant)));
-        connect(request, SIGNAL(requestError(int,QString)), SLOT(handleError(int,QString)));
-    }
-    // Set arguments for request 
-    QList<QVariant> args;
-    //c:\resource\qt\plugins\controlpanel\nfccpplugin.qtplugin
-    args << QVariant( "c:\\two.jpg" );//btcpplugin.dll
-//    args << QVariant ( "c:\\two.jpg" );
-    request->setArguments(args);
-
-    // Make the request
-    if (!request->send())
+        // Make the request
+    if (!mRequest->send())
     {
         //report error  
         qDebug("BTIndicator::launchBTCpSettingView request not sent");
     }
+	
+/*	QString service("com.nokia.symbian.ICpPluginLauncher");
+    QString operation("launchSettingView(QString,QVariant)");
+    QList<QVariant> args;
+    XQAiwRequest* request;
+    XQApplicationManager appManager;
+    request = appManager.create(service, operation, false); // not embedded
+    if ( request == NULL )
+        {
+        //Could not create request because of the arguments passed to the create() API.
+        User::Leave(KErrArgument);       
+        }
+    args << QVariant("btcpplugin.dll");
+    request->setArguments(args);
+    TInt error = KErrNone;
+    if(!request->send())
+        {
+        // The only likely Symbian error code that can be associated is KErrNotSupported
+        
+        }
+    delete request;*/
     
-    delete request;
-    
-    }*/
+
+}
 
 
-/*void BTIndicator::handleReturnValue(const QVariant &returnValue)
+void BTIndicator::handleReturnValue(const QVariant &returnValue)
 {
+    Q_UNUSED(returnValue);
+    mIndicatorlaunch = false;
+    if(!mIndicatorStatus )
+	{
+        emit deactivate();
+	}
 }
 
 void BTIndicator::handleError(int errorCode,const QString &errorMessage)
-    {
+{
     Q_UNUSED(errorCode);
-    }*/
+    Q_UNUSED(errorMessage);
+    mIndicatorlaunch = false;
+}

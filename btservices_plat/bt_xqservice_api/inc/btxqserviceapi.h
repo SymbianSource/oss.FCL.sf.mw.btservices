@@ -72,13 +72,6 @@ static const QString BluetoothInterfaceActivateDutMode("com.nokia.symbian.IActiv
 static const QString BluetoothActivateDutMode("activateDeviceTestMode()");
 
 /*!
- The operation used for activating the Bluetooth device test mode (DUT mode) 
- 
- This API is deprecated and should be removed when the client has migrated to new API.
- */
-static const QString ActivateDutMode("activateDeviceTestMode()");
-
-/*!
  The full service name of activating Bluetooth device test mode (DUT mode)
  */
 static const QString BluetoothServiceActivateDutMode = 
@@ -93,13 +86,6 @@ static const QString BluetoothInterfaceToggleSspDebugMode("com.nokia.symbian.ITo
  The operation used for toggling the Bluetooth SSP debug mode 
  */
 static const QString BluetoothToggleSspDebugMode("toggleSspDebugMode()");
-
-/*!
- The operation used for toggling the Bluetooth SSP debug mode.
-  
- This API is deprecated and should be removed when the client has migrated to new API.
- */
-static const QString ToggleSspDebugMode("toggleSspDebugMode()");
 
 /*!
  The full service name of toggling Bluetooth SSP debug mode

@@ -218,21 +218,18 @@ void CBluetoothNotification::SetDataL( TInt aType, const TDesC& aData )
                     TBuf<32> buf;
                     switch (aType) {
                         case TBluetoothDialogParams::EAddress:
-                            _LIT(KAddress,"EAddress");
-                            buf.Append(KAddress); 
+                            buf.Append(_L("EAddress")); 
                             break;
                         case TBluetoothDeviceDialog::EDeviceName:
-                            _LIT(KDeviceName,"EDeviceName");
-                            buf.Append(KDeviceName); 
+                            buf.Append(_L("EDeviceName")); 
                             break;
                         case TBluetoothDeviceDialog::EAdditionalDesc:
-                            _LIT(KAdditionalDesc,"EAdditionalDesc");
-                            buf.Append(KAdditionalDesc); 
+                            buf.Append(_L("EAdditionalDesc")); 
                             break;
                     }
                     TPtrC p(buf);
                     TPtrC16 *ptr = (TPtrC16 *)value->Data();
-                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%S]", &p, ptr);
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, _L("SetData [%S] = [%S]"), &p, ptr);
                     );
             User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
             break;
@@ -285,7 +282,7 @@ void CBluetoothNotification::SetDataL( TInt aType, TInt aData )
                     }
                     TPtrC p(buf);
                     TInt *intPtr = (TInt *)value->Data();
-                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%d]", &p, *intPtr);
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, _L("SetData [%S] = [%d]"), &p, *intPtr);
                     );
             User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
             break;
@@ -322,21 +319,18 @@ void CBluetoothNotification::UpdateDataL( TInt aType, const TDesC& aData )
                     TBuf<32> buf;
                     switch (aType) {
                         case TBluetoothDialogParams::EAddress:
-                            _LIT(KAddress,"EAddress");
-                            buf.Append(KAddress); 
+                            buf.Append(_L("EAddress")); 
                             break;
                         case TBluetoothDeviceDialog::EDeviceName:
-                            _LIT(KDeviceName,"EDeviceName");
-                            buf.Append(KDeviceName); 
+                            buf.Append(_L("EDeviceName")); 
                             break;
                         case TBluetoothDeviceDialog::EAdditionalDesc:
-                            _LIT(KAdditionalDesc,"EAdditionalDesc");
-                            buf.Append(KAdditionalDesc); 
+                            buf.Append(_L("EAdditionalDesc")); 
                             break;
                     }
                     TPtrC p(buf);
                     TPtrC16 *ptr = (TPtrC16 *)value->Data();
-                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%S]", &p, ptr);
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, _L("SetData [%S] = [%S]"), &p, ptr);
                     );
             User::LeaveIfError(iNotificationData->Delete( key));
             User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
@@ -390,7 +384,7 @@ void CBluetoothNotification::UpdateDataL( TInt aType, TInt aData )
                     }
                     TPtrC p(buf);
                     TInt *intPtr = (TInt *)value->Data();
-                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, "SetData [%S] = [%d]", &p, *intPtr);
+                    BOstraceExt2( TRACE_DEBUG, DUMMY_DEVLIST, _L("SetData [%S] = [%d]"), &p, *intPtr);
                     );
 			User::LeaveIfError(iNotificationData->Delete(key));
 			User::LeaveIfError(iNotificationData->Add( key, value ));   // Takes ownership of value
@@ -498,7 +492,7 @@ void CBluetoothNotification::debugHbSymbianVariantMap( CHbSymbianVariantMap& aDa
                 break;
             }
         TPtrC p(buf);
-        BOstraceExt1( TRACE_DEBUG, DUMMY_DEVLIST, "HbSymbianVariantMap [%S]", &p);
+        BOstraceExt1( TRACE_DEBUG, DUMMY_DEVLIST, _L("HbSymbianVariantMap [%S]"), &p);
         }
     }
 #endif // BLUETOOTHTRACE_ENABLED

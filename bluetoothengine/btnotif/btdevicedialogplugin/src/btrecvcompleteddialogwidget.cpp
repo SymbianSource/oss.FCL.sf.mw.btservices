@@ -17,6 +17,7 @@
 
 #include "btrecvcompleteddialogwidget.h"
 #include "bluetoothdevicedialogs.h"
+#include "btdevicedialogpluginerrors.h"
 
 const char* DOCML_BT_RECV_CMPLTD_DIALOG = ":/docml/bt-receive-done-dialog.docml";
 
@@ -24,7 +25,8 @@ const char* DOCML_BT_RECV_CMPLTD_DIALOG = ":/docml/bt-receive-done-dialog.docml"
 BTRecvcompletedDialogWidget::BTRecvcompletedDialogWidget(const QVariantMap &parameters)
 
 :mLoader(0),
- mOpenConversationView(false)
+ mOpenConversationView(false),
+ mError(NoError)
 {
     constructDialog(parameters);
 }
@@ -41,12 +43,19 @@ BTRecvcompletedDialogWidget::~BTRecvcompletedDialogWidget()
 bool BTRecvcompletedDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
     Q_UNUSED(parameters);
-    return true;
+    if(!mError)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 int BTRecvcompletedDialogWidget::deviceDialogError() const
 {
-    return 0;
+    return mError;
 }
 
 void BTRecvcompletedDialogWidget::closeDeviceDialog(bool byClient)
@@ -66,7 +75,7 @@ QObject* BTRecvcompletedDialogWidget::signalSender() const
     return const_cast<BTRecvcompletedDialogWidget*>(this);
 }
 
-bool BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
+void BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
 {
     mLoader = new HbDocumentLoader();
     bool ok = false;
@@ -137,22 +146,24 @@ bool BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
             QString fCntStr(hbTrId("txt_bt_info_ln_other_files_received", (fCnt-1)));
             mFileCount->setPlainText(fCntStr);
             }
-    }
 
-    mReceiveCompleteDialog->setBackgroundFaded(false);
-    mReceiveCompleteDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mReceiveCompleteDialog->setTimeout(HbPopup::NoTimeout);
-     
-    connect(mShowAction, SIGNAL(triggered()), this, SLOT(showClicked()));
-    connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
-    
-    QVariantMap::const_iterator i = parameters.find("OpenCnvView");
-    if(i != parameters.end())
-        {
-        mOpenConversationView = (i.value().toBool() == true) ? true : false; 
-        }
-    
-    return true;
+        mReceiveCompleteDialog->setBackgroundFaded(false);
+        mReceiveCompleteDialog->setDismissPolicy(HbPopup::NoDismiss);
+        mReceiveCompleteDialog->setTimeout(HbPopup::NoTimeout);
+         
+        connect(mShowAction, SIGNAL(triggered()), this, SLOT(showClicked()));
+        connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+        
+        QVariantMap::const_iterator i = parameters.find("OpenCnvView");
+        if(i != parameters.end())
+            {
+            mOpenConversationView = (i.value().toBool() == true) ? true : false; 
+            }
+    }
+    else
+    {
+        mError = DocMLLoadingError;
+    }
 }
 
 void BTRecvcompletedDialogWidget::showClicked()

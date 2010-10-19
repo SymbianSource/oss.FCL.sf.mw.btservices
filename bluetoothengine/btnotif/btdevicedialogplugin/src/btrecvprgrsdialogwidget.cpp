@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -18,13 +18,14 @@
 
 #include "btrecvprgrsdialogwidget.h"
 #include "bluetoothdevicedialogs.h"
+#include "btdevicedialogpluginerrors.h"
 
 const char* DOCML_BT_RECV_PRGRS_DIALOG = ":/docml/bt-recv-progress-dialog.docml";
 
 
 BTRecvPrgrsDialogWidget::BTRecvPrgrsDialogWidget(const QVariantMap &parameters)
+:mLoader(0), mError(NoError)
 {
-    mLoader = 0;
     constructDialog(parameters);
 }
 
@@ -39,15 +40,22 @@ BTRecvPrgrsDialogWidget::~BTRecvPrgrsDialogWidget()
 
 bool BTRecvPrgrsDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
-    mProgressBar->setMinimum(0);
-    mProgressBar->setMaximum(mFileSz);
-    mProgressBar->setProgressValue(parameters.value("progress").toInt());
-    return true;
+    if(!mError)
+    {
+        mProgressBar->setMinimum(0);
+        mProgressBar->setMaximum(mFileSz);
+        mProgressBar->setProgressValue(parameters.value("progress").toInt());
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 int BTRecvPrgrsDialogWidget::deviceDialogError() const
 {
-    return 0;
+    return mError;
 }
 
 void BTRecvPrgrsDialogWidget::closeDeviceDialog(bool byClient)
@@ -67,7 +75,7 @@ QObject* BTRecvPrgrsDialogWidget::signalSender() const
     return const_cast<BTRecvPrgrsDialogWidget*>(this);
 }
 
-bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
+void BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
 {
     mLoader = new HbDocumentLoader();
     bool ok = false;
@@ -153,16 +161,19 @@ bool BTRecvPrgrsDialogWidget::constructDialog(const QVariantMap &parameters)
             QString fCntStr(hbTrId("txt_bt_info_ln_files_already_received", fCnt));
             mFileCount->setPlainText(fCntStr);
             }
-    }
 
-    mDialog->setBackgroundFaded(false);
-    mDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mDialog->setTimeout(HbPopup::NoTimeout);
-     
-    connect(mHide, SIGNAL(triggered()), this, SLOT(hideClicked()));
-    connect(mCancel, SIGNAL(triggered()), this, SLOT(cancelClicked()));
-    
-    return true;
+        mDialog->setBackgroundFaded(false);
+        mDialog->setDismissPolicy(HbPopup::NoDismiss);
+        mDialog->setTimeout(HbPopup::NoTimeout);
+         
+        connect(mHide, SIGNAL(triggered()), this, SLOT(hideClicked()));
+        connect(mCancel, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+
+    }
+    else
+    {
+        mError = DocMLLoadingError;
+    }
 }
 
 void BTRecvPrgrsDialogWidget::hideClicked()

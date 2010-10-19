@@ -28,10 +28,7 @@ class HbLineEdit;
 class HbPushButton;
 class HbIcon;
 class HbDocumentLoader;
-class HbDataForm;
-
-class HbDataFormModel;
-class HbDataFormModelItem;
+class HbComboBox;
 class CpSettingFormItemData;
 class BtAbstractDelegate;
 class BtCpUiDeviceDetail;
@@ -77,7 +74,7 @@ private:
     void clearViewData();
     void setDeviceCategory(int cod, int majorRole);//cod:class of device
     void setDeviceStatus(int majorRole);
-    void setConnectionCombobox();
+    
     void setTextAndVisibilityOfButtons(int majorProperty);
     void loadDeviceDetails();
     void unloadDeviceDetails();
@@ -94,9 +91,7 @@ private:
     HbLabel *mDeviceCategory;
     HbLabel *mDeviceStatus;
     
-    HbDataForm *mConnectionDataForm;
-    HbDataFormModel *mConnectionComboboxModel;
-    HbDataFormModelItem *mCombobox;
+    HbComboBox *mCombobox;
     
     HbPushButton *mPair_Unpair;
     HbPushButton *mConnect_Disconnect;

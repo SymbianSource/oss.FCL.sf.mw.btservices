@@ -11,13 +11,13 @@
 *
 * Contributors:
 *
-* Description:  BtDeviceDialogWidget class declaration.
+* Description:  BtDeviceDialogWaitingWidget class declaration.
 *
 */
 
 
-#ifndef BTDEVICEDIALOGRECVQUERYWIDGET_H
-#define BTDEVICEDIALOGRECVQUERYWIDGET_H
+#ifndef BTDEVICEDIALOGWAITINGWIDGET_H
+#define BTDEVICEDIALOGWAITINGWIDGET_H
 
 #include <QObject>
 #include <QVariantMap>
@@ -25,20 +25,15 @@
 #include <hbdevicedialoginterface.h>
 #include <hbpopup.h>
 #include <hbdocumentloader.h>
-#include <qstandarditemmodel.h>
-#include <hbcheckbox.h>
-#include <hblabel.h>
-#include <hbaction.h>
 
-
-class BTRecvQueryDialogWidget : public QObject, 
-                                public HbDeviceDialogInterface
+class BtDeviceDialogWaitingWidget : public QObject, 
+                          public HbDeviceDialogInterface
     {
     Q_OBJECT
     
 public:
-    BTRecvQueryDialogWidget(const QVariantMap &parameters);
-    ~BTRecvQueryDialogWidget();
+    BtDeviceDialogWaitingWidget(const QVariantMap &parameters);
+    ~BtDeviceDialogWaitingWidget();
     
 public: // from HbDeviceDialogInterface
     bool setDeviceDialogParameters(const QVariantMap &parameters);
@@ -47,13 +42,8 @@ public: // from HbDeviceDialogInterface
     HbPopup *deviceDialogWidget() const;
     virtual QObject *signalSender() const;
     
-public slots:
-    void yesClicked();
-    void noClicked();
-    void checkBoxStateChanged(bool checked);
-
 private:
-    void constructDialog(const QVariantMap &parameters);
+    bool constructDialog(const QVariantMap &parameters);
     
 signals:
     void deviceDialogClosed();
@@ -61,18 +51,10 @@ signals:
     
 private:
     HbDocumentLoader    *mLoader;
-    QStandardItemModel  *mContentItemModel;
-    HbLabel             *mHeading;
-    HbLabel             *mDeviceName;
-    HbLabel             *mDeviceType;
-    HbLabel             *mDeviceIcon;
-    HbAction            *mYesAction;
-    HbAction            *mNoAction;
-    HbCheckBox          *mAuthorizeUser;
     HbDialog            *mDialog;
-    int                 mError;
+    int                 mLastError;
     
-    Q_DISABLE_COPY(BTRecvQueryDialogWidget)
+    Q_DISABLE_COPY(BtDeviceDialogWaitingWidget)
     };
 
-#endif /* BTDEVICEDIALOGRECVQUERYWIDGET_H */
+#endif /* BTDEVICEDIALOGWAITINGWIDGET */

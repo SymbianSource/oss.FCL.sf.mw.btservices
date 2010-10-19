@@ -146,8 +146,14 @@ CBTNotifOutgoingPairingHandler::~CBTNotifOutgoingPairingHandler()
 //
 TInt CBTNotifOutgoingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAddr )
     {
-    (void)aAddr;
-    return KErrServerBusy;
+    if(iAddr == aAddr)
+        {
+        return KErrNone;
+        }
+    else
+        {
+        return KErrServerBusy;
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -156,7 +162,7 @@ TInt CBTNotifOutgoingPairingHandler::ObserveIncomingPair( const TBTDevAddr& aAdd
 //
 void CBTNotifOutgoingPairingHandler::HandleOutgoingPairL( const TBTDevAddr& aAddr, TUint aCod )
     {
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST," cod 0x%08x", aCod );
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L(" cod 0x%08x"), aCod );
     if ( iActive->IsActive() || aAddr != iAddr )
         {
         // we don't allow another pairing request.
@@ -264,7 +270,7 @@ void CBTNotifOutgoingPairingHandler::DoHandleRegistryNewPairedEvent(
     // bluetooth application:
     if ( aDev.LinkKeyType() == ELinkKeyUnauthenticatedNonUpgradable )
         {
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNOTIF] Outgoing Pairing, Just Works pairing");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNOTIF] Outgoing Pairing, Just Works pairing"));
         err = iParent.AddUiCookieJustWorksPaired( aDev );
         }
     iActive->Cancel();
@@ -292,7 +298,7 @@ void CBTNotifOutgoingPairingHandler::RequestCompletedL(
         CBtSimpleActive* aActive, TInt aStatus )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstraceExt3(TRACE_DEBUG,DUMMY_DEVLIST,"reqid %d, status: %d, pair mode %d ", aActive->RequestId(), 
+    BOstraceExt3(TRACE_DEBUG,DUMMY_DEVLIST,_L("reqid %d, status: %d, pair mode %d "), aActive->RequestId(), 
             aStatus, iPairMode);
     if( aActive->RequestId() == EDedicatedBonding && 
 				( aStatus == KErrRemoteDeviceIndicatedNoBonding || 
@@ -306,7 +312,7 @@ void CBTNotifOutgoingPairingHandler::RequestCompletedL(
         {
         iPairMode = EBTOutgoingHeadsetManualPairing;
         // auto pairing with headset failed, try to pair again with manual pin:
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST," auto pairing failed, switch to manual pairing");     
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L(" auto pairing failed, switch to manual pairing"));     
         DoPairingL();
         }
     else if ( aStatus && aActive->RequestId() == EGeneralBonding && 
@@ -398,7 +404,7 @@ void CBTNotifOutgoingPairingHandler::CancelRequest( TInt aRequestId )
 void CBTNotifOutgoingPairingHandler::HandleError( 
         CBtSimpleActive* aActive, TInt aError )
     {
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"error: %d", aError );
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("error: %d"), aError );
     // Our RunL can actually not leave, so we should never reach here.
     (void) aActive;
     iParent.OutgoingPairCompleted( aError );
@@ -427,7 +433,7 @@ void CBTNotifOutgoingPairingHandler::DoPairingL()
         nextMode = EGeneralBondingRetry;
         }
     
-    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,"[BTENG] CBTEngOtgPair::DoPairingL: bonding mode: pre %d, next %d", currentMode, nextMode);
+    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNOTIF] CBTEngOtgPair::DoPairingL: bonding mode: pre %d, next %d"), currentMode, nextMode);
     
     iActive->SetRequestId( nextMode );
     if ( nextMode == EDedicatedBonding )
@@ -513,6 +519,7 @@ void CBTNotifOutgoingPairingHandler::PrepareNotificationL( TBluetoothDialogParam
 void CBTNotifOutgoingPairingHandler::NotificationClosedL( TInt aError, const TDesC8& aData )
     {
     BOstraceFunctionEntryExt( DUMMY_DEVLIST, this, aError );
+    (void)aError;
     // Read the result.
     TPckgC<TBool> result( EFalse );
     result.Set( aData.Ptr(), result.Length() ); // Read the part containing the result

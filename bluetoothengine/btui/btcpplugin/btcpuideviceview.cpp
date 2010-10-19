@@ -20,9 +20,7 @@
 #include <QtGui/QGraphicsLinearLayout>
 #include <hbmainwindow.h>
 #include <hbdocumentloader.h>
-#include <hbdataform.h>
-#include <hbdataformmodel.h>
-#include <hbdataformmodelitem.h>
+#include <hbcombobox.h>
 #include <hbgroupbox.h>
 #include <hbpushbutton.h>
 #include <hblabel.h>
@@ -101,12 +99,14 @@ BtcpuiDeviceView::BtcpuiDeviceView(BtSettingModel &settingModel,
     BTUI_ASSERT_X( mDeviceStatus != 0, "bt-device-view", "Device status not found" );
     
     
-    mConnectionDataForm = 0;
-    mConnectionDataForm = qobject_cast<HbDataForm *>( mLoader->findWidget( "connectionCombobox" ) );
-    BTUI_ASSERT_X( mConnectionDataForm != 0, "bt-device-view", "connection combobox not found" );
+    mCombobox = 0;
+    mCombobox = qobject_cast<HbComboBox *>( mLoader->findWidget( "connectionCombobox" ) );
+    BTUI_ASSERT_X( mCombobox != 0, "bt-device-view", "connection combobox not found" );
     
-    mConnectionComboboxModel = new HbDataFormModel( this );
-    
+    ret = connect(mCombobox, SIGNAL(currentIndexChanged (int)), 
+                this, SLOT(connectionPreferenceChanged(int)));
+    BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::BtcpuiDeviceView", "currentIndexChanged() connect failed");
+        
     mPair_Unpair=0;
     mPair_Unpair = qobject_cast<HbPushButton *>( mLoader->findWidget( "devicePairUnpair" ) );
     BTUI_ASSERT_X( mPair_Unpair != 0, "bt-device-view", "pair/unpair button not found" );
@@ -122,7 +122,7 @@ BtcpuiDeviceView::BtcpuiDeviceView(BtSettingModel &settingModel,
             SLOT(handleDeviceSetting()));
     BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::BtcpuiDeviceView", "clicked() connect failed");
 
-    setConnectionCombobox();
+
 }
 
 BtcpuiDeviceView::~BtcpuiDeviceView()
@@ -311,88 +311,73 @@ void BtcpuiDeviceView::setDeviceStatus(int majorRole)
 {
     BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
     QString deviceStatus;
+    bool ret = false;
+    
     // Avoid unnecessary actions:
     // The device model has been modified and need to be reflected
     // in the UI however if we don't disable the signal before the UI update
     // the connectionPreferenceChanged function will be called and trigger
     // unnecessary update of the model by the device view.
-    mConnectionDataForm->removeConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
+    ret = disconnect(mCombobox, SIGNAL(currentIndexChanged (int)), 
             this, SLOT(connectionPreferenceChanged(int)));
+    BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::setDeviceStatus", "currentIndexChanged() disconnect failed");
+    
     if (majorRole & BtuiDevProperty::Bonded && 
         majorRole & BtuiDevProperty::Trusted &&
         majorRole & BtuiDevProperty::Connected ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_trused_connected"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mCombobox->setCurrentIndex(ConnectionAutomatic );
         mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Bonded && 
              majorRole & BtuiDevProperty::Connected ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_connected"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mCombobox->setCurrentIndex(ConnectionAlwaysAsk );
         mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Bonded && 
              majorRole & BtuiDevProperty::Trusted ) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired_trusted"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mCombobox->setCurrentIndex(ConnectionAutomatic );
         mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Connected && 
              majorRole & BtuiDevProperty::Trusted ) {
         mDeviceStatus->setPlainText(hbTrId("Trusted, Connected"));  // ToDo: missing textId!
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mCombobox->setCurrentIndex(ConnectionAutomatic );
         mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Trusted ) {
         mDeviceStatus->setPlainText(hbTrId("Trusted"));  // ToDo: missing textId!
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAutomatic );
+        mCombobox->setCurrentIndex(ConnectionAutomatic );
         mComboboxIndex = ConnectionAutomatic;
     } 
     else if (majorRole & BtuiDevProperty::Bonded) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_paired"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mCombobox->setCurrentIndex(ConnectionAlwaysAsk );
         mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Connected) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_connected"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mCombobox->setCurrentIndex(ConnectionAlwaysAsk );
         mComboboxIndex = ConnectionAlwaysAsk;
     }
     else if (majorRole & BtuiDevProperty::Blocked) {
         mDeviceStatus->setPlainText(hbTrId("txt_bt_info_blocked"));
-        mCombobox->setContentWidgetData("currentIndex", ConnectionBlocked );
+        mCombobox->setCurrentIndex(ConnectionBlocked );
         mComboboxIndex = ConnectionBlocked;
     }
     else {
         // device not paired, connected, trusted or blocked.  
         mDeviceStatus->setPlainText(" ");
-        mCombobox->setContentWidgetData("currentIndex", ConnectionAlwaysAsk );
+        mCombobox->setCurrentIndex(ConnectionAlwaysAsk );
         mComboboxIndex = ConnectionAlwaysAsk;
     }
-    mConnectionDataForm->addConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
+    ret = connect(mCombobox, SIGNAL(currentIndexChanged (int)), 
             this, SLOT(connectionPreferenceChanged(int)));
-    BOstraceFunctionExit0(DUMMY_DEVLIST);
-}
-
-void BtcpuiDeviceView::setConnectionCombobox()
-{
-    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
-    //create a model class
-    mCombobox = mConnectionComboboxModel->appendDataFormItem(
-    HbDataFormModelItem::ComboBoxItem, hbTrId("txt_bt_setlabel_connection"), 
-        mConnectionComboboxModel->invisibleRootItem());
+    BTUI_ASSERT_X( ret, "Btui, BtcpuiDeviceView::setDeviceStatus", "currentIndexChanged() connect failed");
     
-    QStringList connList;
-    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_automatic") );
-    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_always_ask") );
-    connList.append( hbTrId("txt_bt_setlabel_bluetooth_val_blocked") );
-    mCombobox->setContentWidgetData( "items", connList );
-
-    //set the model to the view, once model and data class are created
-    mConnectionDataForm->setModel(mConnectionComboboxModel);
-    mConnectionDataForm->addConnection(mCombobox, SIGNAL(currentIndexChanged (int)), 
-            this, SLOT(connectionPreferenceChanged(int)));
-    BOstraceFunctionExit0(DUMMY_DEVLIST);    
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtcpuiDeviceView::setTextAndVisibilityOfButtons(int majorProperty)
@@ -693,10 +678,14 @@ void BtcpuiDeviceView::changeBtDeviceName()
         params.setValue(list);
         
         mAbstractDelegate = BtDelegateFactory::newDelegate(
-                BtDelegate::ChangeDeviceFriendlyName, mSettingModel, mDeviceModel); 
-        connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
-                this, SLOT(changeDevNameDelegateCompleted(int, QVariant)) );
-        mAbstractDelegate->exec(params);
+                BtDelegate::ChangeDeviceFriendlyName, mSettingModel, mDeviceModel);
+        
+        bool ok(false);
+        ok =connect( mAbstractDelegate, SIGNAL(delegateCompleted(int,BtAbstractDelegate*)), 
+                this, SLOT(changeDevNameDelegateCompleted(int)) );
+        BTUI_ASSERT_X( ok, "BtcpuiDeviceView", "changeDevName: fail to connect signal" );
+        
+		mAbstractDelegate->exec(params);
     }
     else {
         setPrevBtDeviceName();

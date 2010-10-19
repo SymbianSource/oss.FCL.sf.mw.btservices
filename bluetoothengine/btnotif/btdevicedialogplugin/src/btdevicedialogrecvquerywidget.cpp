@@ -18,14 +18,16 @@
 
 #include "btdevicedialogrecvquerywidget.h"
 #include "bluetoothdevicedialogs.h"
+#include "btdevicedialogpluginerrors.h"
 #include <btuiiconutil.h>
 
 const char* DOCML_BT_RECV_QUERY_DIALOG = ":/docml/bt-receive-auth-dialog.docml";
 
 
 BTRecvQueryDialogWidget::BTRecvQueryDialogWidget(const QVariantMap &parameters)
+:mLoader(0),
+mError(NoError)
 {
-    mLoader = 0;
     constructDialog(parameters);
 }
 
@@ -41,12 +43,19 @@ BTRecvQueryDialogWidget::~BTRecvQueryDialogWidget()
 bool BTRecvQueryDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
     Q_UNUSED(parameters);
-    return true;
+    if(!mError)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 int BTRecvQueryDialogWidget::deviceDialogError() const
 {
-    return 0;
+    return mError;
 }
 
 void BTRecvQueryDialogWidget::closeDeviceDialog(bool byClient)
@@ -66,7 +75,7 @@ QObject* BTRecvQueryDialogWidget::signalSender() const
     return const_cast<BTRecvQueryDialogWidget*>(this);
 }
 
-bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
+void BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
 {
     mLoader = new HbDocumentLoader();
     bool ok = false;
@@ -121,17 +130,19 @@ bool BTRecvQueryDialogWidget::constructDialog(const QVariantMap &parameters)
 
         }
         mDialog->setHeadingWidget(mHeading);
-    }
 
-    mDialog->setBackgroundFaded(false);
-    mDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mDialog->setTimeout(HbPopup::NoTimeout);
-     
-    connect(mYesAction, SIGNAL(triggered()), this, SLOT(yesClicked()));
-    connect(mNoAction, SIGNAL(triggered()), this, SLOT(noClicked()));
-    connect(mAuthorizeUser, SIGNAL(clicked(bool)), this, SLOT(checkBoxStateChanged(bool)));
-    
-    return true;
+        mDialog->setBackgroundFaded(false);
+        mDialog->setDismissPolicy(HbPopup::NoDismiss);
+        mDialog->setTimeout(HbPopup::NoTimeout);
+         
+        connect(mYesAction, SIGNAL(triggered()), this, SLOT(yesClicked()));
+        connect(mNoAction, SIGNAL(triggered()), this, SLOT(noClicked()));
+        connect(mAuthorizeUser, SIGNAL(clicked(bool)), this, SLOT(checkBoxStateChanged(bool)));
+    }
+    else
+    {
+        mError = DocMLLoadingError;
+    }
 }
 
 void BTRecvQueryDialogWidget::yesClicked()

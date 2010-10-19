@@ -176,7 +176,7 @@ void CBTNotifDeviceSelector::MBRDataReceived( CHbSymbianVariantMap& aData )
     if(aData.Keys().MdcaPoint(aData.Keys().MdcaCount()-1).Compare(_L("selectedindex"))==KErrNone)
         {
         TInt val = *(static_cast<TInt*>(aData.Get(_L("selectedindex"))->Data()));
-        BOstrace1( TRACE_DEBUG, TNAME_DEVLIST_2, "MBRDataReceived, val %d", val );
+        BOstrace1( TRACE_DEBUG, DUMMY_DEVLIST, _L("MBRDataReceived, val %d"), val );
 
         if ( !iMessage.IsNull() )
             {

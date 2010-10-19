@@ -48,7 +48,6 @@ private:
     bool constructDialog(const QVariantMap &parameters);
     
 public slots:
-    void messageBoxClosed(HbAction *action);
     void messageBoxClosed(int action);
     
 private:

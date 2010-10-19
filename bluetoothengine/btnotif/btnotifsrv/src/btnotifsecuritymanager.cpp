@@ -337,7 +337,7 @@ void CBTNotifSecurityManager::OutgoingPairCompleted( TInt aErr )
 void CBTNotifSecurityManager::SessionClosed( CSession2* aSession )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST," session %x", aSession);
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L(" session %x"), aSession);
     if ( !iMessage.IsNull() && iMessage.Session() == aSession )
         {
         iMessage.Complete( KErrCancel );
@@ -364,7 +364,7 @@ void CBTNotifSecurityManager::UnpairDevice( const TBTDevAddr& aAddr )
         // Unpair the device in registry (synchronously)
         iRegistry.UnpairDevice( dev.Address(), status );
         User::WaitForRequest( status );
-        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"Delete link key, res %d", status.Int());
+        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("Delete link key, res %d"), status.Int());
         if ( status == KErrNone )
             {
             TBTDeviceSecurity security = dev.GlobalSecurity();
@@ -379,7 +379,7 @@ void CBTNotifSecurityManager::UnpairDevice( const TBTDevAddr& aAddr )
                 // Remove the UI cookie bit for Just Works pairing.
                 TInt32 cookie = dev.UiCookie() & ~EBTUiCookieJustWorksPaired;
                 dev.SetUiCookie( cookie );
-                BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"UI cookie %x cleared", EBTUiCookieJustWorksPaired );
+                BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("UI cookie %x cleared"), EBTUiCookieJustWorksPaired );
                 }
             // modify the device in registry synchronously
             // status.Int() could be -1 if the device is not in registry 
@@ -429,7 +429,7 @@ TInt CBTNotifSecurityManager::AddUiCookieJustWorksPaired( const TBTNamelessDevic
         cookie |= EBTUiCookieJustWorksPaired;
         dev.SetUiCookie( cookie );
         err = UpdateRegDevice( dev );
-        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"Outgoing Pairing write Ui cookie ret %d", err );
+        BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("Outgoing Pairing write Ui cookie ret %d"), err );
         }
     BOstraceFunctionExit0( DUMMY_DEVLIST);
     return err;
@@ -446,7 +446,7 @@ TInt CBTNotifSecurityManager::UpdateRegDevice( const TBTNamelessDevice& aDev )
     // update the device in registry synchronously
     iRegistry.ModifyDevice( aDev, status );
     User::WaitForRequest( status );
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"UpdateRegDevice, ret %d", status.Int());
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("UpdateRegDevice, ret %d"), status.Int());
     BOstraceFunctionExit0( DUMMY_DEVLIST);
     return status.Int();
     }
@@ -498,7 +498,7 @@ TBTEngConnectionStatus CBTNotifSecurityManager::ConnectStatus( const TBTDevAddr&
 void CBTNotifSecurityManager::RequestCompletedL( CBtSimpleActive* aActive, TInt aStatus )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,"aId: %d, aStatus: %d", aActive->RequestId(), aStatus);
+    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,_L("aId: %d, aStatus: %d"), aActive->RequestId(), aStatus);
     // Check which request is completed.
     switch( aActive->RequestId() )
         {
@@ -579,7 +579,7 @@ void CBTNotifSecurityManager::CancelRequest( TInt aRequestId )
 void CBTNotifSecurityManager::HandleError( CBtSimpleActive* aActive, TInt aError )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,"request id: %d, error: %d", aActive->RequestId(), aError);
+    BOstraceExt2(TRACE_DEBUG,DUMMY_DEVLIST,_L("request id: %d, error: %d"), aActive->RequestId(), aError);
     (void) aActive;
     (void) aError;
     BOstraceFunctionExit0( DUMMY_DEVLIST);
@@ -650,10 +650,10 @@ void CBTNotifSecurityManager::ChangedInRegistry(
     TBool bonded = CBtDevExtension::IsBonded( aDevice.Device().AsNamelessDevice() );
     if ( i == KErrNotFound )
         {
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"Not found");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("Not found"));
         if ( bonded ) 
             {
-            BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"Not found but bonded");
+            BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("Not found but bonded"));
             TRAP_IGNORE(
                     HandleRegistryBondingL( 
                             aDevice.Device().AsNamelessDevice() ) );                
@@ -672,7 +672,7 @@ void CBTNotifSecurityManager::ChangedInRegistry(
         // no pairing or linkkey change. Nothing to do for pairing handling.
         // but we'd better update local copy just in case other data
         // of this device is needed by someone:
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"No pairing or link key change");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("No pairing or link key change"));
         iPairedDevices[i] = aDevice.Device().AsNamelessDevice();
         BOstraceFunctionExit0( DUMMY_DEVLIST);
         return;
@@ -717,7 +717,7 @@ void CBTNotifSecurityManager::ServiceConnectionChanged(
 TInt CBTNotifSecurityManager::SetPairObserver(const TBTDevAddr& aAddr, TBool aActivate)
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"%d", aActivate);
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("%d"), aActivate);
     BtTraceBtAddr0(TRACE_DEBUG,DUMMY_DEVLIST, aAddr );
     TInt err( KErrNone );
     if ( !aActivate )
@@ -823,7 +823,7 @@ void CBTNotifSecurityManager::SubscribeAuthenticateResult()
 void CBTNotifSecurityManager::HandlePairingResultL( const TBTDevAddr& aAddr, TInt aResult )
     {
     BOstraceFunctionEntry0( DUMMY_DEVLIST );
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"result %d", aResult);
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("result %d"), aResult);
     BtTraceBtAddr0(TRACE_DEBUG,DUMMY_DEVLIST, aAddr );
  
     if ( !iPairingHandler && ( aResult == KErrNone || aResult == KHCIErrorBase ) )

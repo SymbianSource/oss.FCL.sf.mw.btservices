@@ -20,13 +20,17 @@
 
 
 #include <hbindicatorinterface.h>
-//#include <xqappmgr.h>
+#include <xqappmgr.h>
+
+
+
 /**
  * Bluetooth indicator class. 
  * Handles client request and showing the indications. 
  */
 class BTIndicator : public HbIndicatorInterface
 {
+    Q_OBJECT
 public:
     /**
      * Constructor
@@ -55,20 +59,18 @@ protected:
     bool handleClientRequest(RequestType type, const QVariant &parameter);
     
 private:
-//    void launchBTCpSettingView(); 
+    void launchBTCpSettingView(); 
     
-/*private slots:
+private slots:
     void handleReturnValue(const QVariant &returnValue);
-    void handleError(int errorCode,const QString &errorMessage);*/
+    void handleError(int errorCode,const QString &errorMessage);
     
 private: 
-
-    QString mSecDisplayName;
-//    XQApplicationManager mAppMgr;
+    XQApplicationManager mAppMgr;
+    XQAiwRequest *mRequest;
     int mIndicatorStatus;
-    
-private:
-
+    bool mIndicatorlaunch;
+    QStringList mSecondaryText;
 };
 
 #endif /* BTINDICATOR_H */

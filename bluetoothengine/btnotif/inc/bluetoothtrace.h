@@ -1,23 +1,18 @@
 /*
-* ============================================================================
-*  Name        : bluetoothtrace.h
-*  Part of     : BluetoothUI / bluetoothuimodel       *** Info from the SWAD
-*  Description : API declaration of run-time debug tracing
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
-*  All rights reserved.
-*  This component and the accompanying materials are made available
-*  under the terms of "Eclipse Public License v1.0"
-*  which accompanies this distribution, and is available
-*  at the URL "http://www.eclipse.org/legal/epl-v10.html".
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
 *
-*  Initial Contributors:
-*  Nokia Corporation - initial contribution.
+* Contributors:
 *
-*  Contributors:
-*  Nokia Corporation
-* ============================================================================
-* Template version: 4.2
+* Description:  BtDeviceDialogWidget class declaration.
+*
 */
 
 #ifndef BLUETOOTHTRACE_H
@@ -144,14 +139,11 @@ public:
  */
 inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
 {
-    _LIT(Format, "%S%S%S");
-    TBuf16<0x180> str; 
     TPtrC cp(KComponentName);
-    str.Format(Format, &cp, &trGrp, &trTxt);
 #ifdef BLUETOOTHTRACE_MEDIA_FILE
-    RFileLogger::WriteFormat( KLogDir, KLogFile, EFileLoggingModeAppend, str);
+    RFileLogger::WriteFormat( KLogDir, KLogFile, EFileLoggingModeAppend, _L("%S%S%S"),&cp,&trGrp,&trTxt);
 #else
-    RDebug::Print( str );
+    RDebug::Print( _L("%S%S%S"),&cp,&trGrp,&trTxt );
 #endif
 }
 
@@ -160,8 +152,7 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstrace0( aGroupName, aTraceName, aTraceText ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    Trace( TrGrp, TrTxt ); \
+    Trace( aGroupName, aTraceText ); \
 }
 
 /*
@@ -169,10 +160,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstrace1( aGroupName, aTraceName, aTraceText, aParam ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    TBuf<512> buf; TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(TrTxt, &overflow, aParam); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; TBtTraceOflowTruncate16 overflow; \
+    buf.AppendFormat(aTraceText, &overflow, aParam); \
+    Trace( aGroupName, buf ); \
 }
 
 /*
@@ -191,10 +181,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceExt2( aGroupName, aTraceName, aTraceText, aParam1, aParam2 ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    TBuf<512> buf; TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(TrTxt, &overflow, aParam1, aParam2); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; TBtTraceOflowTruncate16 overflow; \
+    buf.AppendFormat(aTraceText, &overflow, aParam1, aParam2); \
+    Trace( aGroupName, buf ); \
 }
 
 /*
@@ -202,10 +191,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceExt3( aGroupName, aTraceName, aTraceText, aParam1, aParam2, aParam3 ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    TBuf<512> buf; TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(TrTxt, &overflow, aParam1, aParam2, aParam3); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; TBtTraceOflowTruncate16 overflow; \
+    buf.AppendFormat(aTraceText, &overflow, aParam1, aParam2, aParam3); \
+    Trace( aGroupName, buf ); \
 }
 
 /*
@@ -213,10 +201,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */    
 #define BOstraceExt4( aGroupName, aTraceName, aTraceText, aParam1, aParam2, aParam3, aParam4 ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    TBuf<512> buf; TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(TrTxt, &overflow, aParam1, aParam2, aParam3, aParam4); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; TBtTraceOflowTruncate16 overflow; \
+    buf.AppendFormat(aTraceText, &overflow, aParam1, aParam2, aParam3, aParam4); \
+    Trace( aGroupName, buf ); \
 }
 
 /*
@@ -224,10 +211,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */   
 #define BOstraceExt5( aGroupName, aTraceName, aTraceText, aParam1, aParam2, aParam3, aParam4, aParam5 ) \
 {\
-    _LIT(TrGrp, aGroupName); _LIT(TrTxt, aTraceText); \
-    TBuf<512> buf; TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(TrTxt, &overflow, aParam1, aParam2, aParam3, aParam4, aParam5); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; TBtTraceOflowTruncate16 overflow; \
+    buf.AppendFormat(aTraceText, &overflow, aParam1, aParam2, aParam3, aParam4, aParam5); \
+    Trace( aGroupName, buf ); \
 }
 
 /*
@@ -236,11 +222,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionEntry0( aTraceName ) \
 {\
-    _LIT(TrGrp, "[ API ]"); \
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, ">> "); \
-    TBuf<512> buf; buf.Copy( func ); buf.Insert(0, Entry );\
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; buf.Copy( func.Left(150) ); buf.Insert(0, _L(">> ") );\
+    Trace( _L("[ API ]"), buf ); \
 }
 
 /*
@@ -250,13 +234,11 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionEntry1( aTraceName, aInstance ) \
 {\
-    _LIT(TrGrp, "[ API ]");\
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, ">> "); _LIT(Fmt, " 0x%X(%d)"); \
-    TBuf<512> buf; buf.Copy( func ); buf.Insert(0, Entry); \
+    TBuf<200> buf; buf.Copy( func.Left(150) ); buf.Insert(0, _L(">> ") ); \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Fmt, &overflow, aInstance, aInstance); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L(" 0x%X(%d)"), &overflow, aInstance, aInstance); \
+    Trace( _L("[ API ]"), buf ); \
 }
 
 /*
@@ -265,13 +247,11 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionEntryExt(aTraceName, aInstance, aArg) \
 { \
-    _LIT(TrGrp, "[ API ]");\
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, ">> "); _LIT(Fmt, " 0x%X(%d) arg %d"); \
-    TBuf<512> buf; buf.Copy( func );  buf.Insert(0, Entry); \
+    TBuf<200> buf; buf.Copy( func.Left(150) );  buf.Insert(0, _L(">> ")); \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Fmt, &overflow, aInstance, aInstance, aArg); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L(" 0x%X(%d) arg %d"), &overflow, aInstance, aInstance, aArg); \
+    Trace( _L("[ API ]"), buf ); \
 }
 /*
  * Function exit trace without extra parameters. 
@@ -279,11 +259,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionExit0( aTraceName ) \
 {\
-    _LIT(TrGrp, "[ API ]"); \
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, "<< "); \
-    TBuf<512> buf; buf.Copy( func );  buf.Insert(0, Entry); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf; buf.Copy( func.Left(150) );  buf.Insert(0, _L("<< ")); \
+    Trace( _L("[ API ]"), buf ); \
 }
 
 /*
@@ -293,13 +271,11 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionExit1( aTraceName, aInstance ) \
 {\
-    _LIT(TrGrp, "[ API ]"); \
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, "<< "); _LIT(Fmt, " 0x%X(%d)"); \
-    TBuf<512> buf; buf.Copy( func );  buf.Insert(0, Entry); \
+    TBuf<200> buf; buf.Copy( func.Left(150) );  buf.Insert(0, _L("<< ")); \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Fmt, &overflow, aInstance, aInstance); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L(" 0x%X(%d)"), &overflow, aInstance, aInstance); \
+    Trace( _L("[ API ]"), buf ); \
 }
 
 /*
@@ -309,13 +285,11 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceFunctionExitExt(aTraceName, aInstance, aRetval) \
 {\
-    _LIT(TrGrp, "[ API ]");\
     TPtrC8 func( (TUint8*) __PRETTY_FUNCTION__ ); \
-    _LIT(Entry, "<< "); _LIT(Fmt, " 0x%X(%d) ret %d"); \
-    TBuf<512> buf; buf.Copy( func );  buf.Insert(0, Entry); \
+    TBuf<200> buf; buf.Copy( func.Left(150) );  buf.Insert(0, _L("<< ")); \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Fmt, &overflow, aInstance, aInstance, aRetval); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L(" 0x%X(%d) ret %d"), &overflow, aInstance, aInstance, aRetval); \
+    Trace( _L("[ API ]"), buf ); \
 }
 
 /*
@@ -324,10 +298,8 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceEventStart0( aTraceName, aEventName ) \
 {\
-    _LIT(TrGrp, "[PFMAN]"); _LIT(EvName, aEventName); \
-    _LIT(Entry, "[Start] "); \
-    TBuf<512> buf(Entry); buf.Append( EvName ); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf(_L("[Start] ")); buf.Append( aEventName ); \
+    Trace( _L("[PFMAN]"), buf ); \
 }
 
 /*
@@ -336,12 +308,10 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceEventStart1( aTraceName, aEventName, aParam ) \
 {\
-    _LIT(TrGrp, "[PFMAN]"); _LIT(EvName, aEventName); \
-    _LIT(Entry, "[Start] %S 0x%X(%d)"); \
-    TPtrC evt(EvName); TBuf<512> buf; \
+    TPtrC evt(aEventName); TBuf<200> buf; \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Entry, &overflow, &evt, aParam, aParam ); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L("[Start] %S 0x%X(%d)"), &overflow, &evt, aParam, aParam ); \
+    Trace( _L("[PFMAN]"), buf ); \
 }
 
 /*
@@ -350,10 +320,8 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceEventStop( aTraceName, aEventName ) \
 {\
-    _LIT(TrGrp, "[PFMAN]"); _LIT(EvName, aEventName); \
-    _LIT(Entry, "[Stop] "); \
-    TBuf<512> buf(Entry); buf.Append( EvName ); \
-    Trace( TrGrp, buf ); \
+    TBuf<200> buf(_L("[Stop] ")); buf.Append( aEventName ); \
+    Trace( _L("[PFMAN]"), buf ); \
 }
 
 /*
@@ -362,12 +330,10 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceState0( aTraceName, aStateName, aNewState ) \
 {\
-    _LIT(TrGrp, "[STATE]"); _LIT(StName, aStateName); \
-    _LIT(Entry, "%S 0x%X(%d)"); \
-    TPtrC evt(StName); TBuf<512> buf; \
+    TPtrC evt(aStateName); TBuf<200> buf; \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Entry, &overflow, &evt, aNewState, aNewState ); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L("%S 0x%X(%d)"), &overflow, &evt, aNewState, aNewState ); \
+    Trace( _L("[STATE]"), buf ); \
 }
 
 /*
@@ -376,12 +342,10 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BOstraceState1( aTraceName, aStateName, aNewState, aInstance ) \
 {\
-    _LIT(TrGrp, "[STATE]"); _LIT(StName, aStateName); \
-    _LIT(Entry, "%S 0x%X(%d) instance=0x%X(%d)"); \
-    TPtrC evt(StName); TBuf<512> buf; \
+    TPtrC evt(aStateName); TBuf<200> buf; \
     TBtTraceOflowTruncate16 overflow; \
-    buf.AppendFormat(Entry, &overflow, &evt, aNewState, aNewState, aInstance, aInstance ); \
-    Trace( TrGrp, buf ); \
+    buf.AppendFormat(_L("%S 0x%X(%d) instance=0x%X(%d)"), &overflow, &evt, aNewState, aNewState, aInstance, aInstance ); \
+    Trace( _L("[STATE]"), buf ); \
 }
 
 #endif // BLUETOOTHTRACE_MEDIA_OST
@@ -399,10 +363,9 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
  */
 #define BtTraceBtAddr1( aGroupName, aTraceName, aTraceText, aParam ) \
 { \
-    _LIT(TrTxt, aTraceText); TPtrC p(TrTxt); \
     TBuf<12> buf; \
     aParam.GetReadable( buf ); TPtrC p2(buf);\
-    BOstraceExt2( aGroupName, aTraceName, "%S%S", &p, &p2 ); \
+    BOstraceExt2( aGroupName, aTraceName, "%S%S", aTraceText, &p2 ); \
 }
 
 /*
@@ -412,7 +375,7 @@ inline void Trace(const TDesC &trGrp, const TDesC &trTxt)
 #define BtTraceBtAddr0( aGroupName, aTraceName, aParam ) \
 { \
     TBuf<12> buf; aParam.GetReadable( buf ); TPtrC p(buf); \
-    BOstraceExt1( aGroupName, aTraceName, "%S", &p ); \
+    BOstraceExt1( aGroupName, aTraceName, _L("%S"), &p ); \
 }
 
 #else // BLUETOOTHTRACE_ENABLED

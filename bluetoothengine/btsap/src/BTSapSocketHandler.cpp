@@ -279,16 +279,6 @@ void CBTSapSocketHandler::RegisterBTSapServiceL()
     
     if(err)
         {
-        TInt freeChnl;
-        err = iListener.GetOpt(KRFCOMMGetAvailableServerChannel, KSolBtRFCOMM, freeChnl);
-        if (err == KErrNone)
-            {
-            err = iListener.SetLocalPort(freeChnl);
-            iChannel = freeChnl;
-            }
-        }
-    if(err)
-        {
         // Try to bind using KRfcommPassiveAutoBind
         iChannel = KRfcommPassiveAutoBind;
         addr.SetPort(iChannel);

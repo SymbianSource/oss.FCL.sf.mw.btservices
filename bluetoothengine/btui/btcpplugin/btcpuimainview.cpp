@@ -533,12 +533,14 @@ void BtcpuiMainView::updateSettingItems(const QModelIndex &topLeft, const QModel
             if (val) {
                 HbIcon icon("qtg_mono_bluetooth");
                 icon.setIconName("qtg_mono_bluetooth");
-                mPowerButton->setIcon(icon);  
+                mPowerButton->setIcon(icon); 
+                mPowerButton->setChecked(true);
             }
             else {
                 HbIcon icon("qtg_mono_bluetooth_off");
                 icon.setIconName("qtg_mono_bluetooth_off");
                 mPowerButton->setIcon(icon);
+                mPowerButton->setChecked(false);
             }
             break;
         case BtSettingModel::VisibilityRow:
@@ -569,9 +571,22 @@ void BtcpuiMainView::changePowerState()
         powerState = BtPowerOff;
     } 
     (void) createExecuteDelegate(BtDelegate::ManagePower, 
-            this, SLOT(handleDelegateCompleted(int,BtAbstractDelegate*)), 
+            this, SLOT(powerDelegateCompleted(int)), 
             QVariant((int)powerState));
     BOstraceFunctionExit0(DUMMY_DEVLIST); 
+}
+
+void BtcpuiMainView::powerDelegateCompleted(int status)
+{   
+    BOstraceFunctionEntry1( DUMMY_DEVLIST, this );
+    if(KErrNone != status) {
+	    QModelIndex top = mSettingModel->index( BtSettingModel::PowerStateRow, 0 );
+	    QModelIndex bottom = mSettingModel->index( BtSettingModel::PowerStateRow, 0 );
+	    // update power rows only
+	    updateSettingItems( top, bottom );
+	}
+    handleDelegateCompleted(status, mDelegate);
+    BOstraceFunctionExit0(DUMMY_DEVLIST);
 }
 
 void BtcpuiMainView::loadDocument()
@@ -637,6 +652,7 @@ void BtcpuiMainView::loadDocument()
     BTUI_ASSERT_X( mPowerButton != 0, "bt-main-view", "power button not found" );
     ret =  connect(mPowerButton, SIGNAL(clicked()), this, SLOT(changePowerState()));
     BTUI_ASSERT_X( ret, "BtcpuiMainView::BtcpuiMainView", "can't connect power button" );
+    mPowerButton->setCheckable(true);
     
     mVisibilityMode=0;
     mVisibilityMode = qobject_cast<HbComboBox *>( mLoader->findWidget( "visibilityMode" ) );

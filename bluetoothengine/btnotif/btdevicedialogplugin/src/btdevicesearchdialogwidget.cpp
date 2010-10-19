@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * This component and the accompanying materials are made available
  * under the terms of "Eclipse Public License v1.0""
@@ -30,6 +30,7 @@
 #include <bluetoothdevicedialogs.h>
 #include <btuidevtypemap.h>
 #include <btuiiconutil.h>
+#include "btdevicedialogpluginerrors.h"
 
 const char* DOCML_BTDEV_SEARCH_DIALOG = ":/docml/bt-device-search-dialog.docml";
 
@@ -48,6 +49,7 @@ BTDeviceSearchDialogWidget::BTDeviceSearchDialogWidget(const QVariantMap &parame
     mContentItemModel = 0;
     mStopRetryFlag = 0; // Stop 
     mQuery = 0;
+    mLastError = NoError;
     mSelectedDeviceType |= (BtuiDevProperty::AVDev | BtuiDevProperty::Computer |
             BtuiDevProperty::Phone | BtuiDevProperty::Peripheral |
             BtuiDevProperty::LANAccessDev | BtuiDevProperty::Toy |
@@ -68,65 +70,71 @@ BTDeviceSearchDialogWidget::~BTDeviceSearchDialogWidget()
 
 bool BTDeviceSearchDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
-    if(parameters.keys().contains("Search Completed"))
+    if(!mLastError)
     {
-        mStopRetryFlag = 1; // Retry 
-        mSearchLabel->hide();
+        if(parameters.keys().contains("Search Completed"))
+        {
+            mStopRetryFlag = 1; // Retry 
+            mSearchLabel->hide();
+            
+            mSearchIconLabel->hide();
+            
+            mSearchDoneLabel->show();
+            mSearchDoneLabel->setTextWrapping(Hb::TextWordWrap);
+            mSearchDoneLabel->setAlignment(Qt::AlignLeft);
+            mSearchDoneLabel->setPlainText(LOC_SEARCH_DONE);
+            
+            mStopRetryAction->setText(LOC_SEARCH_RETRY);
+        }
+        else
+        {
+            int cod  = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass)).toInt();
+            int uiMajorDevice;
+            int uiMinorDevice;
         
-        mSearchIconLabel->hide();
-        
-        mSearchDoneLabel->show();
-        mSearchDoneLabel->setTextWrapping(Hb::TextWordWrap);
-        mSearchDoneLabel->setAlignment(Qt::AlignLeft);
-        mSearchDoneLabel->setPlainText(LOC_SEARCH_DONE);
-        
-        mStopRetryAction->setText(LOC_SEARCH_RETRY);
+            BtuiDevProperty::mapDeiveType(uiMajorDevice, uiMinorDevice, cod);
+    
+            BtSendDataItem devData;
+            //TODO Need to create string constant for Name as enum EDeviceName is not working for this
+            devData[NameAliasRole] =parameters.value("Name").toString();
+            devData[ReadableBdaddrRole] = parameters.value(QString::number(TBluetoothDeviceDialog::EAddress));
+            devData[CoDRole] = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass));
+            devData[DeviceTypeRole] = QVariant(uiMajorDevice);
+            setMajorProperty(devData,BtuiDevProperty::Bonded,
+                    parameters.value("Bonded").toBool());
+            setMajorProperty(devData,BtuiDevProperty::Blocked,
+                    parameters.value("Blocked").toBool());
+            setMajorProperty(devData,BtuiDevProperty::Trusted,
+                    parameters.value("Trusted").toBool());
+            setMajorProperty(devData,BtuiDevProperty::Connected,
+                    parameters.value("Connected").toBool());
+            mData.append(devData);
+            
+            if(mSelectedDeviceType & devData[DeviceTypeRole].toInt())
+            {
+                QStandardItem* listitem = new QStandardItem();
+                QStringList info;
+                info.append(devData[NameAliasRole].toString());
+                listitem->setData(info, Qt::DisplayRole);
+                HbIcon icon =  getBadgedDeviceTypeIcon(devData[CoDRole].toInt(),
+                        devData[MajorPropertyRole].toInt(),
+                        BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight);
+                listitem->setIcon(icon.qicon());
+                mContentItemModel->appendRow(listitem);    
+                mSelectedData.append(devData);
+            }
+        }
+        return true;
     }
     else
     {
-        int cod  = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass)).toInt();
-        int uiMajorDevice;
-        int uiMinorDevice;
-    
-        BtuiDevProperty::mapDeiveType(uiMajorDevice, uiMinorDevice, cod);
-
-        BtSendDataItem devData;
-        //TODO Need to create string constant for Name as enum EDeviceName is not working for this
-        devData[NameAliasRole] =parameters.value("Name").toString();
-        devData[ReadableBdaddrRole] = parameters.value(QString::number(TBluetoothDeviceDialog::EAddress));
-        devData[CoDRole] = parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceClass));
-        devData[DeviceTypeRole] = QVariant(uiMajorDevice);
-        setMajorProperty(devData,BtuiDevProperty::Bonded,
-                parameters.value("Bonded").toBool());
-        setMajorProperty(devData,BtuiDevProperty::Blocked,
-                parameters.value("Blocked").toBool());
-        setMajorProperty(devData,BtuiDevProperty::Trusted,
-                parameters.value("Trusted").toBool());
-        setMajorProperty(devData,BtuiDevProperty::Connected,
-                parameters.value("Connected").toBool());
-        mData.append(devData);
-        
-        if(mSelectedDeviceType & devData[DeviceTypeRole].toInt())
-        {
-            QStandardItem* listitem = new QStandardItem();
-            QStringList info;
-            info.append(devData[NameAliasRole].toString());
-            listitem->setData(info, Qt::DisplayRole);
-            HbIcon icon =  getBadgedDeviceTypeIcon(devData[CoDRole].toInt(),
-                    devData[MajorPropertyRole].toInt(),
-                    BtuiBottomLeft | BtuiBottomRight | BtuiTopLeft | BtuiTopRight);
-            listitem->setIcon(icon.qicon());
-            mContentItemModel->appendRow(listitem);    
-            mSelectedData.append(devData);
-        }
+        return false;
     }
-                
-    return true;
 }
 
 int BTDeviceSearchDialogWidget::deviceDialogError() const
 {
-    return 0;
+    return mLastError;
 }
 
 void BTDeviceSearchDialogWidget::closeDeviceDialog(bool byClient)
@@ -153,9 +161,9 @@ QObject* BTDeviceSearchDialogWidget::signalSender() const
     return const_cast<BTDeviceSearchDialogWidget*>(this);
 }
 
-bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
+void BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
 {
-    (void) parameters;
+    Q_UNUSED(parameters);
     bool ok = false;
     
     mLoader = new HbDocumentLoader();
@@ -196,19 +204,22 @@ bool BTDeviceSearchDialogWidget::constructDialog(const QVariantMap &parameters)
         connect(mStopRetryAction, SIGNAL(triggered()), this, SLOT(stopRetryClicked()));
 
         connect(mSearchDevicesDialog, SIGNAL(aboutToClose()), this, SLOT(searchDialogClosed()));
+        mSearchDevicesDialog->setBackgroundFaded(false);
+        mSearchDevicesDialog->setDismissPolicy(HbPopup::NoDismiss);
+        mSearchDevicesDialog->setTimeout(HbPopup::NoTimeout);
+        mSearchDevicesDialog->setAttribute(Qt::WA_DeleteOnClose);
+        
+        mDevTypeList << hbTrId("txt_bt_list_audio_devices")
+                << hbTrId("txt_bt_list_computers") 
+                << hbTrId("txt_bt_list_input_devices") 
+                << hbTrId("txt_bt_list_phones") 
+                << hbTrId("txt_bt_list_other_devices");
     }
-    mSearchDevicesDialog->setBackgroundFaded(false);
-    mSearchDevicesDialog->setDismissPolicy(HbPopup::NoDismiss);
-    mSearchDevicesDialog->setTimeout(HbPopup::NoTimeout);
-    mSearchDevicesDialog->setAttribute(Qt::WA_DeleteOnClose);
-    
-    mDevTypeList << hbTrId("txt_bt_list_audio_devices")
-            << hbTrId("txt_bt_list_computers") 
-            << hbTrId("txt_bt_list_input_devices") 
-            << hbTrId("txt_bt_list_phones") 
-            << hbTrId("txt_bt_list_other_devices");
-    
-    return true;
+    else
+    {
+        mLastError = DocMLLoadingError;			    		    		
+    }
+
 }
 
 

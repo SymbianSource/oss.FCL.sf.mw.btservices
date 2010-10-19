@@ -37,32 +37,38 @@ BTSendDialogWidget::~BTSendDialogWidget()
 
 bool BTSendDialogWidget::setDeviceDialogParameters(const QVariantMap &parameters)
 {
-	mLastError = NoError;
-    if(mFileIndex != parameters.value("currentFileIdx").toString().toInt() )
+	if(!mLastError)
     {
-        mDialogHeading->setTextWrapping(Hb::TextWordWrap);
-        mDialogHeading->setAlignment(Qt::AlignHCenter);
-    
-        QString headLabel = QString(LOC_SENDING_FILES_TO_DEVICE).arg(parameters.value("currentFileIdx").toInt())
-                                        .arg(parameters.value("totalFilesCnt").toInt())
-                                        .arg(parameters.value("destinationName").toString());
-        mDialogHeading->setPlainText(headLabel);
+        if(mFileIndex != parameters.value("currentFileIdx").toString().toInt() )
+        {
+            mDialogHeading->setTextWrapping(Hb::TextWordWrap);
+            mDialogHeading->setAlignment(Qt::AlignHCenter);
         
-        //Todo - Insert file icons here instead of bluetooth image        
-        QIcon icon(QString(":/icons/qtg_large_bluetooth.svg"));        
-        mFileIconLabel->setIcon(icon);
-        mFileNameLabel->setPlainText(parameters.value("fileName").toString());
-        mFileSizeLabel->setPlainText(parameters.value("fileSzTxt").toString());
-        mProgressBar->setMinimum(0);
-        mProgressBar->setProgressValue(0);
-        mProgressBar->setMaximum(parameters.value("fileSz").toInt());
-        mFileIndex = parameters.value("currentFileIdx").toString().toInt();
+            QString headLabel = QString(LOC_SENDING_FILES_TO_DEVICE).arg(parameters.value("currentFileIdx").toInt())
+                                            .arg(parameters.value("totalFilesCnt").toInt())
+                                            .arg(parameters.value("destinationName").toString());
+            mDialogHeading->setPlainText(headLabel);
+            
+            //Todo - Insert file icons here instead of bluetooth image        
+            QIcon icon(QString(":/icons/qtg_large_bluetooth.svg"));        
+            mFileIconLabel->setIcon(icon);
+            mFileNameLabel->setPlainText(parameters.value("fileName").toString());
+            mFileSizeLabel->setPlainText(parameters.value("fileSzTxt").toString());
+            mProgressBar->setMinimum(0);
+            mProgressBar->setProgressValue(0);
+            mProgressBar->setMaximum(parameters.value("fileSz").toInt());
+            mFileIndex = parameters.value("currentFileIdx").toString().toInt();
+        }
+        else
+        {
+            mProgressBar->setProgressValue(parameters.value("progressValue").toInt());
+        }
+        return true;
     }
-    else
+	else
     {
-        mProgressBar->setProgressValue(parameters.value("progressValue").toInt());
+	    return false;
     }
-    return true;
 }
 
 int BTSendDialogWidget::deviceDialogError() const
@@ -90,7 +96,7 @@ QObject *BTSendDialogWidget::signalSender() const
 
 void BTSendDialogWidget::constructDialog(const QVariantMap& parameters)
 {
-		Q_UNUSED(parameters);
+	Q_UNUSED(parameters);
     mLoader = new HbDocumentLoader();
     bool ok = false;
     
@@ -104,19 +110,19 @@ void BTSendDialogWidget::constructDialog(const QVariantMap& parameters)
         mFileSizeLabel = qobject_cast<HbLabel*>(mLoader->findWidget("fileSize"));
          
         mProgressBar = qobject_cast<HbProgressBar*>(mLoader->findWidget("sendProgressBar"));
-		    mSendDialog->setBackgroundFaded(false);
-		    mSendDialog->setDismissPolicy(HbPopup::NoDismiss);
-		    mSendDialog->setTimeout(HbPopup::NoTimeout);
-		    mSendDialog->setAttribute(Qt::WA_DeleteOnClose);
-		    
-		    mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelAction" ) );
-		    
-		    connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
+        mSendDialog->setBackgroundFaded(false);
+        mSendDialog->setDismissPolicy(HbPopup::NoDismiss);
+        mSendDialog->setTimeout(HbPopup::NoTimeout);
+        mSendDialog->setAttribute(Qt::WA_DeleteOnClose);
+        
+        mCancelAction = static_cast<HbAction*>( mLoader->findObject( "cancelAction" ) );
+        
+        connect(mCancelAction, SIGNAL(triggered()), this, SLOT(cancelClicked()));
     }
     else
-    	{
-			mLastError = DocMLLoadingError;    		
-    	}
+    {
+        mLastError = DocMLLoadingError;    		
+    }
 }
 
 

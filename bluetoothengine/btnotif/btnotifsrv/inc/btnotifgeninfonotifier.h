@@ -111,7 +111,13 @@ private: // data
      * Not own.
      */
     CBluetoothNotification* iNotification;
-    
+
+    /**
+     * Pointer to the entering SAP notification.
+     * 
+     */    
+    CBluetoothNotification* iEnterSAPNotification;
+  
     };
 
 #endif // BTNOTIFDEVICESELECTOR_H

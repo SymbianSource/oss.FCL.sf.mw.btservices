@@ -4,7 +4,7 @@
 *  Part of     : bluetoothengine / btnotif
 *  Description : Data structures for passing dialog type and formatting between btnotif and the UI component showing the actual dialogs. Also defines identifiers for Bluetooth device dialogs.
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
+*  Copyright © 2010 Nokia Corporation and/or its subsidiary(-ies).
 *  All rights reserved.
 *  This component and the accompanying materials are made available
 *  under the terms of "Eclipse Public License v1.0"
@@ -76,7 +76,13 @@ public:
         EUserAuthorization,
         EReceiveProgress,
         EReceiveDone,
-        EInformationDialog
+        EInformationDialog,
+        bt_052_d_entering,
+        bt_054_d_entered_popup,
+        bt_056_d_no_sim,
+        bt_051_d_no_carkit_connection,
+        bt_053_d_unable_to_use_no_sim,
+        bt_053_d_unable_to_use
         };
 
     /**  Enumeration for the notification parameters data type to be configured. */
@@ -105,7 +111,10 @@ public:
         EMemoryFull,
         EFileMoved,
         EDriveNotFound,
-        EUnsupportedImages
+        EUnsupportedImages,
+        ENoSimInDevice,
+        EUnableToUseSAP,
+        ECannotUseSAPTemporarily
         };
     
     enum TDialogActionType

@@ -358,6 +358,16 @@ TInt CBIPController::PutPacketIndication()
         return KErrIrObexRespUnauthorized;
         }
     
+    // For every packet received, this check is required to ensure that the case where the 
+    // memory card is removed while a transfer is in progress is handled in the right way.
+    TVolumeInfo volInfo;
+    TInt err = iFs.Volume(volInfo, iDrive);
+    if(err != KErrNone)
+        {
+        HandleError(ETrue);
+        return err;
+        }
+    
     if (iBTObject)
         {
         iTotalSizeByte = iBTObject->Length();     // get size of receiving file
@@ -639,6 +649,34 @@ TInt CBIPController::HandlePutCompleteIndication()
     TRACE_FUNC_ENTRY
     TInt retVal = KErrNone;
 
+    // Before saving the file received, this check is required to ensure that the case where the 
+    // memory card is removed while a transfer is in progress is handled in the right way.
+    TVolumeInfo volInfo;
+    retVal = iFs.Volume(volInfo, iDrive);
+    if(retVal != KErrNone)
+        {
+        TRACE_ERROR((_L( "[obexreceiveservicebip] CBIPController: HandlePutCompleteIndication error:\t %d" ), retVal ) );              
+        HandleError(ETrue);
+        
+        // Even if the object saving fails we must return image handle with error code
+        TRAP_IGNORE( iBIPImageHandler->AddImageHandleHeaderL( iBTObexServer ) );            
+        
+        TRACE_INFO( _L( "[obexreceiveservicebip] HandlePutCompleteIndication Done\t" ) );
+        
+        delete iBTObject;
+        iBTObject = NULL;
+        
+        delete iBuf;
+        iBuf = NULL;
+        
+        iPreviousDefaultFolder = iDefaultFolder;  // save the last file path where file is successfully saved to file system.
+        iMsvIdParent = KMsvNullIndexEntryId;
+        
+        TRACE_FUNC_EXIT    
+        
+        return retVal;
+        }
+
     iDefaultFolder.Zero();
     TChar driveLetter;
     if ( iDrive == EDriveC )
@@ -667,15 +705,15 @@ TInt CBIPController::HandlePutCompleteIndication()
     if ( retVal == KErrNone)
         {
         TRAP (retVal, TObexUtilsMessageHandler::AddEntryToInboxL(iMsvIdParent, iFullPathFilename));
+        
+        if( retVal != KErrNone )
+            {
+            TRACE_ERROR((_L( "[obexreceiveservicebip] CBIPController: HandlePutCompleteIndication error:\t %d" ), retVal ) );              
+            TRAP( retVal, TObexUtilsMessageHandler::RemoveInboxEntriesL(iBTObject, iMsvIdParent));
+            retVal = KErrDiskFull;
+            }
         }
     
-    
-    if( retVal != KErrNone )
-        {
-        TRACE_ERROR((_L( "[obexreceiveservicebip] CBIPController: HandlePutCompleteIndication error:\t %d" ), retVal ) );              
-        TRAP( retVal, TObexUtilsMessageHandler::RemoveInboxEntriesL(iBTObject, iMsvIdParent));
-        retVal = KErrDiskFull;
-        }
     // Even if the object saving fails we must return image handle with error code
     TRAP_IGNORE( iBIPImageHandler->AddImageHandleHeaderL( iBTObexServer ) );            
     TRACE_INFO( _L( "[obexreceiveservicebip] HandlePutCompleteIndication Done\t" ) );

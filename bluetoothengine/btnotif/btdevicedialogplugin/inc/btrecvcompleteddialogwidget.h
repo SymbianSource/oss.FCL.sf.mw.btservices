@@ -51,7 +51,7 @@ public slots:
     void cancelClicked();
 
 private:
-    bool constructDialog(const QVariantMap &parameters);
+    void constructDialog(const QVariantMap &parameters);
     
 signals:
     void deviceDialogClosed();
@@ -69,6 +69,7 @@ private:
     HbDialog            *mReceiveCompleteDialog;
     int                 mFileSz;
     bool                mOpenConversationView;
+    int                 mError;
     
     Q_DISABLE_COPY(BTRecvcompletedDialogWidget)
     };

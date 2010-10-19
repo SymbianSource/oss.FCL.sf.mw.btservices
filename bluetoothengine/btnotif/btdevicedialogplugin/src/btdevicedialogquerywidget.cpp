@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -22,6 +22,7 @@
 #include <hbaction.h>
 #include <hbdialog.h>
 #include <hblabel.h>
+#include <hbparameterlengthlimiter.h>
 #include "btdevicedialogpluginerrors.h"
 #include <Bluetooth\hci\hcitypes.h>
 
@@ -163,9 +164,9 @@ QString& BtDeviceDialogQueryWidget::GetPasskeyEntryStatusString(int aStatus)
 void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
 {
     TRACE_ENTRY
-    QString keyStr, prompt,title;
+    QString keyStr, prompt,title,devName;
     int status = -1;
-    QVariant name,param,addval,passkeyinputstatus;
+    QVariant param,addval,passkeyinputstatus;
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -180,18 +181,26 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
     
     param = parameters.value( keyStr );
     int key = param.toInt();
+    
+    keyStr.setNum( TBluetoothDeviceDialog::EDeviceName );
+    i = parameters.constFind( keyStr );
+    if ( i != parameters.constEnd() )
+        {
+        devName = QString(parameters.value(QString::number(TBluetoothDeviceDialog::EDeviceName)).toString());
+        }
+    
     switch ( key ) {
         case ENumericComparison:
-            prompt = QString( hbTrId( "txt_bt_info_does_this_code_match_the_code_on_1" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_does_this_code_match_the_code_on_1" )).arg(devName);
             break;
         case EPasskeyDisplay:
-            prompt = QString( hbTrId( "txt_bt_info_enter_the_following_code_to_the_1" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_enter_the_following_code_to_the_1" )).arg(devName);
             break;
         case EPairingFailureRetry:
-            prompt = QString( hbTrId( "txt_bt_info_pairing_with_1_failed_either_the_pas" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_pairing_with_1_failed_either_the_pas" )).arg(devName);
             break;
         case EPairingFailureOk:
-            prompt = QString( hbTrId( "txt_bt_info_unable_to_pair_with_1" ) );
+            prompt = HbParameterLengthLimiter(hbTrId("txt_bt_info_unable_to_pair_with_1" )).arg(devName);
             break;
         // Input dialogs
         case EPinInput:
@@ -203,36 +212,26 @@ void BtDeviceDialogQueryWidget::processParam(const QVariantMap &parameters)
             mLastError = ParameterError;
             break;
     }
-    int repls = prompt.count( QString( "%" ) );
-    if ( repls > 0 ) {
-        name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
-        prompt = prompt.arg( name.toString() );
-        if(key != EPairingFailureRetry && key != EPairingFailureOk)
-            {
-            addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
-            // todo: Formating the prompt need to be discussed with UI designer
-            // The passcode could be displayed on a separate row if it the label did support
-            // the use of newline escape character.
-            prompt.append(tr("\n")); // insert 1 newlines for clarity
-            prompt.append(addval.toString());
-            if(key == EPasskeyDisplay)
-                {
-                prompt.append("\n");
-                bool ret = false;
-                passkeyinputstatus = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalInt ));
-                status = passkeyinputstatus.toInt(&ret);
-                if(ret)
-                    {
-                        prompt.append(GetPasskeyEntryStatusString(status));
-                    }
-                }
-            }
-    }
-    // set property value to this dialog widget
     if(key != EPairingFailureRetry && key != EPairingFailureOk)
         {
-        title = QString(hbTrId("txt_bt_title_pairing_with_1"));
-        title = title.arg(name.toString());
+        addval = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalDesc ) );
+        // todo: Formating the prompt need to be discussed with UI designer
+        // The passcode could be displayed on a separate row if it the label did support
+        // the use of newline escape character.
+        prompt.append(tr("\n")); // insert 1 newlines for clarity
+        prompt.append(addval.toString());
+        if(key == EPasskeyDisplay)
+            {
+            prompt.append("\n");
+            bool ret = false;
+            passkeyinputstatus = parameters.value( QString::number( TBluetoothDeviceDialog::EAdditionalInt ));
+            status = passkeyinputstatus.toInt(&ret);
+            if(ret)
+                {
+                prompt.append(GetPasskeyEntryStatusString(status));
+                }
+            }
+        title = HbParameterLengthLimiter(hbTrId("txt_bt_title_pairing_with_1")).arg(devName);
         mMessageBox->setHeadingWidget(new HbLabel(title));
         mMessageBox->setIconVisible(false);
         if(key == EPasskeyDisplay)

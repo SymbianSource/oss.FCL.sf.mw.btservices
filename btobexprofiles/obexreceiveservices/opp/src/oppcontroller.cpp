@@ -323,6 +323,16 @@ TInt COPPController::PutPacketIndication()
         HandleError(ETrue); // reset state and clear up
         return KErrIrObexRespUnauthorized;
         }
+
+    // For every packet received, this check is required to ensure that the case where the 
+    // memory card is removed while a transfer is in progress is handled in the right way.
+    TVolumeInfo volInfo;
+    TInt err = iFs.Volume(volInfo, iDrive);
+    if(err != KErrNone)
+        {
+        HandleError(ETrue);
+        return err;
+        }
     
     iTotalSizeByte = iObexObject->Length();     // get size of receiving file
     iReceivingFileName = iObexObject->Name();   // get name of receiving file
@@ -574,6 +584,27 @@ TInt COPPController::HandlePutCompleteIndication()
 	{
 	TRACE_FUNC        
     TInt retVal = KErrNone;
+
+    // Before saving the file received, this check is required to ensure that the case where the 
+    // memory card is removed while a transfer is in progress is handled in the right way.
+    TVolumeInfo volInfo;
+    retVal = iFs.Volume(volInfo, iDrive);
+    if(retVal != KErrNone)
+        {
+        TRACE_INFO( (_L( "[oppreceiveservice] HandlePutCompleteIndication failed  %d \t" ),retVal ) ); 
+
+        HandleError(ETrue);
+        delete iObexObject;
+        iObexObject = NULL;
+
+        delete iBuf;
+        iBuf = NULL;
+        
+        iPreviousDefaultFolder = iDefaultFolder;  // save the last file path where file is successfully saved to file system.
+        iMsvIdParent = KMsvNullIndexEntryId; 
+        TRACE_INFO( _L( "[oppreceiveservice] HandlePutCompleteIndication Done\t" ) );    
+        return retVal;
+        }
 
 	TChar driveLetter;
 	iDefaultFolder.Zero();

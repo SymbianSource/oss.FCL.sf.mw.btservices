@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -23,6 +23,7 @@
 #include <hbdialog.h>
 #include <hblabel.h>
 #include <hbvalidator.h>
+#include <hbparameterlengthlimiter.h>
 #include "btdevicedialogpluginerrors.h"
 
 const int PASSCODE_MAX_LEN = 16; // from BT specs
@@ -124,6 +125,8 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
 
     QString keyStr, prompt,title,regExp;
     QVariant name;
+    bool minLenRequired = false;
+    
     keyStr.setNum( TBluetoothDialogParams::EResource );
     // Validate if the resource item exists.
     QVariantMap::const_iterator i = parameters.constFind( keyStr );
@@ -134,30 +137,24 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
     }
 
     QVariant param = parameters.value( keyStr );
-    if ( param.toInt() == EPinInput ) {
-        // Numeric value only
-        mInputDialog->setInputMode(HbInputDialog::RealInput);
-        title = QString(hbTrId("txt_bt_title_pairing_with_1"));
-        // todo: Fix the multiline problem
-        prompt = QString( hbTrId( "txt_bt_dialog_please_enter_the_passcode_for_1" ) );
-    }
-    else {
+  
+    if(param.toInt() != EPinInput)
+        {
         mLastError = ParameterError;
         return;
-    }
+        }
+    mInputDialog->setInputMode(HbInputDialog::RealInput);
+    name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
+    title = HbParameterLengthLimiter(hbTrId("txt_bt_title_pairing_with_1")).arg(name.toString());
     
-    // check if minLength of passcode required
+    // Set minimum input length requirements
     keyStr.setNum( TBluetoothDeviceDialog::EAdditionalDesc );
     i = parameters.constFind( keyStr );
-    // Mini Length required, update prompt
-    // ToDo: The validator doesn't seem to work properly 
+    // Min Length required
     if ( i != parameters.constEnd() ) {
-        // Todo : The string ID for the localization is not available yet
-        // for string : "Enter %1 digit passcode for device %2:"
-        // I'm using the "Enter the passcode for device %1" instead
-        prompt = QString( hbTrId( "txt_bt_dialog_please_enter_the_passcode_for_1" ) );
+        minLenRequired = true;
         param = parameters.value( keyStr );
-        regExp = tr("^\\d{%1,}$");
+        regExp = "^\\d{%1,}$";
         regExp.arg(param.toString());
         HbValidator* validator = new HbValidator(mInputDialog->lineEdit());
         validator->addField(
@@ -166,26 +163,24 @@ void BtDeviceDialogInputWidget::processParam(const QVariantMap &parameters)
         mInputDialog->setValidator(validator);
     }else{
         // Minimum requirement is to have at least 1 digit
-        regExp = tr("^\\d{1,}$");
+        regExp = "^\\d{1,}$";
         HbValidator* validator = new HbValidator(mInputDialog->lineEdit());
         validator->addField(
                 new QRegExpValidator(
                         QRegExp(regExp, Qt::CaseInsensitive), validator ),"");
         mInputDialog->setValidator(validator);    
     }
-    // replace % with the minimum length and device name
-    int repls = prompt.count( QString( "%" ) );
-    if ( repls > 1 ) {
-        prompt = prompt.arg( param.toString() );
-    }
-    if ( repls > 0 ) {
-        name = parameters.value( QString::number( TBluetoothDeviceDialog::EDeviceName ) );
-        prompt = prompt.arg( name.toString() );
-    }
-    repls = title.count(QString("%"));
-    if(repls > 0){
-        title = title.arg( name.toString() );
-    }
+    if(minLenRequired)
+        {
+        // Todo : The string ID for the localization is not available yet
+        // for string : "Enter %1 digit passcode for device %2:"
+        // I'm using the "Enter the passcode for device %1" instead
+        prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dialog_please_enter_the_passcode_for_1" )).arg(name.toString());
+        }
+    else
+        {
+        prompt = HbParameterLengthLimiter(hbTrId("txt_bt_dialog_please_enter_the_passcode_for_1" )).arg(name.toString());
+        }
     mInputDialog->setHeadingWidget(new HbLabel(title));
     mInputDialog->lineEdit(0)->setMaxLength(PASSCODE_MAX_LEN);
     mInputDialog->lineEdit(0)->setText(tr("")); // clear the input field

@@ -91,7 +91,7 @@ void CBTNotifServiceAuthorizer::StartNotifierL(const RMessage2& aMessage)
             aMessage.Complete(err);
             return;
             }
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:We are busy");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:We are busy"));
         User::Leave(KErrServerBusy );
         }
 
@@ -111,7 +111,7 @@ void CBTNotifServiceAuthorizer::StartNotifierL(const RMessage2& aMessage)
         {
         // If the device is banned, service connection from
         // this device is not allowed:
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:Device is banned");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:Device is banned"));
         aMessage.Complete( KErrCancel);
         return;    
         }

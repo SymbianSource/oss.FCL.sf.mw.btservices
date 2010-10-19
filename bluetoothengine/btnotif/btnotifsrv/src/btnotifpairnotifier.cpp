@@ -105,13 +105,13 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
     
     TInt uid = aMessage.Int0();
     TInt opCode = aMessage.Function();
-    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:Opcode: %d",opCode);
+    BOstrace1(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:Opcode: %d"),opCode);
     
     if ( (!iNotifierMessage.IsNull()) && 
          (opCode != EBTNotifCancelNotifier )&&(opCode != EBTNotifUpdateNotifier))
         {
         // todo: do we allow concurrent pairing?
-        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:We are busy");
+        BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:We are busy"));
         User::Leave(KErrServerBusy );
         }
     
@@ -146,7 +146,7 @@ void CBTNotifPairNotifier::StartPairingNotifierL(const RMessage2& aMessage )
             {
             // If the device is banned and pairing is not locally initiated
             // then we reject.
-            BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,"[BTNotif]:Device is banned");
+            BOstrace0(TRACE_DEBUG,DUMMY_DEVLIST,_L("[BTNotif]:Device is banned"));
             iNotifierMessage.Complete( KErrCancel );
             return;
             }

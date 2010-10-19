@@ -55,7 +55,7 @@ static void RunServerL()
     // Initialisation complete, now signal the client
     RProcess::Rendezvous( KErrNone );
         // The server is now up and running.
-    BOstrace0( TRACE_NORMAL, DUMMY_DEVLIST, "[BTNOTIF]\t BTNotif server now up and running" );
+    BOstrace0( TRACE_NORMAL, DUMMY_DEVLIST, _L("[BTNOTIF]\t BTNotif server now up and running" ));
     // The active scheduler runs during the lifetime of this thread.
     CActiveScheduler::Start();
     // Stopping the active scheduler means terminating the thread.

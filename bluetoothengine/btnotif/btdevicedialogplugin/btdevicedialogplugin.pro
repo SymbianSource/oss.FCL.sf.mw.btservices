@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of "Eclipse Public License v1.0"
@@ -24,6 +24,8 @@ DESTDIR = $${HB_BUILD_DIR}/plugins/devicedialogs
 MOC_DIR = moc
 OBJECTS_DIR = obj
 
+TRANSLATIONS = btdialogs.ts
+
 # dependencies
 HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btdevicedialogquerywidget.h \
@@ -37,7 +39,9 @@ HEADERS += inc/btdevicedialoginputwidget.h \
     inc/btdevicedialogrecvquerywidget.h \
     inc/btrecvprgrsdialogwidget.h \
     inc/btrecvcompleteddialogwidget.h \
-    inc/btdeviceinfowidget.h
+    inc/btdeviceinfowidget.h \
+    inc/btdevicedialogwaitingwidget.h \
+    inc/btdeviceokonlydialogwidget.h
 
     
 SOURCES += src/btdevicedialogplugin.cpp \
@@ -50,7 +54,9 @@ SOURCES += src/btdevicedialogplugin.cpp \
     src/btdevicedialogrecvquerywidget.cpp \
     src/btrecvprgrsdialogwidget.cpp \
     src/btrecvcompleteddialogwidget.cpp \
-    src/btdeviceinfowidget.cpp
+    src/btdeviceinfowidget.cpp \
+    src/btdevicedialogwaitingwidget.cpp \
+    src/btdeviceokonlydialogwidget.cpp
 
 RESOURCES += btdevicedialogplugin.qrc
     

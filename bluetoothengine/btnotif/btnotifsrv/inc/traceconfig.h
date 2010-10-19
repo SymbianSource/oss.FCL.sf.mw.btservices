@@ -4,7 +4,7 @@
 *  Part of     : BluetoothUI / bluetoothuimodel       *** Info from the SWAD
 *  Description : Configuration of debug tracing in btnotif
 *
-*  Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
+*  Copyright © 2010 Nokia Corporation and/or its subsidiary(-ies).
 *  All rights reserved.
 *  This component and the accompanying materials are made available
 *  under the terms of "Eclipse Public License v1.0"
@@ -106,15 +106,15 @@ _LIT( KLogDir, "bt" );
  * Group-mapping aligning with OST groups.
  * The purpose of using groups is to ease migrating tracing from legacy logging to OST.
  */
-#define TRACE_FATAL       "[FATAL]"
-#define TRACE_IMPORTANT   "[IMPTT]"
-#define TRACE_NORMAL      "[NORML]"
-#define TRACE_API         "[ API ]"
-#define TRACE_FLOW        "[FLOW ]"
-#define TRACE_STATE       "[STATE]"
-#define TRACE_DETAILED    "[DETLD]"
-#define TRACE_DEBUG       "[DEBUG]"
-#define TRACE_PERFORMANCE "[PFMAN]"
+#define TRACE_FATAL       _L("[FATAL]")
+#define TRACE_IMPORTANT   _L("[IMPTT]")
+#define TRACE_NORMAL      _L("[NORML]")
+#define TRACE_API         _L("[ API ]")
+#define TRACE_FLOW        _L("[FLOW ]")
+#define TRACE_STATE       _L("[STATE]")
+#define TRACE_DETAILED    _L("[DETLD]")
+#define TRACE_DEBUG       _L("[DEBUG]")
+#define TRACE_PERFORMANCE _L("[PFMAN]")
 
 /**
  * Component Identifier to be written into traces:

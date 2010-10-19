@@ -66,6 +66,7 @@ public slots:
     void goToSearchView();
 
     //from delegate classes
+    void powerDelegateCompleted(int status);
     void visibilityDelegateCompleted(int status);
     void btNameDelegateCompleted(int status);
     void allActionTriggered();
