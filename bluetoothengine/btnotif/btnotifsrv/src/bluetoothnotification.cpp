@@ -179,7 +179,7 @@ void CBluetoothNotification::ShowL()
     delete iReturnData;
     iReturnData = NULL;
     iReturnData = CHbSymbianVariantMap::NewL();
-    iDialog->Show( KBTDevDialogId(), *iNotificationData, this );
+    User::LeaveIfError(iDialog->Show( KBTDevDialogId(), *iNotificationData, this ));
     BOstraceFunctionExit1( DUMMY_DEVLIST, this );
     }
 

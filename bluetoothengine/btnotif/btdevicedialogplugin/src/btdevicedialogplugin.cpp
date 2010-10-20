@@ -42,6 +42,7 @@ Q_EXPORT_PLUGIN2(btdevicedialogplugin, BtDeviceDialogPlugin)
 const char* BTDIALOG_TRANSLATION = "btdialogs";
 const char* BTVIEW_TRANSLATION = "btviews";
 const char* COMMON_ERRORS_TRANSLATION = "common_errors";
+const char* COMMON_TRANSLATION = "common";
 
 // This plugin implements one device dialog type
 static const struct {
@@ -69,7 +70,7 @@ BtDeviceDialogPluginPrivate::BtDeviceDialogPluginPrivate()
     BtDeviceDialogPlugin Constructor
  */
 BtDeviceDialogPlugin::BtDeviceDialogPlugin():
- mDialogTranslator(0),mViewTranslator(0),mCommonErrorsTranslator(0)
+ mDialogTranslator(0),mViewTranslator(0),mCommonErrorsTranslator(0), mCommonTranslator(0)
 {
     d = new BtDeviceDialogPluginPrivate;
 }
@@ -83,6 +84,7 @@ BtDeviceDialogPlugin::~BtDeviceDialogPlugin()
     delete mDialogTranslator;
     delete mViewTranslator;
     delete mCommonErrorsTranslator;
+    delete mCommonTranslator;
 }
 
 /*! 
@@ -123,6 +125,10 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
         {
         mCommonErrorsTranslator = new HbTranslator(COMMON_ERRORS_TRANSLATION);
         }
+    if(!mCommonTranslator)
+        {
+        mCommonTranslator = new HbTranslator(COMMON_TRANSLATION);
+        }
     
     // verify that requested dialog type is supported
     const int numTypes = sizeof(noteInfos) / sizeof(noteInfos[0]);
@@ -149,10 +155,31 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::createDeviceDialog(
 bool BtDeviceDialogPlugin::deviceDialogInfo(const QString &deviceDialogType,
     const QVariantMap &parameters, DeviceDialogInfo *info) const
 {
-    Q_UNUSED(parameters)
+
     Q_UNUSED(deviceDialogType)
     // set return values
-    info->group = GenericDeviceDialogGroup;
+    // Construct the key of EDialogType
+    QString keyStr;
+    keyStr.setNum( TBluetoothDialogParams::EDialogType );
+    // Find the const iterator with key EDialogType
+    QVariantMap::const_iterator i = parameters.constFind( keyStr );
+
+    // item with key EDialogType is not found
+    if ( i == parameters.constEnd() ) {
+        d->mError = UnknownDeviceDialogError;
+        return false;
+    }
+    int type = i.value().toInt();
+    if(type == TBluetoothDialogParams::EGlobalNotif ||
+       type == TBluetoothDialogParams::ENote ||
+       type == TBluetoothDialogParams::bt_054_d_entered_popup)
+        {
+        info->group = DeviceNotificationDialogGroup;
+        }
+    else
+        {
+        info->group = GenericDeviceDialogGroup;
+        }
     info->flags = NoDeviceDialogFlags;
     info->priority = DefaultPriority;
     return true;
@@ -266,9 +293,6 @@ HbDeviceDialogInterface *BtDeviceDialogPlugin::checkDialogType( const QVariantMa
             // Do not continue if an error occurred
             delete deviceDialog;
             deviceDialog = NULL;
-        }
-        else {
-            d->mError = UnknownDeviceDialogError;
         }
     }
     return deviceDialog;

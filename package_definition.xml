@@ -144,11 +144,6 @@
     <unit bldFile="bluetoothengine/btxqservice" qt:proFile="btxqservice.pro"/>
    </component>
   </collection>
-  <collection id="bluetoothappprofiles" name="Bluetooth Application Profiles" level="plugin">
-   <component id="avrcp" name="Bluetooth AVRCP" introduced="9.1" purpose="optional">
-    <unit bldFile="bluetoothappprofiles/avrcp" mrp="bluetoothappprofiles/avrcp/bluetooth_avrcp.mrp"/>
-   </component>
-  </collection>
   <collection id="atcommands" name="AT Commands" level="generic">
    <component id="modematplugin" name="Modem AT Plugin" filter="s60" class="plugin" introduced="^4">
     <unit bldFile="atcommands/modematplugin/group"/>

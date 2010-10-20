@@ -20,7 +20,7 @@
 #include "btdevicedialogplugintrace.h"
 #include <bluetoothdevicedialogs.h>
 #include <hbaction.h>
-#include <hbdialog.h>
+#include <hbnotificationdialog.h>
 #include <hbparameterlengthlimiter.h>
 #include "btdevicedialogpluginerrors.h"
 #include <btuiiconutil.h>

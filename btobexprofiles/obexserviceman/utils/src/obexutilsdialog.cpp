@@ -22,6 +22,7 @@
 #include "obexutilsdebug.h"
 #include <hbdevicenotificationdialogsymbian.h>
 #include <btservices/bluetoothdevicedialogs.h>
+#include <hbtextresolversymbian.h>
 
 _LIT(KSendingDialog, "com.nokia.hb.btdevicedialog/1.0");
 _LIT(KCurrentFileIndex,"currentFileIdx" );
@@ -36,6 +37,13 @@ _LIT(KProgressValue,"progressValue");
 const TInt KMaxDescriptionLength = 256;
 const TInt KMinStringSize = 10;
 const TInt KMaxDisplayFileName = 20; 
+
+_LIT(KLocFileName, "common_");
+_LIT(KPath, "z:/resource/qt/translations/");  
+
+_LIT(KFileSizeMb,"txt_common_info_l1_mb");
+_LIT(KFileSizeKb,"txt_common_info_l1_kb");
+_LIT(KFileSizeB,"txt_common_info_l1_byte");
 
 
 // ============================ MEMBER FUNCTIONS ===============================
@@ -185,35 +193,58 @@ EXPORT_C void CObexUtilsDialog::UpdateProgressNoteL( TInt aFileSize,TInt aFileIn
     
     AddDataL( map, *key, &shortname, CHbSymbianVariant::EDes );
     
-    // todo: localiation is needed for code below:
     HBufC* value = HBufC::NewL(KMaxDescriptionLength);
     CleanupStack::PushL(value);
     key->Des().Copy(KFileSizeTxt());
     value->Des().Zero();
 
+    TBool retVal = HbTextResolverSymbian::Init(KLocFileName, KPath);
+    
     //Format the file size into a more readable format
     if ( aFileSize >> 20 )    // size in MB
         {       
         TReal32 sizeInMB = 0;
         sizeInMB = ((TReal32)aFileSize ) / (1024*1024);
-        value->Des().AppendNum(sizeInMB);
-        //TODO - check for localization
-        value->Des().Append(_L(" Mb"));
+        TBuf<KMaxDescriptionLength> sizeInMbBuf;
+        sizeInMbBuf.AppendNum(sizeInMB);
+        if(retVal)
+            {
+            value = HbTextResolverSymbian::LoadL(KFileSizeMb, sizeInMbBuf);
+            }
+        else
+            {
+            value->Des().Append(KFileSizeMb());
+            }
         }
     
     else if( aFileSize >> 10 )        // size in KB
         {
         TInt64 sizeInKB = 0;
         sizeInKB = aFileSize >> 10;
-        value->Des().AppendNum(sizeInKB);
-        //TODO - check for localization
-        value->Des().Append(_L(" Kb"));
+        TBuf<KMaxDescriptionLength> sizeInKbBuf;
+        sizeInKbBuf.AppendNum(sizeInKB);
+        if(retVal)
+            {
+            value = HbTextResolverSymbian::LoadL(KFileSizeKb, sizeInKbBuf);
+            }
+        else
+            {
+            value->Des().Append(KFileSizeKb());
+            }
         }
 
     else                              // size is unknown or less than 1K
         {
-        value->Des().AppendNum(aFileSize);
-        value->Des().Append(_L(" Bytes"));
+        TBuf<KMaxDescriptionLength> sizeInBBuf;
+        sizeInBBuf.AppendNum(aFileSize);
+        if(retVal)
+            {
+            value = HbTextResolverSymbian::LoadL(KFileSizeB, sizeInBBuf);
+            }
+        else
+            {
+            value->Des().Append(KFileSizeB());
+            }
         }
 
     

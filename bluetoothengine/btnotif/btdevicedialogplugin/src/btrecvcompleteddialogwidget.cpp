@@ -110,10 +110,7 @@ void BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
             {       
             float sizeInMB = 0;
             sizeInMB = ((float)mFileSz ) / (1024*1024);
-            QString fileSzMb;
-            fileSzMb.setNum(sizeInMB);
-            //TODO - check for localization
-            fileSzMb.append(QString(" Mb"));
+            QString fileSzMb = QString(hbTrId("txt_common_info_l1_mb")).arg(sizeInMB);
             mFileSize->setPlainText(fileSzMb);
             }
         
@@ -121,19 +118,13 @@ void BTRecvcompletedDialogWidget::constructDialog(const QVariantMap &parameters)
             {
             TInt64 sizeInKB = 0;
             sizeInKB = mFileSz >> 10;
-            QString fileSzKb;
-            fileSzKb.setNum(sizeInKB);
-            //TODO - check for localization
-            fileSzKb.append(QString(" Kb"));
+            QString fileSzKb = QString(hbTrId("txt_common_info_l1_kb")).arg(sizeInKB);
             mFileSize->setPlainText(fileSzKb);
             }
 
         else                              // size is unknown or less than 1K
             {
-            QString fileSzB;
-            fileSzB.setNum(mFileSz);
-            //TODO - check for localization
-            fileSzB.append(QString(" Bytes"));
+            QString fileSzB = QString(hbTrId("txt_common_info_l1_byte")).arg(mFileSz);
             mFileSize->setPlainText(fileSzB);
             }
 
