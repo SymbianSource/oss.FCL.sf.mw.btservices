@@ -102,9 +102,10 @@ NONSHARABLE_CLASS(CBTRCCAbsoluteVolumeLevelController) :
     
     private:
         void AccessoryChangedVolume(TUint32 aVolume, TUint32 aMaxVolume, TInt aError);
-        TBool ValidVolumeParams(TUint32 aVolume, TUint32 aMaxVolume);
-        
+        void SetAbsoluteVolumeResponse(TUint32 aVolume, TUint32 aMaxVolume, TInt aError);
+        TBool ValidVolumeParams(TUint32 aVolume, TUint32 aMaxVolume);        
         void RegisterVolumeChangeNotification();
+        TInt ConvertVolumeToPhoneScale(TUint32 aVolume, TUint32 aMaxVolume);
     
 	private:    // Data
 

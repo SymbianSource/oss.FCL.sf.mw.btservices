@@ -35,6 +35,7 @@ enum TBTRCCPanicCode
     EBtrccPanicUnhandledCase,
     EBtrccPanicAvrcpVolCTNotSupported,
     EBtrccPanicOutOfRangeState,
+    EBtrccPanicInvalidVolume
     };
  
 #ifdef PRJ_FILE_TRACE

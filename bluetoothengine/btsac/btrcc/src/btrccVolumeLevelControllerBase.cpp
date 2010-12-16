@@ -77,10 +77,9 @@ CBTRCCVolumeLevelControllerBase::~CBTRCCVolumeLevelControllerBase()
 void CBTRCCVolumeLevelControllerBase::Start() 
     {
     TRACE_FUNC
-
 	iVolLevelProperty.Subscribe(iBtrccActive->iStatus);
     iBtrccActive->GoActive(); 
-
+    iState = ESubscribePhoneVolume;
     (void) GetPhoneVolume(iPhoneVolume);
     ScalePhoneVolume(iPhoneVolume);
     if( iPhoneVolume > -1)
@@ -159,6 +158,16 @@ void CBTRCCVolumeLevelControllerBase::AccessoryChangedVolume(TInt aVolumeInPhone
         TInt remoteVol = RoundRemoteVolume(prevPhVol);
         SetPhoneVolume(remoteVol);
         }
+    }
+
+// -----------------------------------------------------------------------------
+// CBTRCCVolumeLevelControllerBase::SetAbsoluteVolumeResponse
+// -----------------------------------------------------------------------------
+//
+void CBTRCCVolumeLevelControllerBase::SetAbsoluteVolumeResponse(TInt aVolumeInPhoneScale)
+    {
+    TRACE_FUNC
+    iRemoteVolume = aVolumeInPhoneScale;
     }
 
 // -----------------------------------------------------------------------------
@@ -241,8 +250,10 @@ void CBTRCCVolumeLevelControllerBase::RequestCompletedL(CBTRCCActive& aActive, T
         {
         TInt prevPhVol = iPhoneVolume;
         TInt err = GetPhoneVolume(iPhoneVolume);
-        ScalePhoneVolume(iPhoneVolume);
-                
+        ScalePhoneVolume(iPhoneVolume);        
+        iVolLevelProperty.Subscribe(iBtrccActive->iStatus);
+        iBtrccActive->GoActive();
+        
         if(!err && !aErr && iPhoneVolume > -1)
             {
             switch(iState)
@@ -256,10 +267,7 @@ void CBTRCCVolumeLevelControllerBase::RequestCompletedL(CBTRCCActive& aActive, T
                     SetPhoneVolume(remoteVol);
                     break;
                 }
-            }
-        
-        iVolLevelProperty.Subscribe(iBtrccActive->iStatus);
-        iBtrccActive->GoActive();
+            }        
         }
     }
 

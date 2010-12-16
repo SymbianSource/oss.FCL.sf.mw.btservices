@@ -114,8 +114,6 @@ private:
      */
     virtual void SyncLinkAcceptCompleteL(TInt aErr);
 
-    void RfcommLinkInSniffModeL();
-
     // From base class CBtmActive
 
     /**

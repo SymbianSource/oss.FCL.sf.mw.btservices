@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -316,18 +316,6 @@ void CBTAuthNotifier::HandleGetDeviceCompletedL(const CBTDevice* aDev)
         FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::HandleGetDeviceCompleted, still suspended, wait"));
         return;
         }
-        
-    TBool reqAllowed = IsJustWorksPaired( iDevice->AsNamelessDevice() ) ? 
-        IsUserAwarePaired( iDevice->AsNamelessDevice() ) : ETrue ;
-    FTRACE(FPrint(_L("[BTNOTIF]\t CBTAuthNotifier, reqAllowed %d" ), reqAllowed ) );
-    if ( !reqAllowed )
-        {
-        // Do not grant access to device that is not paired in Just Works mode without
-        // user awareness, e.g. pairing due to an incoming connection request from a 
-        // headset.
-        CompleteMessage(KErrAccessDenied);
-        return;
-        }
     
     iStrResourceId = R_BT_AUTHORISATION_NAME;
 
@@ -527,6 +515,17 @@ void CBTAuthNotifier::ShowAuthoQueryL()
     
     if( keypress )  // User has accepted the dialog
         {
+        TBool registryActionPending = EFalse;
+
+        if (IsJustWorksPaired( iDevice->AsNamelessDevice() ) && !IsUserAwarePaired( iDevice->AsNamelessDevice() ))
+            {
+            TInt autoAuth = iNotifUiUtil->ShowQueryL( R_BT_AUTHORIZATION_PROMPT, R_BT_AUTHORISATION_QUERY, ECmdBTnotifUnavailable, CAknQueryDialog::EConfirmationTone);
+            TInt err = ChangeAuthorizeStateAndMakeUserAware(autoAuth);
+            if (err == KErrNone)
+                {
+                registryActionPending = ETrue;
+                }            
+            }
         if( iDevice && !iDevice->IsValidLinkKey() )
             {               
             TTime now;
@@ -537,7 +536,10 @@ void CBTAuthNotifier::ShowAuthoQueryL()
             }
         
         MemorizeCurrentAudioAttempt(ETrue,iDevice->BDAddr() );
-        CompleteMessage( ETrue, KErrNone );
+        if (!registryActionPending)
+            {
+            CompleteMessage( ETrue, KErrNone );
+            }
         }
     else // User has rejected the dialog.
         {
@@ -566,7 +568,7 @@ void CBTAuthNotifier::DoRejectAuthorizationL()
     
     //Logic: query block only at the second time for the same paired device
     //       query block everytime after rejection for non-paired device.
-    if( IsPaired( iDevice->AsNamelessDevice() ) )
+    if( IsUserAwarePaired( iDevice->AsNamelessDevice() ) )
         {
         FLOG(_L("[BTNOTIF]\t CBTAuthNotifier::DoRejectAuthorizationL() rejected a paired device."));            
         

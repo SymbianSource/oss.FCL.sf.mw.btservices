@@ -12,7 +12,7 @@
 * Contributors:
 *
 * Description:  The audio opened state definition
-*  Version     : %version: 4.2.3 %
+*  Version     : %version: 4.2.4.1.1 %
 *
 */
 
@@ -22,7 +22,6 @@
 #include "btmsyncsock.h"
 #include "btmslisten.h"
 #include "btmsctrl.h"
-#include "btmssniffm.h"
 #include "btmsdisconnect.h"
 #include "btmscloseaudio.h"
 #include "debug.h"
@@ -37,6 +36,7 @@ CBtmsAudio* CBtmsAudio::NewL(CBtmMan& aParent, CBtmRfcommSock* aRfcomm, CBtmSync
 
 CBtmsAudio::~CBtmsAudio()
     {
+    TRACE_FUNC
     delete iSco;
     }
 
@@ -103,6 +103,7 @@ void CBtmsAudio::CloseAudioLinkL(const TBTDevAddr& aAddr, TRequestStatus& aStatu
 
 void CBtmsAudio::RfcommErrorL(TInt /*aErr*/)
     {
+    TRACE_FUNC
     iSco->DisconnectL();
     delete iSco;
     iSco = NULL;
@@ -114,14 +115,12 @@ void CBtmsAudio::SyncLinkDisconnectCompleteL(TInt /*aErr*/)
     // callback and that is too late - the listener RSocket owned by iSco needs
     // to be shut down before the ChangeStateL() call below because Entry actions
     // in Ctrl/Sniffm open a new one.
+    TRACE_FUNC
     delete iSco;
     iSco = NULL;
 
     CBtmsInuse* next;
-    if (iRfcomm->IsInSniff())
-        next = CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), NULL); 
-    else
-        next = CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL);
+    next = CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL);
     next->SetNotifyItemAtEntry(ENotifyAudioClosedByRemote);
     Parent().ChangeStateL(next);
     }

@@ -23,7 +23,6 @@
 #include "btmrfcommsock.h"
 #include "btmsyncsock.h"
 #include "btmsctrl.h"
-#include "btmssniffm.h"
 #include "btmsopenaudio.h"
 #include "btmsdisconnect.h"
 #include "btmsaudio.h"
@@ -137,6 +136,7 @@ void CBtmsCtrl::AccInUse()
 
 void CBtmsCtrl::RfcommErrorL(TInt /*aErr*/)
     {
+    TRACE_FUNC
     if (iSco)
         iSco->CancelAccept();
     }
@@ -157,30 +157,20 @@ void CBtmsCtrl::SyncLinkAcceptCompleteL(TInt aErr)
         }
     }
 
-void CBtmsCtrl::RfcommLinkInSniffModeL()
-    {
-    if (iRfcomm->Service() == EBTProfileHFP)
-        {
-        Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iSco)));
-        }
-    }
-
 void CBtmsCtrl::RequestCompletedL(CBtmActive& /*aActive*/)
     {
+    TRACE_FUNC
     if (iRfcomm->Service() == EBTProfileHSP)
         {
         TBTDevAddr addr = iRfcomm->Remote();
         iRfcomm->Disconnect();
         Parent().ChangeStateL(CBtmsHsTempd::NewL(Parent(), addr));
         }
-    else
-        {
-    	iRfcomm->ActivateSniffRequester();
-        }
     }
 
 void CBtmsCtrl::CancelRequest(CBtmActive& /*aActive*/)
     {
+    TRACE_FUNC
     }
     
 CBtmsCtrl::CBtmsCtrl(CBtmMan& aParent, CBtmRfcommSock* aRfcomm, CBtmSyncSock* aSco)

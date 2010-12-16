@@ -95,7 +95,8 @@ NONSHARABLE_CLASS(CBTRCCVolumeLevelControllerBase) : public CBase, public MBTRCC
         
         TInt GetCurrentRemoteVolume();
 
-        void AccessoryChangedVolume(TInt aVolumeInPhoneScale);  
+        void AccessoryChangedVolume(TInt aVolumeInPhoneScale);
+        void SetAbsoluteVolumeResponse(TInt volumeInPhoneScale);
 
         virtual void DoStart(TInt aInitialVolume) = 0; // Starts monitoring for volume level changes. 
 

@@ -105,16 +105,7 @@ public:
      * @since S60 v3.1
      * @return the BD address
      */
-    const TBTDevAddr& Remote() const; 
-    
-    /**
-     * Activates the notification of baseband events
-     *
-     * @since S60 v3.1
-     * @param aNotification the interested baseband events
-     * @return the completion error code
-     */
-    TInt ActivateBasebandEventNotification(TInt aNotification);
+    const TBTDevAddr& Remote() const;     
     
     /**
      * Sets the socket observer to the specified.
@@ -132,9 +123,12 @@ public:
      */
     TUint Service() const;
     
-    TInt ActivateSniffRequester();
-    
-    void RequestLinkToActiveMode();
+    /**
+     * Requests for master role
+     *
+     * @return the completion error code
+     */
+    TInt RequestMasterRole();
     
     TBool IsInSniff() const;
     

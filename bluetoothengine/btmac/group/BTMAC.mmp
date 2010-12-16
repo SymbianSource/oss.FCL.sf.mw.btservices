@@ -44,7 +44,6 @@ SOURCE      btmslisten.cpp
 SOURCE      btmsinuse.cpp
 SOURCE      btmsrfcomm.cpp
 SOURCE      btmsctrl.cpp
-SOURCE      btmssniffm.cpp
 SOURCE      btmsopenaudio.cpp
 SOURCE      btmscloseaudio.cpp
 SOURCE      btmsaudio.cpp

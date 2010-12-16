@@ -31,9 +31,30 @@
 
 CBtmsInuse::~CBtmsInuse()
     {
+    TRACE_FUNC
     delete iRfcomm;
     }
 
+CBtmState* CBtmsInuse::ErrorOnEntryL(TInt /*aReason*/)
+    {
+    TRACE_FUNC
+    if( iRfcomm )
+        {
+        if (iRfcomm->Service() == EBTProfileHFP)
+            {
+            Parent().AccessoryDisconnected(iRfcomm->Remote(), EHFP);
+            }
+        else
+            {
+            Parent().AccessoryDisconnected(iRfcomm->Remote(), EHSP);
+            }
+        }
+    else
+        {
+        TRACE_INFO((_L("CBtmsInuse::ErrorOnEntryL, no rfcomm")))
+        }
+    return CBtmsListen::NewL(Parent());
+    }
 
 void CBtmsInuse::ConnectL(const TBTDevAddr& aAddr, TRequestStatus& aStatus)
     {

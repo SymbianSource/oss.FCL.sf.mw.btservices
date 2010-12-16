@@ -22,7 +22,6 @@
 #include "btmsyncsock.h"
 #include "btmslisten.h"
 #include "btmsctrl.h"
-#include "btmssniffm.h"
 #include "debug.h"
 
 // ======== MEMBER FUNCTIONS ========
@@ -39,6 +38,7 @@ CBtmsCloseAudio* CBtmsCloseAudio::NewL(CBtmMan& aParent, TRequestStatus* aReques
 
 CBtmsCloseAudio::~CBtmsCloseAudio()
     {
+    TRACE_FUNC
     delete iSco;
     }
 
@@ -73,20 +73,14 @@ void CBtmsCloseAudio::CancelCloseAudioLinkL(const TBTDevAddr& aAddr)
         delete iSco;
         iSco = NULL;
         CompleteStateRequest(KErrCancel);
-        if (iRfcomm->IsInSniff())
-            {
-            Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), NULL));
-            }
-        else
-            {
-            Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL));
-            } 
+        Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL)); 
         }
     }
 
 
 void CBtmsCloseAudio::RfcommErrorL(TInt aErr)
     {
+    TRACE_FUNC
     delete iSco;
     
     iSco = NULL;
@@ -95,15 +89,9 @@ void CBtmsCloseAudio::RfcommErrorL(TInt aErr)
 
 void CBtmsCloseAudio::SyncLinkDisconnectCompleteL(TInt aErr)
     {
+    TRACE_FUNC
     CompleteStateRequest(aErr);
-    if (iRfcomm->IsInSniff())
-        {
-        Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), NULL));
-        }
-    else
-        {
-        Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL));
-        } 
+    Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL)); 
     }
     
 CBtmsCloseAudio::CBtmsCloseAudio(CBtmMan& aParent, TRequestStatus* aRequest, 

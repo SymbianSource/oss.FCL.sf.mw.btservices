@@ -20,6 +20,8 @@
 #include "basrvaccstatedisconnect.h"
 #include "debug.h"
 
+const TInt KRequestIdActiveMode = 0;
+
 // ================= MEMBER FUNCTIONS =======================
 
 CBasrvAccStateDisconnect* CBasrvAccStateDisconnect::NewL(CBasrvAcc& aParent, TInt aConnErr)
@@ -39,7 +41,18 @@ void CBasrvAccStateDisconnect::EnterL()
     StatePrint(_L("Disconnect"));
     iProfiles = AccInfo().iConnProfiles;
     Parent().RequestActiveMode();
-    DoDisconnectL();
+    
+    if (!iActive)
+        {
+        iActive = CBasrvActive::NewL(*this, CActive::EPriorityLow, KRequestIdActiveMode);
+        }
+    // here we'll give time to the scheduler so that the active mode request has 
+    // a chance to get through before disconnect request - running
+    // with EPriorityLow for that
+    TRequestStatus* myStatus( &iActive->iStatus );
+    *myStatus = KRequestPending;
+    iActive->GoActive();
+    User::RequestComplete( myStatus, KErrNone );
     }
 
 CBasrvAccState* CBasrvAccStateDisconnect::ErrorOnEntry(TInt /*aReason*/)
@@ -57,17 +70,27 @@ TBTEngConnectionStatus CBasrvAccStateDisconnect::ConnectionStatus() const
 
 void CBasrvAccStateDisconnect::RequestCompletedL(CBasrvActive& aActive)
     {
-    TRACE_INFO((_L("Disconnect 0x%02x done, err %d"), aActive.RequestId(), iDiscErr))
-    if (!iDiscErr)
-        iDiscErr = aActive.iStatus.Int();
-    AccInfo().iConnProfiles &= ~(aActive.RequestId());
+    TRACE_FUNC
+    if (aActive.RequestId() != KRequestIdActiveMode)
+        {
+        // We are disconnecting a profile
+        if (!iDiscErr)
+            {
+            iDiscErr = aActive.iStatus.Int();
+            }
+         AccInfo().iConnProfiles &= ~(aActive.RequestId());
+        }
     StatePrint(_L("Disconnect"));
     if (!AccInfo().iConnProfiles)
         {
         if (iConnErr)
+            {
             Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, iConnErr, AccInfo().iSuppProfiles);
+            }
         else
+            {
             Parent().AccMan().DisconnectCompletedL(AccInfo().iAddr, iProfiles, KErrNone);
+            }
         Parent().ChangeStateL(NULL);
         }
     else
@@ -108,6 +131,10 @@ void CBasrvAccStateDisconnect::DoDisconnectL()
         if (!iActive)
             {
             iActive = CBasrvActive::NewL(*this, CActive::EPriorityStandard, profile);
+            }
+        else if (iActive->Priority() != CActive::EPriorityStandard)
+            {
+            iActive->SetPriority(CActive::EPriorityStandard);
             }
         iActive->SetRequestId(profile);
         plugin->DisconnectAccessory(AccInfo().iAddr, iActive->iStatus);

@@ -12,7 +12,7 @@
 * Contributors:
 *
 * Description:  Implementation of Connected state.
-*  Version     : %version: 22 %
+*  Version     : %version: 23 %
 *
 */
 
@@ -370,8 +370,17 @@ void CBasrvAccStateAttached::CancelRequest(CBasrvActive& aActive)
     {
     TRACE_FUNC
     TInt request = aActive.RequestId();
-    TAccAudioType type = (request == KRequestIdOpenMonoAudio || request == KRequestIdCloseMonoAudio ) ?
-        EAccMonoAudio : EAccStereoAudio;
+    TAccAudioType type = (request == KRequestIdOpenMonoAudio || request == KRequestIdCloseMonoAudio ||
+        KRequestIdMonoActiveModeRequest) ? EAccMonoAudio : EAccStereoAudio;
+    
+    if (request == KRequestIdMonoActiveModeRequest || request == KRequestIdStereoActiveModeRequest)
+        {
+        // Audio was opened by remote at the same time as audio policy.
+        // Just complete audio request sent by audio policy and return.
+        Parent().AccMan().OpenAudioCompleted(AccInfo().iAddr, type, KErrNone);
+        return;
+        }
+    
     TProfiles profile = (type == EAccMonoAudio) ? EAnyMonoAudioProfiles : EStereo;
     CBTAccPlugin* plugin = Parent().AccMan().PluginMan().Plugin(profile);
     if (request == KRequestIdOpenMonoAudio || request == KRequestIdOpenStereoAudio)

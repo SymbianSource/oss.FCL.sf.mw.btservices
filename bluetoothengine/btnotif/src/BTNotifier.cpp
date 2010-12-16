@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -505,6 +505,41 @@ void CBTNotifierBase::DoBlockDevice()
         CompleteMessage(err); 
         }
     }
+// ---------------------------------------------------------------------------
+// CBTNotifierBase::ChangeAuthorizeStateAndMakeUserAware
+// ---------------------------------------------------------------------------
+//
+TInt CBTNotifierBase::ChangeAuthorizeStateAndMakeUserAware( TBool aTrust )
+    {
+    FTRACE(FPrint(_L("[BTNOTIF]\t CBTNotifierBase::ChangeAuthorizeStateAndMakeUserAware() Trust %d"), aTrust));   
+    TBTDeviceSecurity sec = iDevice->GlobalSecurity();
+    sec.SetBanned(EFalse);
+    sec.SetNoAuthorise( ( aTrust ) ? ETrue : EFalse ) ;
+    iDevice->SetGlobalSecurity(sec);   
+    iBTRegistryQueryState = ESetDeviceAuthorizeAndJWState;
+    
+    if( IsJustWorksPaired(iDevice->AsNamelessDevice()) )
+        {
+        TInt32 cookie = iDevice->IsValidUiCookie() ? iDevice->UiCookie() : EBTUiCookieUndefined;
+        if ( !( cookie & EBTUiCookieJustWorksPaired ) )
+            {
+            cookie |= EBTUiCookieJustWorksPaired;
+            FTRACE(FPrint(_L("[BTNOTIF]\t CBTAuthNotifier::ChangeAuthorizeState cookie %d"), cookie));
+            iDevice->SetUiCookie( cookie );
+            }       
+        }
+        
+    TInt err = KErrNone;
+    if( !iDevMan )
+        {    
+        TRAP(err, iDevMan = CBTEngDevMan::NewL( this ));
+        }
+    if( !err )
+        {
+        err = iDevMan->ModifyDevice( *iDevice );
+        }
+    return err;
+    }
 
 void CBTNotifierBase::ChangeAuthorizeState( TBool aTrust )
     {
@@ -690,12 +725,18 @@ void CBTNotifierBase::HandleDevManComplete(TInt aErr)
             // to be completed here is the original pair or authorization request
             // which has been rejected by the user.
             CompleteMessage(KErrCancel);
+			break;
             }
         case ESetDeviceAuthorizeState:
             {
             TBTNotifLockPublish::DeleteNotifLocks( 
                     EBTNotiferLockPairedDeviceSetting, iDevice->BDAddr() );
             CompleteMessage(aErr);
+            break;
+            }
+        case ESetDeviceAuthorizeAndJWState:
+            {
+            CompleteMessage( ETrue, KErrNone );
             break;
             }
         }

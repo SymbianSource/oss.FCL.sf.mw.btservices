@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -50,6 +50,7 @@ enum TBTRegistryQueryState
 	EQueryPaired=1,
 	EQueryUsed=2,
 	ESetDeviceAuthorizeState,
+	ESetDeviceAuthorizeAndJWState,
 	ESetDeviceBlocked,
 	ESetDeviceUnblocked,
 };
@@ -174,6 +175,14 @@ NONSHARABLE_CLASS(CBTNotifierBase): public CBase, public MEikSrvNotifierBase2, M
          * @return None
          */
         void DoBlockDevice();
+
+        /**
+         * Set BTDevice's security setting to un/authorized and modify device, and change the pairing
+         * to be user aware
+         * @param aTrust Set authorized if ETrue; otherwise, unauthorized.
+         * @return None
+         */
+        TInt ChangeAuthorizeStateAndMakeUserAware( TBool aTrust);
 
         /**
          * Set BTDevice's security setting to un/authorized and modify device

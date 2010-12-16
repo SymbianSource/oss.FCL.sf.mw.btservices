@@ -21,7 +21,6 @@
 #include "btmsyncsock.h"
 #include "btmslisten.h"
 #include "btmsctrl.h"
-#include "btmssniffm.h"
 #include "btmsaudio.h"
 #include "debug.h"
 #include <btengconstants.h>
@@ -40,6 +39,7 @@ CBtmsOpenAudio* CBtmsOpenAudio::NewL(CBtmMan& aParent, TRequestStatus* aRequest,
 
 CBtmsOpenAudio::~CBtmsOpenAudio()
     {
+    TRACE_FUNC
     delete iAcceptSco;
     delete iSetupSco;
     }
@@ -104,14 +104,7 @@ void CBtmsOpenAudio::CancelOpenAudioLinkL(const TBTDevAddr& aAddr)
         {
         iSetupSco->CancelSetup();
         CompleteStateRequest(KErrCancel);
-        if (iRfcomm->IsInSniff())
-            {
-            Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
-            }
-        else
-            {
-            Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
-            }
+        Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
         }
     }
     
@@ -154,14 +147,7 @@ void CBtmsOpenAudio::SyncLinkSetupCompleteL(TInt aErr)
             {
 	        TInt err4openaudio  = (aErr == KErrInUse) ? KErrCouldNotConnect : aErr;
 	        CompleteStateRequest(err4openaudio);
-            if (iRfcomm->IsInSniff())
-                {
-                Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
-                }
-            else
-                {
-                Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
-                }
+	        Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), SwapSyncSock(iAcceptSco)));
             } 
         }
     else

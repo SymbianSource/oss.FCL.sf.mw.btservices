@@ -23,7 +23,6 @@
 #include "btmrfcommsock.h"
 #include "btmsrfcomm.h"
 #include "btmsctrl.h"
-#include "btmssniffm.h"
 #include "btmsdisconnect.h"
 #include "btmsopenaudio.h"
 #include "debug.h"
@@ -130,14 +129,7 @@ void CBtmsRfcomm::SlcIndicateL(TBool aSlc)
             }
         else
             {
-            if (iRfcomm->IsInSniff())
-                {
-                Parent().ChangeStateL(CBtmsSniffm::NewL(Parent(), SwapStateRfcommSock(), NULL));
-                }
-            else
-                {
-                Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL));
-                }
+            Parent().ChangeStateL(CBtmsCtrl::NewL(Parent(), SwapStateRfcommSock(), NULL));
             }
         }
     }

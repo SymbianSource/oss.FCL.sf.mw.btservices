@@ -91,6 +91,10 @@ void CBasrvAccStateConnect::RequestCompletedL(CBasrvActive& aActive)
         AccInfo().iConnProfiles |= iConnectingProfile;
         Parent().ChangeStateL(CBasrvAccStateAttach::NewL(Parent(), ETrue));
         }
+    else if (aActive.iStatus == KErrAlreadyExists && AccInfo().iConnProfiles & iConnectingProfile)
+        {
+        Parent().ChangeStateL(CBasrvAccStateAttach::NewL(Parent(), ETrue));
+        }
     else
         {
         Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, aActive.iStatus.Int(), AccInfo().iSuppProfiles);

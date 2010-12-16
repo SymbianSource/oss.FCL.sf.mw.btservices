@@ -12,7 +12,7 @@
 * Contributors:
 *
 * Description:  the entry of this plugin.
-*  Version     : %version: 12.1.8 %
+*  Version     : %version: 12.1.8.1.1 %
 *
 */
 
@@ -47,7 +47,7 @@ class CBtmPageScanParametersManager;
  *
  *  @since S60 v3.1
  */
-class CBtmMan : public CBTAccPlugin, public MBtmcObserver, public MBtmActiveObserver
+class CBtmMan : public CBTAccPlugin, public MBtmcObserver
     {
 public:
     static CBtmMan* NewL(TPluginParams& aParams);
@@ -143,9 +143,7 @@ public:
      *
      * @since S60 v5.0
      */ 
-    TInt AudioLinkLatency();   
-    
-    TBool IsTrashBinEmpty();
+    TInt AudioLinkLatency();       
     
     void LoadCmdHandlerL(TBtmcProfileId aProfile, const TBTDevAddr& aAddr, TBool aAccessoryInitiated);
     
@@ -260,24 +258,6 @@ private:
 
     TInt GetRemoteSupportedFeature();
 
-    // From base class CBtmActive
-
-    /**
-     * Handles the request completion event.
-     *
-     * @since S60 v3.1
-     * @param aActive the Active Object to which the request is assigned to.
-     */
-    void RequestCompletedL(CBtmActive& aActive);
-
-    /**
-     * Handles the cancellation of an outstanding request.
-     *
-     * @since S60 v3.1
-     * @param aActive the Active Object to which the request is assigned to.
-     */
-    void CancelRequest(CBtmActive& aActive);
-
 private:
     // From MBtmcObserver
     void SlcIndicateL(TBool aSlc);
@@ -299,14 +279,7 @@ private:
     /**
      * the current state.
      */
-    CBtmState* iState;
-
-    /**
-     * The place where obsolete state instances are temporarily stored.
-     */
-    RPointerArray<CBtmState> iTrashBin;
-    
-    CBtmActive* iActive;
+    CBtmState* iState;   
     
     /**
      * the property for mono accessory connection state

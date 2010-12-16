@@ -12,7 +12,7 @@
 * Contributors:
 *
 * Description:  BT sync socket
-*  Version     : %version: 4.2.4 %
+*  Version     : %version: 4.2.6 %
 *
 */
 
@@ -70,7 +70,9 @@ void CBtmSyncSock::AcceptL(TBool aAllowEsco)
     TRACE_FUNC_ENTRY
     iScoAcceptor = TScoAcceptor(this);
     iSco->SetNotifier(iScoAcceptor);
-    User::LeaveIfError(iSco->AcceptConnection(TBTSyncPackets(KScoPacketTypeSpec)));
+    TInt err = iSco->AcceptConnection( TBTSyncPackets(KScoPacketTypeSpec) );
+    TRACE_INFO((_L("CBtmSyncSock::AcceptL err = %d"), err))
+    User::LeaveIfError( err );
     if (aAllowEsco)
         {
         iESco_Acceptor = TScoAcceptor(this);

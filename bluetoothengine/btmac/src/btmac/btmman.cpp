@@ -12,7 +12,7 @@
 * Contributors:
 *
 * Description:  CBtmMan definition
-*  Version     : %version: 15.1.9 %
+*  Version     : %version: 15.1.9.1.1 %
 *
 */
 
@@ -35,8 +35,6 @@
 #ifdef _DEBUG // only used in traces
 const TInt KBTDevAddrReadable = KBTDevAddrSize * 2;
 #endif
-
-const TInt KDestroyObsoleteStateOneShot = 20;
 
 void CompleteRequest(TRequestStatus* aStatus, TInt aErr)
     {
@@ -61,10 +59,7 @@ CBtmMan* CBtmMan::NewL(TPluginParams& aParams)
 CBtmMan::~CBtmMan()
     {
     TRACE_FUNC_ENTRY
-    delete iActive;
     delete iCmdHandler;
-    iTrashBin.ResetAndDestroy();
-    iTrashBin.Close();
     delete iState;
     iMonoStateProp.Close();
     iMonoAddrProp.Close();
@@ -78,13 +73,8 @@ CBtmMan::~CBtmMan()
 
 void CBtmMan::ChangeStateL(CBtmState* aState)
     {
-    TRACE_FUNC_ENTRY
-    TRACE_ASSERT(!!aState, EBTPanicNullPointer);
-    if (iState)
-        {
-        iTrashBin.AppendL(iState);
-        }
-        
+    TRACE_ASSERT(aState != NULL, EBTPanicNullPointer);
+    delete iState;
     iState = aState;
     TInt err = KErrNone;
     TRAP(err, iState->EnterL());
@@ -92,24 +82,7 @@ void CBtmMan::ChangeStateL(CBtmState* aState)
         {
         ChangeStateL(iState->ErrorOnEntryL(err));
         }
-  
-    if (iTrashBin.Count())
-        {
-        if (!iActive)
-            {
-            iActive = CBtmActive::NewL(*this, CActive::EPriorityStandard, KDestroyObsoleteStateOneShot);
-            }
-        if (!iActive->IsActive())
-            {
-            iActive->iStatus = KRequestPending;
-            iActive->GoActive();
-            TRequestStatus* sta = &(iActive->iStatus);
-            CompleteRequest(sta, KErrNone);
-            }
-        }
-    TRACE_FUNC_EXIT
     }
-
 RSocketServ& CBtmMan::SockServ()
     {
     return iSockServ;
@@ -190,10 +163,6 @@ TInt CBtmMan::GetLastUsedChannel(TUint aService)
 TInt CBtmMan::AudioLinkLatency()
     {
     return iState->AudioLinkLatency();
-    }
-TBool CBtmMan::IsTrashBinEmpty()
-    {
-    return iTrashBin.Count() == 0 ? ETrue : EFalse;
     }
 
 void CBtmMan::DeleteRegisteredService(TUint aService)
@@ -409,22 +378,6 @@ CBtmMan::CBtmMan(TPluginParams& aParams)
     : CBTAccPlugin(aParams)
     {
     TRACE_FUNC
-    }
-
-void CBtmMan::RequestCompletedL(CBtmActive& /*aActive*/)
-    {
-    TRACE_FUNC
-    TRACE_INFO((_L("TRASHBIN SIZE: %d"), iTrashBin.Count()))
-    iTrashBin.ResetAndDestroy();
-    if( iState )
-        {
-        iState->StartListenerL();
-        }
-        
-    }
-
-void CBtmMan::CancelRequest(CBtmActive& /*aActive*/)
-    {
     }
 
 void CBtmMan::SlcIndicateL(TBool aSlc)

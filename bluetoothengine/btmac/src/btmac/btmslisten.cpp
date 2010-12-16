@@ -41,6 +41,7 @@ CBtmsListen* CBtmsListen::NewL(CBtmMan& aParent)
 
 CBtmsListen::~CBtmsListen()
     {
+    TRACE_FUNC
     delete iHfpSock;
     delete iHspSock;
     Parent().StoppedListenning();
@@ -51,10 +52,7 @@ void CBtmsListen::EnterL()
     TRACE_STATE(_L("[BTMAC State] Listen"))
     iHfpSock = CBtmRfcommSock::NewL(*this, Parent().SockServ());
     iHspSock = CBtmRfcommSock::NewL(*this, Parent().SockServ());
-    if ( Parent().IsTrashBinEmpty() )
-        {
-        StartListenerL();
-        }
+    StartListenerL();
     }
 CBtmState* CBtmsListen::ErrorOnEntryL(TInt /*aReason*/)
     {
@@ -100,6 +98,7 @@ void CBtmsListen::OpenAudioLinkL(const TBTDevAddr& aAddr, TRequestStatus& aStatu
 
 void CBtmsListen::ConnectL(const TBTDevAddr& aAddr, TRequestStatus& aStatus)
     {
+    TRACE_FUNC
     if ( iHfpSock && iHspSock )
         {
         iHfpSock->CancelListen();

@@ -89,26 +89,38 @@ void CBasrvAccStateAttach::AccessoryDisconnectedL(TProfiles aProfile)
         {
         if (iConnecting)
             {
-            Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, KErrDisconnected, AccInfo().iSuppProfiles);
+            CBasrvAccfwIf* accif = NULL;
+            accif = Parent().AccMan().AccfwConnectionL();
+            if( accif )
+                accif->CancelAttachAccessory(AccInfo().iAddr);
             }
-        iActive->Cancel();
-        Parent().ChangeStateL(NULL);
         }
     }
 
 void CBasrvAccStateAttach::RequestCompletedL(CBasrvActive& aActive)
     {
     TRACE_FUNC
-    if (iConnecting && aActive.iStatus == KErrNone)
+    
+    if (iConnecting)
         {
-        Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, aActive.iStatus.Int(), AccInfo().iConnProfiles);
+        if (aActive.iStatus == KErrNone)
+            {
+            Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, aActive.iStatus.Int(), AccInfo().iConnProfiles);
+            }    
+        else if (!AccInfo().iConnProfiles)
+            {
+            Parent().AccMan().ConnectCompletedL(AccInfo().iAddr, KErrDisconnected, AccInfo().iSuppProfiles);
+            Parent().ChangeStateL(NULL);
+            return;
+            }
         }
         
     if (aActive.iStatus == KErrNone)
         {
         Parent().AccMan().ListenAudioRequestL();        	
         Parent().AccMan().PluginMan().AccInUse();
-        Parent().ChangeStateL(CBasrvAccStateAttached::NewL(Parent(), !iConnecting));
+        // we always show connect/disconnect notes regardless of the initiator
+        Parent().ChangeStateL(CBasrvAccStateAttached::NewL(Parent(), ETrue));
         }
     else
         {

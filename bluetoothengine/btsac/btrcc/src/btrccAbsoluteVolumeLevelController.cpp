@@ -28,7 +28,9 @@
 
 const TInt KAbsoluteVolumeLevelSetServiceId = 0x02; 
 const TInt KMaxRetries = 3;
-const TInt KDefaultStep = 1000;
+// Current known step values
+const TInt KDefaultStep1 = 500;
+const TInt KDefaultStep2 = 1000;
 
 // MODULE DATA STRUCTURES
 
@@ -54,7 +56,7 @@ CBTRCCAbsoluteVolumeLevelController* CBTRCCAbsoluteVolumeLevelController::NewL(C
 // -----------------------------------------------------------------------------
 //
 CBTRCCAbsoluteVolumeLevelController::CBTRCCAbsoluteVolumeLevelController(MBTRCCVolumeControllerObserver& aObserver)
-: CBTRCCVolumeLevelControllerBase(aObserver), iStep(KDefaultStep)
+: CBTRCCVolumeLevelControllerBase(aObserver), iStep(KDefaultStep1)
 	{
 	}
 
@@ -95,7 +97,9 @@ CBTRCCAbsoluteVolumeLevelController::~CBTRCCAbsoluteVolumeLevelController()
 void CBTRCCAbsoluteVolumeLevelController::DoStart(TInt aInitialVolume) 
     {
     TRACE_FUNC
-    AdjustRemoteVolume(aInitialVolume); 
+    iStep = KDefaultStep1;
+    //Register volume change notification
+    RegisterVolumeChangeNotification(); 
     }
 
 // -----------------------------------------------------------------------------
@@ -124,16 +128,14 @@ void CBTRCCAbsoluteVolumeLevelController::DoReset()
 //
 void CBTRCCAbsoluteVolumeLevelController::AdjustRemoteVolume(TInt aVolume)
     {
+    TRACE_FUNC
 	TRACE_INFO((_L("Setting volume to %d"), aVolume))
 	
 	if(iBtrccAbsoluteVolumeActive->IsActive()) 
         {
         iRemConAbsoluteVolumeController->CancelSetAbsoluteVolume(); 
         iBtrccAbsoluteVolumeActive->Cancel();
-        }
-	
-    //Try to register volume change notification
-	RegisterVolumeChangeNotification();
+        }	
     
 	// iNumRemotes is not needed by us, but the method requires it. 
     iRemConAbsoluteVolumeController->SetAbsoluteVolume(iBtrccAbsoluteVolumeActive->iStatus, 
@@ -148,7 +150,7 @@ void CBTRCCAbsoluteVolumeLevelController::AdjustRemoteVolume(TInt aVolume)
 //
 void CBTRCCAbsoluteVolumeLevelController::RegisterVolumeChangeNotification()
     {
-
+    TRACE_FUNC
     iRemConAbsoluteVolumeController->CancelAbsoluteVolumeNotification(); 
     iRemConAbsoluteVolumeController->RegisterAbsoluteVolumeNotification();
     }
@@ -164,6 +166,7 @@ TInt CBTRCCAbsoluteVolumeLevelController::RoundRemoteVolume(TInt aPrevPhVol)
     TInt remoteVol = GetCurrentRemoteVolume();
     TRACE_INFO((_L("Volume to be rounded %d"), remoteVol))
     // Update step
+    // step is defined as a subtraction of previous and current volume value
     if( phoneVol != -1 && aPrevPhVol != -1 )
         {
         TInt step = Abs( phoneVol - aPrevPhVol );
@@ -172,6 +175,11 @@ TInt CBTRCCAbsoluteVolumeLevelController::RoundRemoteVolume(TInt aPrevPhVol)
             TRACE_INFO((_L("Step %d"), step))
             // Only update step value if it is not equal to zero
             iStep = step;
+            }
+        // We accept only known step values, if not known, force to be default value
+        if( iStep != KDefaultStep1 && iStep != KDefaultStep2 )
+            {
+            iStep = KDefaultStep1;
             }
         }    
     if( remoteVol >= 0 && remoteVol <= iLocalMaxVolume )
@@ -190,6 +198,9 @@ TInt CBTRCCAbsoluteVolumeLevelController::RoundRemoteVolume(TInt aPrevPhVol)
                 break;
                 }
             }
+        TRACE_INFO((_L("Step = %d"), iStep))
+        TRACE_INFO((_L("lowLimit = %d"), lowLimit))
+        TRACE_INFO((_L("highLimit = %d"), highLimit))
         TInt diff1 = Abs( remoteVol - lowLimit );
         TInt diff2 = Abs( remoteVol - highLimit );
         remoteVol = diff1 <= diff2 ? lowLimit : highLimit;
@@ -250,11 +261,8 @@ void CBTRCCAbsoluteVolumeLevelController::MrcavcoCurrentVolume(TUint32 aVolume,
     {
     TRACE_FUNC
     AccessoryChangedVolume(aVolume, aMaxVolume, aError);
-    /*if(aError != KErrNone) 
-        {
-        // Register again to the notifications. 
-        iRemConAbsoluteVolumeController->RegisterAbsoluteVolumeNotification();     
-        }*/
+    //Register volume change notification
+    RegisterVolumeChangeNotification();
     }
 
 // -----------------------------------------------------------------------------
@@ -262,12 +270,10 @@ void CBTRCCAbsoluteVolumeLevelController::MrcavcoCurrentVolume(TUint32 aVolume,
 // -----------------------------------------------------------------------------
 //
 void CBTRCCAbsoluteVolumeLevelController::MrcavcoSetAbsoluteVolumeResponse(TUint32 aVolume, 
-        TUint32 aMaxVolume, 
-        TInt aError)
+        TUint32 aMaxVolume, TInt aError)
     {
     TRACE_FUNC
-    TRACE_INFO((_L("Accessory volume is %d / %d"), aVolume, aMaxVolume))
-    AccessoryChangedVolume(aVolume, aMaxVolume, aError);
+    SetAbsoluteVolumeResponse(aVolume, aMaxVolume, aError);
     }
 
 // -----------------------------------------------------------------------------
@@ -282,24 +288,68 @@ void CBTRCCAbsoluteVolumeLevelController::MrcavcoAbsoluteVolumeNotificationError
     // it's better to stop volume controlling and reset the link.  
     VolumeControlError(ERegisterNotificationsFailed); 
     }
+
 // -----------------------------------------------------------------------------
 // CBTRCCAbsoluteVolumeLevelController::AccessoryChangedVolume
 // -----------------------------------------------------------------------------
 //
-void CBTRCCAbsoluteVolumeLevelController::AccessoryChangedVolume(TUint32 aVolume, TUint32 aMaxVolume, TInt aError)
+void CBTRCCAbsoluteVolumeLevelController::AccessoryChangedVolume(TUint32 aVolume,
+        TUint32 aMaxVolume, TInt aError)
     {
     TRACE_FUNC
-    TRACE_INFO((_L("Accessory volume is %d / %d"), aVolume, aMaxVolume))
-    if( ValidVolumeParams(aVolume, aMaxVolume) && (aError == KErrNone) )
+    TRACE_INFO((_L("Accessory volume is %d / %d, err %d"), aVolume, aMaxVolume, aError))
+    if( aError == KErrNone )
         {
-        // Convert volume scale to phone's volume scale. (User reals and round in the end.)  
-        TInt volumeInPhoneScale = (TReal)aVolume * ((TReal)iLocalMaxVolume / (TReal)aMaxVolume) + 0.5;
-        ASSERT(volumeInPhoneScale <= iLocalMaxVolume);
-        TRACE_INFO((_L("Volume in phone scale is %d"), volumeInPhoneScale))
-        CBTRCCVolumeLevelControllerBase::AccessoryChangedVolume(volumeInPhoneScale); 
+        TInt scaledRemoteVolume = ConvertVolumeToPhoneScale( aVolume, aMaxVolume );
+        if( scaledRemoteVolume >= 0 )
+            {
+            CBTRCCVolumeLevelControllerBase::AccessoryChangedVolume( scaledRemoteVolume );
+            }
         }
     }
 
+// -----------------------------------------------------------------------------
+// CBTRCCAbsoluteVolumeLevelController::SetAbsoluteVolumeResponse
+// -----------------------------------------------------------------------------
+//
+void CBTRCCAbsoluteVolumeLevelController::SetAbsoluteVolumeResponse(TUint32 aVolume, 
+        TUint32 aMaxVolume, TInt aError)
+    {
+    TRACE_FUNC
+    TRACE_INFO((_L("Accessory volume is %d / %d, err %d"), aVolume, aMaxVolume, aError))
+    if( aError == KErrNone )
+        {
+        TInt scaledRemoteVolume = ConvertVolumeToPhoneScale( aVolume, aMaxVolume );
+        if( scaledRemoteVolume >= 0 )
+            {
+            CBTRCCVolumeLevelControllerBase::SetAbsoluteVolumeResponse( scaledRemoteVolume );
+            }
+        }
+    }
+
+// -----------------------------------------------------------------------------
+// CBTRCCAbsoluteVolumeLevelController::ConvertVolumeToPhoneScale
+// -----------------------------------------------------------------------------
+//
+TInt CBTRCCAbsoluteVolumeLevelController::ConvertVolumeToPhoneScale(TUint32 aVolume, 
+        TUint32 aMaxVolume)
+    {
+    TInt volumeInPhoneScale = -1;
+    if( ValidVolumeParams(aVolume, aMaxVolume) )
+        {
+        // Convert volume scale to phone's volume scale. (Use reals, assignment to integer
+        // in the end drops the decimal part.)
+        volumeInPhoneScale = (TReal)aVolume * ((TReal)iLocalMaxVolume / (TReal)aMaxVolume) + 0.5;
+        TRACE_ASSERT(volumeInPhoneScale <= iLocalMaxVolume, EBtrccPanicInvalidVolume);
+        TRACE_INFO((_L("Volume in phone scale is %d"), volumeInPhoneScale))        
+        }
+    return volumeInPhoneScale;
+    }
+
+// -----------------------------------------------------------------------------
+// CBTRCCAbsoluteVolumeLevelController::ValidVolumeParams
+// -----------------------------------------------------------------------------
+//
 TBool CBTRCCAbsoluteVolumeLevelController::ValidVolumeParams(TUint32 aVolume, TUint32 aMaxVolume)
     {
     return (( aMaxVolume > 0 ) && (aVolume <= aMaxVolume));

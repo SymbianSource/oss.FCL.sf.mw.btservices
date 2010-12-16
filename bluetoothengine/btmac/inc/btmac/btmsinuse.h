@@ -47,6 +47,14 @@ public:
      * @param aErr the completion error code
      */
     virtual void RfcommErrorL(TInt aErr) = 0;
+    
+    /**
+     * Returns the next state if EnterL leaves.
+     *
+     * @since S60 v3.1
+     * @return the next state
+     */
+    virtual CBtmState* ErrorOnEntryL(TInt aReason);
 
 protected:
 
